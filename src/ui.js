@@ -334,14 +334,15 @@
       const t = today(), ym = t.slice(0, 7), minutes = s => { if (!s) return 9999; const [a, b] = s.split(':').map(Number); return a * 60 + b; };
       const due = active().filter(h => D.H[h.id].due).sort((a, b) => (!!D.H[a.id].doneToday - !!D.H[b.id].doneToday) || (minutes(a.anchorTime) - minutes(b.anchorTime)));
       const free = active().filter(h => !D.H[h.id].due);
-      let h = `<h2>Heute</h2><p class="sub">Hake ab, was du geschafft hast. Die Mini-Version zählt an schlechten Tagen voll für die Stärke deiner Gewohnheit.</p>`;
+      let h = `<h2>Heute</h2><p class="sub">Hake ab, was du geschafft hast. An schlechten Tagen zählt die Mini-Version voll.</p>`;
+      h += '<h3>Gewohnheiten</h3><div class="list">' + (due.length ? due.map(habitRow).join('') : `<div class="empty">${active().length ? 'Heute steht keine Gewohnheit an.' : 'Noch keine Gewohnheit. Unter „Gewohnheiten“ kannst du eine pflanzen.'}</div>`) + '</div>';
+      h += lateHTML();
+      // U1: Hinweise stehen unter der Liste, damit der erste Haken ohne Scrollen sichtbar bleibt.
       if (!S.demo && isIOS() && !standalone() && !S.installHintSeen) h += `<div class="banner info"><span class="sp"><b>Als App installieren:</b> Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach läuft dein Hof offline und kann später Erinnerungen schicken.</span><button class="btn sm" type="button" data-act="install-ok">Verstanden</button></div>`;
       const c = L.canAddHabit(S, t);
       if (c.ok && active().length >= L.C.START_HABITS && !S.unlockSeen && !S.demo) h += `<div class="banner"><span class="sp">Eine Woche geschafft! Wenn du magst, kannst du jetzt weitere Gewohnheiten pflanzen.</span><button class="btn sm" type="button" data-act="unlock-go">Gewohnheit pflanzen</button><button class="btn ghost" type="button" data-act="unlock-no">Später</button></div>`;
       if (new Date().getDate() <= 3 && S.freshSeen !== ym && S.startedAt < ym + '-01') h += `<div class="banner"><span class="sp">Ein neuer Monat beginnt, ein guter Moment für einen frischen Start. Möchtest du eine Gewohnheit anpassen oder neu anfangen?</span><button class="btn sm" type="button" data-act="fresh-go">Gewohnheiten ansehen</button><button class="btn ghost" type="button" data-act="fresh-no">Später</button></div>`;
       if (!S.checkins[t] && hour() >= 5) h += `<div class="row-btns"><button class="btn ghost" type="button" data-act="ci-open">Check-in für heute öffnen</button></div>`;
-      h += '<h3>Gewohnheiten</h3><div class="list">' + (due.length ? due.map(habitRow).join('') : `<div class="empty">${active().length ? 'Heute steht keine Gewohnheit an.' : 'Noch keine Gewohnheit. Unter „Gewohnheiten“ kannst du eine pflanzen.'}</div>`) + '</div>';
-      h += lateHTML();
       if (free.length) h += `<h3>Heute frei</h3><div class="list">${free.map(x => { const d = D.H[x.id]; return `<div class="row off"><span></span><div><div class="row-title">${esc(x.title)}</div><div class="meta"><span>${d.weekly ? `Wochenziel erreicht: ${d.weekCnt} von ${d.N}` : 'Heute nicht geplant · ' + freqText(x.frequency)}</span></div></div><span></span></div>`; }).join('')}</div>`;
       h += `<h3>To-dos</h3><form class="add" id="todoForm"><input class="in" id="tTitle" placeholder="Neue Aufgabe, z. B. Steuerunterlagen sortieren" maxlength="90" aria-label="Aufgabe">
         <select class="in" id="tEff" aria-label="Aufwand"><option value="1">Leicht · 10 XP</option><option value="2" selected>Mittel · 20 XP</option><option value="3">Schwer · 30 XP</option></select>
@@ -352,7 +353,7 @@
         return `<div class="row${x.doneAt ? ' done' : ''}" data-tid="${x.id}"><button class="chk" type="button" data-act="todo" aria-pressed="${!!x.doneAt}" aria-label="${x.doneAt ? 'Als offen markieren' : 'Erledigen'}: ${esc(x.title)}"></button>
           <div>${plan && !x.doneAt ? `<div class="planned">${plan}</div>` : ''}<div class="row-title">${esc(x.title)}</div><div class="meta"><span>${img(s.icon, 2, '')}${esc(s.name)}</span><span>+${10 * x.effort} XP</span></div></div><div class="side"><button class="del" type="button" data-act="deltodo" aria-label="Aufgabe löschen">×</button></div></div>`; };
       h += `<div class="list">${open.length ? open.map(trow).join('') : '<div class="empty">Keine offenen To-dos.</div>'}${doneT.map(trow).join('')}</div>`;
-      $('#p-today').innerHTML = h;
+      $('#todayBody').innerHTML = h;
     },
     habits() {
       const t = today(), c = L.canAddHabit(S, t), act = active(), paused = S.habits.filter(h => h.archivedAt);
@@ -409,7 +410,7 @@
         <div class="err" id="importErr" hidden></div>
         ${U.importPending ? `<div class="banner info"><span class="sp">Die Sicherung enthält ${U.importPending.habits.length} Gewohnheiten, ${U.importPending.todos.length} To-dos und ${U.importPending.journal.length} Logbuch-Einträge. Sie ersetzt die Daten auf diesem Gerät.</span><button class="btn sm" type="button" data-act="import-apply">Wiederherstellen</button><button class="btn ghost" type="button" data-act="import-cancel">Abbrechen</button></div>` : ''}
         ${isIOS() && !standalone() ? '<p class="hint">Tipp: In Safari über „Teilen“ → „Zum Home-Bildschirm“ wird der Hof zur App, die offline läuft.</p>' : ''}`}</div>`;
-      $('#p-progress').innerHTML = h;
+      $('#progressBody').innerHTML = h;
       const sc = $('#p-progress .cal-scroll'); if (sc) sc.scrollLeft = (U.calYear || t.slice(0, 4)) === t.slice(0, 4) ? sc.scrollWidth : 0;
     },
     chest() {
@@ -626,12 +627,29 @@
     });
   }
 
+  /* ---------- Aufbau für schmale Bildschirme (U1) ----------
+   * Bis 767 px: Tab-Leiste fest unten, Erfahrung und Fähigkeiten im Tab „Fortschritt“, Wilma am Ende von „Heute“.
+   * Die Knoten werden nur umgehängt (gleiche ids), Ereignisse laufen über document und bleiben erhalten.
+   */
+  const narrowMQ = root.matchMedia ? matchMedia('(max-width: 767px)') : null;
+  function layout() {
+    const narrow = !!(narrowMQ && narrowMQ.matches), scene = $('.scene');
+    if (narrow) { $('#statsSlot').append($('#charBox'), $('#skillsBox')); $('#npcSlot').append($('#npc')); }
+    else { scene.after($('#charBox')); $('#charBox').after($('#skillsBox')); $('#skillsBox').after($('#npc')); }
+    document.documentElement.classList.toggle('narrow', narrow);
+  }
+  function tabIcons() {
+    const ic = { today: 'sonnig', habits: 'p3', journal: 'book', progress: 'gem', chest: 'crate' };
+    $$('.tab .ti').forEach(sp => { sp.innerHTML = img(ic[sp.dataset.icon], 3, ''); });
+  }
+
   /* ---------- Start ---------- */
   function boot(state) {
     S = state || L.emptyState(today()); applyLook();
     au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
     derive();
     scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
+    tabIcons(); layout(); if (narrowMQ) narrowMQ.addEventListener('change', layout);
     bind(); refresh(); scene.start();
     if (!S.onboarded) showOnboarding('welcome');
     else { checkRewards(null); if (L.needsCheckin(S, today(), hour())) showCheckin(); }

@@ -34,7 +34,7 @@
         <canvas id="scene" width="256" height="160" aria-label="Dein Hof von oben: ein Beet pro Gewohnheit, ein Gebäude pro Fähigkeit"></canvas>
         <div class="legend" id="legend"></div>
       </div>
-      <section class="frame" aria-label="Charakter">
+      <section class="frame" id="charBox" aria-label="Charakter">
         <div class="stat-row">
           <div class="lvl-badge"><small>Level</small><strong id="lvlNum">1</strong></div>
           <div class="stat-main">
@@ -44,7 +44,7 @@
           </div>
         </div>
       </section>
-      <section class="frame" aria-label="Fähigkeiten">
+      <section class="frame" id="skillsBox" aria-label="Fähigkeiten">
         <div class="plank">Fähigkeiten</div>
         <div class="skills" id="skills"></div>
       </section>
@@ -56,20 +56,20 @@
 
     <div class="panel-wrap">
       <div class="tabs" role="tablist" aria-label="Bereiche">
-        <button class="tab" role="tab" id="t-today" data-tab="today" aria-controls="p-today" aria-selected="true">Heute<span class="n" id="nToday"></span></button>
-        <button class="tab" role="tab" id="t-habits" data-tab="habits" aria-controls="p-habits" aria-selected="false" tabindex="-1">Gewohnheiten</button>
-        <button class="tab" role="tab" id="t-journal" data-tab="journal" aria-controls="p-journal" aria-selected="false" tabindex="-1">Logbuch</button>
-        <button class="tab" role="tab" id="t-progress" data-tab="progress" aria-controls="p-progress" aria-selected="false" tabindex="-1">Fortschritt</button>
-        <button class="tab" role="tab" id="t-chest" data-tab="chest" aria-controls="p-chest" aria-selected="false" tabindex="-1">Truhe<span class="n" id="nChest"></span></button>
+        <button class="tab" role="tab" id="t-today" data-tab="today" aria-controls="p-today" aria-selected="true"><span class="ti" aria-hidden="true" data-icon="today"></span><span class="tl">Heute</span><span class="n" id="nToday"></span></button>
+        <button class="tab" role="tab" id="t-habits" data-tab="habits" aria-controls="p-habits" aria-selected="false" tabindex="-1"><span class="ti" aria-hidden="true" data-icon="habits"></span><span class="tl">Gewohnheiten</span></button>
+        <button class="tab" role="tab" id="t-journal" data-tab="journal" aria-controls="p-journal" aria-selected="false" tabindex="-1"><span class="ti" aria-hidden="true" data-icon="journal"></span><span class="tl">Logbuch</span></button>
+        <button class="tab" role="tab" id="t-progress" data-tab="progress" aria-controls="p-progress" aria-selected="false" tabindex="-1"><span class="ti" aria-hidden="true" data-icon="progress"></span><span class="tl">Fortschritt</span></button>
+        <button class="tab" role="tab" id="t-chest" data-tab="chest" aria-controls="p-chest" aria-selected="false" tabindex="-1"><span class="ti" aria-hidden="true" data-icon="chest"></span><span class="tl">Truhe</span><span class="n" id="nChest"></span></button>
       </div>
-      <div class="frame panel" id="p-today" role="tabpanel" aria-labelledby="t-today"></div>
+      <div class="frame panel" id="p-today" role="tabpanel" aria-labelledby="t-today"><div class="panel-body" id="todayBody"></div><div class="slot" id="npcSlot"></div></div>
       <div class="frame panel" id="p-habits" role="tabpanel" aria-labelledby="t-habits" hidden></div>
       <div class="frame panel" id="p-journal" role="tabpanel" aria-labelledby="t-journal" hidden></div>
-      <div class="frame panel" id="p-progress" role="tabpanel" aria-labelledby="t-progress" hidden></div>
+      <div class="frame panel" id="p-progress" role="tabpanel" aria-labelledby="t-progress" hidden><div class="slot" id="statsSlot"></div><div class="panel-body" id="progressBody"></div></div>
       <div class="frame panel" id="p-chest" role="tabpanel" aria-labelledby="t-chest" hidden></div>
     </div>
   </div>
-  <footer class="foot"><span id="footNote">Speichert nur auf diesem Gerät.</span><span>Prototyp V5</span></footer>
+  <footer class="foot"><span id="footNote">Speichert nur auf diesem Gerät.</span><span id="version">Prototyp</span></footer>
 </div>
 <div id="overlay"></div>
 

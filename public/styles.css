@@ -290,3 +290,33 @@ h2[tabindex="-1"]:focus{outline:none}
 .late-row .side{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
 /* Nachgetragene Tage im Erntekalender: abgeschrägte Ecke als Form-Merkmal zusätzlich zur Farbe */
 .cal-grid i.late,.cal-legend i.late{clip-path:polygon(0 0,55% 0,100% 45%,100% 100%,0 100%)}
+
+/* ---------- v7: Aufbau für schmale Bildschirme (U1, U2, U15) ---------- */
+.slot:empty,.panel-body:empty{display:none}
+.panel-body,.slot{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-content:start;min-width:0}
+.tab .ti{display:none}
+@media (max-width:767px){
+  :root{--tabbar:60px}
+  body{padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:calc(var(--tabbar) + 24px + env(safe-area-inset-bottom,0px))}
+  .wrap{gap:12px}
+  .main,.col{gap:12px}
+  .top{align-items:center;flex-wrap:wrap;gap:4px 8px}
+  .logo{font-size:1.625rem;flex:1 1 auto}
+  .top-r{display:contents}
+  .top-r .cal{order:3;flex:1 1 100%;font-size:1.125rem}
+  .top-r .cal img{display:none}
+  .scene{padding:4px}
+  .scene canvas{width:auto;height:min(150px,22vh);margin:0 auto}
+  .legend{display:none}
+  .panel{min-height:0;padding:14px}
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:70;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:0;
+    padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);background:var(--panel-dk);border-top:3px solid var(--edge);box-shadow:0 -4px 0 rgba(0,0,0,.25)}
+  .tab{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:var(--tabbar);
+    padding:4px 2px;border:none;font-size:0.625rem;letter-spacing:0}
+  .tab .ti{display:block;line-height:0}
+  .tab .tl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tab[aria-selected="true"]{padding-bottom:4px;background:var(--panel-2);box-shadow:inset 0 3px 0 var(--wood)}
+  .tab .n{position:absolute;top:4px;left:calc(50% + 10px);margin:0}
+  .toast{bottom:calc(var(--tabbar) + 12px + env(safe-area-inset-bottom,0px))}
+  .foot{font-size:1rem}
+}
