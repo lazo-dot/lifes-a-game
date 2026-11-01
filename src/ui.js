@@ -130,7 +130,7 @@
     h.logs[t] = status; status === 'tiny' ? au.sfx.tiny() : au.sfx.check(); if (S.chest.placed.some(p => p.itemId === 'chicken')) au.sfx.cluck();
     derive(); const Hn = D.H[h.id], sk = skillById(h.skillId), units = L.unitsToNext(D.levels[sk.id], h.effort);
     const gained = Math.max(0, L.xpFor(h.effort, status) - (prev ? L.xpFor(h.effort, prev) : 0));
-    const info = `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${L.xpFor(h.effort, status)} XP</b> · ${esc(h.title)}: ${Hn.weekly ? Hn.weekCnt + ' von ' + Hn.N + ' diese Woche' : Hn.month + '× diesen Monat'}${status === 'tiny' ? ' · Mini zählt voll für die Stärke' : ''} · noch ${units} ${units === 1 ? 'Einheit' : 'Einheiten'} bis Stufe ${D.levels[sk.id].l + 1}</span>`;
+    const info = `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${L.xpFor(h.effort, status)} XP</b> · ${esc(h.title)}: ${Hn.weekly ? Hn.weekCnt + ' von ' + Hn.N + ' diese Woche' : Hn.month + '× diesen Monat'}${status === 'tiny' ? ' · Mini zählt voll für die Stärke' : ''} · noch ${units}× bis ${esc(sk.name)} Stufe ${D.levels[sk.id].l + 1}</span>`;
     if (!prev && L.dropAllowed(h, t, t)) { h.rolled = t; rollDrop(pt); }
     afterAction(before, h.skillId, pt, gained, info); refresh();
     const row = document.querySelector(`[data-hid="${h.id}"]`); if (row) row.classList.add('pop');
@@ -178,7 +178,8 @@
       <div class="step"><b>5</b><label for="${p}-skill">Zu welcher Fähigkeit gehört das?</label><div class="ctl"><select class="in" id="${p}-skill" data-f="skill">${skillOptions(h ? h.skillId : null)}</select><input class="in" data-f="newskill" maxlength="20" placeholder="Name der neuen Fähigkeit" aria-label="Name der neuen Fähigkeit" hidden></div></div>
       <div class="step"><b>6</b><span class="lab">Aufwand und Optionen</span>
         <div class="ctl">${[1, 2, 3].map(e => `<button type="button" class="chip" data-eff="${e}" aria-pressed="${eff === e}">${['Leicht', 'Mittel', 'Schwer'][e - 1]} · ${10 * e} XP</button>`).join('')}</div>
-        <div class="ctl"><label class="sw"><input type="checkbox" data-f="streak" ${h ? (h.streakEnabled ? 'checked' : '') : 'checked'}> Serie zählen</label><label class="sw"><input type="checkbox" data-f="rem" ${h ? (h.remindersEnabled ? 'checked' : '') : 'checked'}> Erinnerung</label></div></div>
+        <div class="ctl"><label class="sw"><input type="checkbox" data-f="streak" ${h ? (h.streakEnabled ? 'checked' : '') : 'checked'}> Serie zählen</label><label class="sw"><input type="checkbox" data-f="rem" ${h ? (h.remindersEnabled ? 'checked' : '') : 'checked'}> Wilma erinnert in der App</label></div>
+        <p class="hint" style="grid-column:2">Wilma zeigt dir deinen Plan, wenn du die App öffnest. Mitteilungen außerhalb der App gibt es im Prototyp noch nicht.</p></div>
       ${h ? '<p class="hint">Neuer Aufwand oder Rhythmus gilt ab heute. Bisherige Tage behalten ihre Werte.</p>' : ''}
       <div class="preview" data-f="preview">Nach ${h ? esc(h.anchor) : '___'} werde ich ${h ? esc(h.title) : '___'}.</div><div class="err" data-f="err" hidden></div>
       <div class="row-btns"><button class="btn" type="submit">${h ? 'Änderungen speichern' : 'Gewohnheit pflanzen'}</button>${h ? `<button class="btn ghost" type="button" data-act="edit-cancel">Abbrechen</button>` : ''}</div></form>`;
@@ -331,12 +332,12 @@
 
   /* ---------- Bereiche ---------- */
   const R = {
-    cal() { const d = new Date(), w = weather(); $('#cal').innerHTML = `${img(w, 3, WNAME[w])}<span><b>${L.seasonOf(d.getMonth())}</b> · Tag ${d.getDate()} · ${d.toLocaleDateString('de-DE', { weekday: 'long' })} · ${WNAME[w]}</span>`; },
+    cal() { const d = new Date(), w = weather(); $('#cal').innerHTML = `${img(w, 3, WNAME[w])}<span><b>${d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}</b> · ${L.seasonOf(d.getMonth())} · ${d.toLocaleDateString('de-DE', { weekday: 'long' })} · ${WNAME[w]}</span>`; },
     hud() {
       const c = D.char; $('#lvlNum').textContent = c.l; $('#xpText').textContent = c.into + ' / ' + c.need + ' XP'; $('#xpBar').style.width = Math.round(c.into / c.need * 100) + '%';
       const w = $('#xpBarWrap'); w.setAttribute('aria-valuenow', c.into); w.setAttribute('aria-valuemin', 0); w.setAttribute('aria-valuemax', c.need);
-      let best = null; S.skills.forEach(s => { const hs = active().filter(h => h.skillId === s.id); if (!hs.length) return; const eff = Math.round(hs.reduce((a, h) => a + h.effort, 0) / hs.length), u = L.unitsToNext(D.levels[s.id], eff); if (!best || u < best.u) best = { s, u }; });
-      $('#nearText').textContent = best ? `Noch ${best.u} ${best.u === 1 ? 'Einheit' : 'Einheiten'} bis ${best.s.name} Stufe ${D.levels[best.s.id].l + 1}` : '';
+      let best = null; S.skills.forEach(s => { active().filter(h => h.skillId === s.id).forEach(h => { const u = L.unitsToNext(D.levels[s.id], h.effort); if (!best || u < best.u) best = { s, h, u }; }); });
+      $('#nearText').textContent = best ? `Noch ${best.u}× „${best.h.title}“ bis ${best.s.name} Stufe ${D.levels[best.s.id].l + 1}` : '';
       const open = active().filter(h => D.H[h.id].due && !D.H[h.id].doneToday).length + S.todos.filter(t => !t.doneAt && (!t.dueDate || t.dueDate <= today())).length;
       $('#nToday').textContent = open || ''; $('#nToday').hidden = !open;
       $('#footNote').textContent = S.demo ? 'Demo-Hof · nichts wird gespeichert' : 'Speichert nur auf diesem Gerät · Sicherung unter Fortschritt';
@@ -362,7 +363,7 @@
       h += '<h3>Gewohnheiten</h3><div class="list">' + (due.length ? due.map(habitRow).join('') : `<div class="empty">${active().length ? 'Heute steht keine Gewohnheit an.' : 'Noch keine Gewohnheit. Unter „Gewohnheiten“ kannst du eine pflanzen.'}</div>`) + '</div>';
       h += lateHTML();
       // U1: Hinweise stehen unter der Liste, damit der erste Haken ohne Scrollen sichtbar bleibt.
-      if (!S.demo && isIOS() && !standalone() && !S.installHintSeen) h += `<div class="banner info"><span class="sp"><b>Als App installieren:</b> Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach läuft dein Hof offline und kann später Erinnerungen schicken.</span><button class="btn sm" type="button" data-act="install-ok">Verstanden</button></div>`;
+      if (!S.demo && isIOS() && !standalone() && !S.installHintSeen) h += `<div class="banner info"><span class="sp"><b>Als App installieren:</b> Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach läuft dein Hof auch offline.</span><button class="btn sm" type="button" data-act="install-ok">Verstanden</button></div>`;
       const c = L.canAddHabit(S, t);
       if (c.ok && active().length >= L.C.START_HABITS && !S.unlockSeen && !S.demo) h += `<div class="banner"><span class="sp">Eine Woche geschafft! Wenn du magst, kannst du jetzt weitere Gewohnheiten pflanzen.</span><button class="btn sm" type="button" data-act="unlock-go">Gewohnheit pflanzen</button><button class="btn ghost" type="button" data-act="unlock-no">Später</button></div>`;
       if (new Date().getDate() <= 3 && S.freshSeen !== ym && S.startedAt < ym + '-01') h += `<div class="banner"><span class="sp">Ein neuer Monat beginnt, ein guter Moment für einen frischen Start. Möchtest du eine Gewohnheit anpassen oder neu anfangen?</span><button class="btn sm" type="button" data-act="fresh-go">Gewohnheiten ansehen</button><button class="btn ghost" type="button" data-act="fresh-no">Später</button></div>`;
@@ -462,7 +463,7 @@
   };
   /** U17: Regentage als Knopf, Antippen erklärt sie (kein Tooltip nötig). */
   const tokInfo = d => `Regentage: ${d.tokens} von 2. Ein Regentag rettet automatisch einen verpassten Tag deiner Serie. Für je 7 erledigte Termine bekommst du einen, höchstens zwei.`;
-  const tokBtn = d => `<button type="button" class="tok" data-act="info" data-info="${esc(tokInfo(d))}" aria-label="Regentage: ${d.tokens} von 2. Erklärung anzeigen">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</button>`;
+  const tokBtn = (d, text) => `<button type="button" class="tok" data-act="info" data-info="${esc(tokInfo(d))}" aria-label="Regentage: ${d.tokens} von 2. Erklärung anzeigen">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}${text ? `<span>${d.tokens} ${d.tokens === 1 ? 'Regentag' : 'Regentage'}</span>` : ''}</button>`;
   function habitRow(h) {
     const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), done = d.doneToday === 'done', tiny = d.doneToday === 'tiny';
     return `<div class="row${done || tiny ? ' done' : ''}" data-hid="${h.id}">
@@ -470,7 +471,7 @@
       <div><div class="plan">Nach ${esc(h.anchor)}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) : ''}</div><div class="row-title">${esc(h.title)}</div>
       <div class="meta"><span>${img('p' + d.stage, 2, '', { F: st.c, f: st.dk })}${L.STAGES[d.stage][1]} · ${Math.round(d.s * 100)} %</span><span>${img(sk.icon, 2, '')}${esc(sk.name)} +${10 * h.effort}</span>
       <span>${d.weekly ? `${d.weekCnt} von ${d.N} diese Woche` : `${d.month}× diesen Monat`}</span>
-      ${h.streakEnabled && d.streak ? `<span>${img('flame', 2, '')}${d.streak}${d.weekly ? ' Wo.' : ''}</span>` : ''}${h.streakEnabled && !d.weekly ? tokBtn(d) : ''}</div>
+      ${h.streakEnabled && d.streak ? `<span>${img('flame', 2, '')}${d.streak}${d.weekly ? (d.streak === 1 ? ' Woche' : ' Wochen') : ''} in Folge</span>` : ''}${h.streakEnabled && !d.weekly ? tokBtn(d, true) : ''}</div>
       <div class="tinytxt">Mini: ${esc(h.tinyVersion)}</div>
       ${d.canRepair ? repairHTML(h, d) : ''}</div>
       <div class="side habit-side"><button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" aria-label="${tiny ? 'Rückgängig' : 'Mini-Version erledigt'}: ${esc(h.tinyVersion)}"><b>Mini</b><span>${esc(h.tinyVersion)}</span></button></div></div>`;
@@ -489,8 +490,8 @@
       <div class="hd">${img('p' + d.stage, 5, stageName, { F: st.c, f: st.dk })}<div class="row-title">${esc(h.title)}</div>${d.graduated ? '<span class="badge gold">Gemeistert</span>' : ''}${h.archivedAt ? '<span class="badge com">Pausiert</span>' : ''}</div>
       <div class="plan">${esc(planText(h))}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) + ' Uhr' : ''}</div>
       <dl class="kv"><dt>Rhythmus</dt><dd>${freqText(h.frequency)} · Aufwand ${h.effort} (${10 * h.effort} XP)</dd><dt>Mini-Version</dt><dd>${esc(h.tinyVersion)}</dd><dt>Fähigkeit</dt><dd>${esc(sk.name)}</dd>
-      <dt>Stärke</dt><dd>${pct} % · ${stageName} · Tag ${d.age} von etwa 66</dd>${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : (d.streak === 1 ? 'Termin' : 'Termine')}${d.weekly ? '' : ` · Regentage ${tokBtn(d)}`}</dd>` : ''}<dt>Gesamt</dt><dd>${d.year}× dieses Jahr</dd>
-      <dt>Erinnerung</dt><dd>${h.remindersEnabled ? 'an' : h.remOffAt ? `aus seit ${L.daysBetween(h.remOffAt, today())} Tagen${!d.graduated ? ' (30 für „Gemeistert“)' : ''}` : 'aus'}</dd></dl>
+      <dt>Stärke</dt><dd>${pct} % · ${stageName} · ${d.age > 66 ? `Tag ${d.age} · die üblichen 66 Tage sind geschafft` : `Tag ${d.age} von etwa 66`}</dd>${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : (d.streak === 1 ? 'Termin' : 'Termine')}${d.weekly ? '' : ` · Regentage ${tokBtn(d)}`}</dd>` : ''}<dt>Gesamt</dt><dd>${d.year}× dieses Jahr</dd>
+      <dt>Wilma erinnert</dt><dd>${h.remindersEnabled ? 'an' : h.remOffAt ? `aus seit ${L.daysBetween(h.remOffAt, today())} Tagen${!d.graduated ? ' (30 für „Gemeistert“)' : ''}` : 'aus'}</dd></dl>
       <div class="bar sm sk" style="--c:${st.c};--hi:${st.hi};--dk:${st.dk}" role="progressbar" aria-label="Gewohnheitsstärke" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
       ${d.suggestOff ? `<div class="suggest">Läuft fast von allein: ${d.weekly ? 'Wochenziel zwei Wochen nacheinander erreicht' : `${d.held14} der letzten ${d.of14} Termine geschafft`}. Erinnerung abschalten? Hältst du die Gewohnheit danach 30 Tage lang an mindestens 70 % der Termine, gilt sie als gemeistert. <button class="btn sm" type="button" data-act="remoff" data-id="${h.id}">Abschalten</button></div>` : ''}
       <div class="row-btns">${h.archivedAt ? `<button class="btn sm" type="button" data-act="resume" data-id="${h.id}">Fortsetzen</button>` : `<button class="btn sm alt" type="button" data-act="edit" data-id="${h.id}">Bearbeiten</button><button class="btn sm alt" type="button" data-act="pause" data-id="${h.id}">Pausieren</button>`}<button class="btn ghost" type="button" data-act="delhabit" data-id="${h.id}">Löschen</button></div></div>`;
@@ -508,7 +509,8 @@
     active().forEach(h => { const d = D.H[h.id]; if (d.weekly) { if (d.weekCnt >= d.N) list.push(`Wochenziel geschafft: ${h.title}, ${d.weekCnt} von ${d.N}.`); } else { const c = Object.keys(h.logs).filter(k => L.weekStart(k) === wk && (h.logs[k] === 'done' || h.logs[k] === 'tiny')).length; if (c >= 4) list.push(`Du hast diese Woche schon ${c}× „${h.title}“ geschafft!`); } });
     if (hr >= 18 && open.length) list.push(`Langer Tag? Die Mini-Version zählt auch: ${open[0].tinyVersion}.`);
     active().forEach(h => { if (D.H[h.id].suggestOff) list.push(`„${h.title}“ läuft fast von allein. Magst du die Erinnerung abschalten?`); });
-    const sk = S.skills.map(s => [s, L.unitsToNext(D.levels[s.id], 2)]).sort((a, b) => a[1] - b[1])[0]; if (sk && sk[1] <= 2) list.push(`Noch ${sk[1]} ${sk[1] === 1 ? 'Einheit' : 'Einheiten'}, dann wächst dein ${sk[0].name}-Gebäude.`);
+    const near = active().map(h => [h, skillById(h.skillId), L.unitsToNext(D.levels[skillById(h.skillId).id], h.effort)]).sort((a, b) => a[2] - b[2])[0];
+    if (near && near[2] <= 2) list.push(`Noch ${near[2]}× „${near[0].title}“, dann wächst dein ${near[1].name}-Gebäude.`);
     if (w === 'regen' || w === 'gewitter') list.push('Bei dem Wetter bleibt man gern drinnen. Eine kleine Aufgabe am Schreibtisch geht immer.');
     if (w === 'sonnig' && hr < 18) list.push('Was für ein Tag! Der Hof glänzt in der Sonne.');
     if (!L.journalOn(S, t) && hr >= 19) list.push('Magst du den Tag mit ein paar Zeilen im Logbuch abschließen?');
@@ -664,8 +666,10 @@
    * Die Knoten werden nur umgehängt (gleiche ids), Ereignisse laufen über document und bleiben erhalten.
    */
   const narrowMQ = root.matchMedia ? matchMedia('(max-width: 767px)') : null;
+  let wasNarrow = null;
   function layout() {
     const narrow = !!(narrowMQ && narrowMQ.matches), scene = $('.scene');
+    if (narrow === wasNarrow) return; wasNarrow = narrow;
     if (narrow) { $('#statsSlot').append($('#charBox'), $('#skillsBox')); $('#npcSlot').append($('#npc')); }
     else { scene.after($('#charBox')); $('#charBox').after($('#skillsBox')); $('#skillsBox').after($('#npc')); }
     document.documentElement.classList.toggle('narrow', narrow);
@@ -681,7 +685,7 @@
     au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
     derive();
     scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
-    tabIcons(); layout(); if (narrowMQ) narrowMQ.addEventListener('change', layout);
+    tabIcons(); layout(); if (narrowMQ) narrowMQ.addEventListener('change', layout); root.addEventListener('resize', layout);
     bind(); refresh(); scene.start();
     if (!S.onboarded) showOnboarding('welcome');
     else { checkRewards(null); if (L.needsCheckin(S, today(), hour())) showCheckin(); }

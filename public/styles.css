@@ -379,3 +379,4 @@ label.due{display:grid;gap:2px;font-size:0.9375rem;color:var(--text-soft)}
 .cal-legend.full span{align-items:flex-start}
 .cal-legend.full i{flex:none;margin-top:3px}
 .cal-legend.full b{font-weight:400;color:var(--text)}
+button.tok span{margin-left:6px;font-family:var(--f-body);font-size:inherit}

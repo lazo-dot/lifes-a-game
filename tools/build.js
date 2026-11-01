@@ -29,6 +29,8 @@ function build() {
   const version = `lag-${pkg.version}-${hash.digest('hex').slice(0, 8)}`;
   const swPath = path.join(DIST, 'sw.js');
   fs.writeFileSync(swPath, fs.readFileSync(swPath, 'utf8').replace('__VERSION__', version).replace('__ASSETS__', JSON.stringify(assets)));
+  const idx = path.join(DIST, 'index.html');              // U10: Versionsanzeige aus package.json
+  fs.writeFileSync(idx, fs.readFileSync(idx, 'utf8').replace('__APP_VERSION__', pkg.version));
   fs.writeFileSync(path.join(DIST, 'version.txt'), version + '\n');
   return { version, count: files.length };
 }
