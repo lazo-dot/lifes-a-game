@@ -444,8 +444,9 @@
       <div class="meta"><span>${img('p' + d.stage, 2, '', { F: st.c, f: st.dk })}${L.STAGES[d.stage][1]} · ${Math.round(d.s * 100)} %</span><span>${img(sk.icon, 2, '')}${esc(sk.name)} +${10 * h.effort}</span>
       <span>${d.weekly ? `${d.weekCnt} von ${d.N} diese Woche` : `${d.month}× diesen Monat`}</span>
       ${h.streakEnabled && d.streak ? `<span>${img('flame', 2, '')}${d.streak}${d.weekly ? ' Wo.' : ''}</span>` : ''}${h.streakEnabled && !d.weekly ? `<span class="tok" title="Regentage retten automatisch einen verpassten Tag" aria-label="Regentage: ${d.tokens} von 2">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</span>` : ''}</div>
+      <div class="tinytxt">Mini: ${esc(h.tinyVersion)}</div>
       ${d.canRepair ? repairHTML(h, d) : ''}</div>
-      <div class="side"><button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" title="${esc(h.tinyVersion)}">Mini: ${esc(h.tinyVersion)}</button></div></div>`;
+      <div class="side habit-side"><button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" aria-label="${tiny ? 'Rückgängig' : 'Mini-Version erledigt'}: ${esc(h.tinyVersion)}"><b>Mini</b><span>${esc(h.tinyVersion)}</span></button></div></div>`;
   }
   function repairHTML(h, d) {
     const k = d.repairKey, day = dayName(k), Day = day[0].toUpperCase() + day.slice(1);
