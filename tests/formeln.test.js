@@ -127,11 +127,11 @@ test('Serie: Wochen-Gewohnheit zählt Wochen, laufende Woche zählt erst bei err
 });
 
 /* ---------- 4.5 Ausschleichen und Graduierung ---------- */
-test('Ausschleichen: Vorschlag ab Stärke ≥ 0,8 und 14 Terminen in Folge', () => {
+test('Ausschleichen (v6): Vorschlag ab Stärke ≥ 0,6 und 12 von 14 Terminen, nicht mehr 14 in Folge', () => {
   const h = fill(habit({ createdAt: L.addDays(T, -40) }), L.addDays(T, -40), T);
   assert.equal(L.computeHabit(h, T).suggestOff, true);
-  const short = fill(habit({ createdAt: L.addDays(T, -40) }), L.addDays(T, -40), T); delete short.logs[L.addDays(T, -5)]; short.streakEnabled = false;
-  assert.equal(L.computeHabit(short, T).suggestOff, false);                     // Lauf nur 5
+  const gap = fill(habit({ createdAt: L.addDays(T, -40) }), L.addDays(T, -40), T); delete gap.logs[L.addDays(T, -5)]; gap.streakEnabled = false;
+  assert.equal(L.computeHabit(gap, T).suggestOff, true);                        // v5: false (Lauf nur 5), v6: 13 von 14 reichen
   const quiet = fill(habit({ createdAt: L.addDays(T, -40), rem: false }), L.addDays(T, -40), T);
   assert.equal(L.computeHabit(quiet, T).suggestOff, false);                     // Erinnerung schon aus
 });

@@ -1,7 +1,7 @@
 /* Life's a Game · Spiellogik
  * UI-frei und ohne DOM: läuft im Browser (window.LAG) und in Node (require) für Tests.
  * Alle Datumswerte sind lokale Tagesschlüssel "YYYY-MM-DD", damit die Logik 1:1 nach Dart portierbar ist.
- * Referenz: Entwicklungsleitfaden v1.3, Abschnitte 3, 4 und 9.
+ * Referenz: Entwicklungsleitfaden v1.5, Abschnitte 3, 4 und 9.
  */
 (function (root) {
   'use strict';
@@ -20,9 +20,13 @@
     MAX_BEDS: 12,
     START_HABITS: 3,       // 5.1 Onboarding max. 3
     UNLOCK_DAYS: 7,        // 5.1 weitere nach der ersten Woche
-    GRAD_DAYS: 30,         // 4.5 Graduierung
-    SUGGEST_STRENGTH: 0.8, // 4.5 Ausschleichen
-    SUGGEST_RUN: 14,
+    GRAD_DAYS: 30,         // 4.5 Graduierung: 30 Tage ohne Erinnerung …
+    GRAD_SHARE: 0.7,       // … mit mindestens 70 % gehaltenen Terminen (v6)
+    SUGGEST_STRENGTH: 0.6, // 4.5 Ausschleichen ab Stärke 0,6 (v6, vorher 0,8) …
+    SUGGEST_OF: 14,        // … wenn von den letzten 14 geplanten Terminen …
+    SUGGEST_HELD: 12,      // … mindestens 12 gehalten wurden (v6, vorher 14 in Folge)
+    V5_GRAD_STRENGTH: 0.8, // Regel bis v5: gilt nur noch für Tage vor rulesV6Since (bereits Gemeistertes bleibt)
+    LATE_DAYS: 2,          // 4.3 Nachtragen: gestern und vorgestern
     CHECKIN_UNTIL_HOUR: 14 // 4.6 Morgen-Check-in nur bis zum frühen Nachmittag anbieten
   };
   const STAGES = [[0.15, 'Keim'], [0.35, 'Setzling'], [0.6, 'Jungpflanze'], [0.9, 'Blüte'], [2, 'Ausgewachsen']];
@@ -73,33 +77,53 @@
     return f.kind !== 'weekdays' || f.days.includes(weekday(k));
   }
   const isDoneStatus = st => st === 'done' || st === 'tiny';
+  /** Gehalten = erledigt, Mini, nachgeholt oder Regentag (Leitfaden 4.3, v6). */
+  const isHeld = v => v === 'done' || v === 'tiny' || v === 'repaired' || v === 'watered';
+
+  /** Anteil gehaltener Termine von from bis to (beide inklusive). Der Endtag zählt nur, wenn er gehalten ist (heute ist nie verpasst).
+   *  Wochen-Gewohnheiten: Erledigungen gegen das anteilige Wochenziel N × aktive Tage / 7. */
+  function heldShare(h, days, from, to) {
+    if (settingsAt(h, to).frequency.kind === 'weekly') {
+      let n = 0, active = 0;
+      for (let k = from; k <= to; k = addDays(k, 1)) { if (k >= h.createdAt && !isPaused(h, k)) active++; if (isDoneStatus(days[k])) n++; }
+      const target = settingsAt(h, to).frequency.timesPerWeek * active / 7;
+      return target > 0 ? n / target : 0;
+    }
+    let plan = 0, held = 0;
+    for (let k = from; k <= to; k = addDays(k, 1)) {
+      const v = days[k]; if (!v || v === 'off' || (k === to && !isHeld(v))) continue;
+      plan++; if (isHeld(v)) held++;
+    }
+    return plan ? held / plan : 0;
+  }
 
   /* ---------- Kernberechnung pro Gewohnheit ----------
    * Die Logs sind die einzige Quelle der Wahrheit. Stärke, Serie, Regentage, XP und Kalender
    * werden daraus abgeleitet (statt gespeichert), damit Rückgängig und Bearbeiten nie inkonsistent werden.
    */
-  function computeHabit(h, today) {
+  function computeHabit(h, today, rulesV6Since) {
     const ym = today.slice(0, 7), y = today.slice(0, 4), mStart = ym + '-01';
     const logs = h.logs || {};
     let s = 0, sMonth = null, streak = 0, run = 0, tokens = 0, prog = 0, xp = 0;
     let month = 0, monthTiny = 0, year = 0, lastPrev = null, lastPrevKey = null, doneToday = null;
     const xpByDay = {}, days = {};
-    // 4.5 Graduierung: erster Tag ab 30 Tagen ohne Erinnerung, an dem die Gewohnheit kräftig ist. Danach bleibt sie gemeistert.
+    // 4.5 Graduierung, Regel bis v5 (Stärke ≥ 0,8): nur noch für Tage vor dem Update, damit bereits Gemeistertes gemeistert bleibt.
     const gradFrom = !h.remindersEnabled && h.remOffAt ? addDays(h.remOffAt, C.GRAD_DAYS) : null;
     let gradAt = null;
-    const checkGrad = k => { if (gradFrom && !gradAt && k >= gradFrom && s >= C.SUGGEST_STRENGTH) gradAt = k; };
+    const checkGradV5 = k => { if (gradFrom && !gradAt && rulesV6Since && k < rulesV6Since && k >= gradFrom && s >= C.V5_GRAD_STRENGTH) gradAt = k; };
     // Wochen-Gewohnheiten
     let wk = null, wcnt = 0, wStreak = 0, wN = 0;
+    const weeks = [];                                                // abgeschlossene Wochen: { target, cnt }
     const finishWeek = () => {
       if (wk === null) return;
       let active = 0;
       for (let i = 0; i < 7; i++) { const d = addDays(wk, i); if (d >= h.createdAt && !isPaused(h, d)) active++; }
       const target = Math.min(wN, Math.ceil(wN * active / 7));     // A11: anteilig in angebrochenen Wochen
       for (let i = Math.min(wcnt, target); i < target; i++) s = ema(s, 0);
-      if (target > 0) wStreak = wcnt >= target ? wStreak + 1 : 0;
+      if (target > 0) { wStreak = wcnt >= target ? wStreak + 1 : 0; weeks.push({ target, cnt: wcnt }); }
     };
     for (let k = h.createdAt; k <= today; k = addDays(k, 1)) {
-      if (k > h.createdAt) checkGrad(addDays(k, -1));
+      if (k > h.createdAt) checkGradV5(addDays(k, -1));
       const st = logs[k], isT = k === today, set = settingsAt(h, k), f = set.frequency;
       if (k === mStart && sMonth === null) sMonth = s;
       if (isT) doneToday = st || null;
@@ -121,22 +145,34 @@
         const x = xpFor(set.effort, st); xp += x; xpByDay[k] = x; days[k] = st;
         if (k.startsWith(y)) year++; if (k.startsWith(ym)) { month++; if (st === 'tiny') monthTiny++; }
         if (!isT) { lastPrev = st; lastPrevKey = k; }
-      } else if (st === 'repaired') {
-        s = ema(s, 1); streak++; run = 0; days[k] = 'repaired'; lastPrev = st; lastPrevKey = k;
+      } else if (st === 'repaired') {                                // v6: verzeihende Mechaniken setzen run nicht mehr zurück
+        s = ema(s, 1); streak++; run++; days[k] = 'repaired'; lastPrev = st; lastPrevKey = k;
       } else if (!isT) {
-        if (h.streakEnabled && tokens > 0) { tokens--; s = ema(s, 1); run = 0; days[k] = 'watered'; lastPrev = 'watered'; }
+        if (h.streakEnabled && tokens > 0) { tokens--; s = ema(s, 1); run++; days[k] = 'watered'; lastPrev = 'watered'; }
         else { s = ema(s, 0); streak = 0; run = 0; days[k] = 'missed'; lastPrev = 'missed'; }
         lastPrevKey = k;
       }
     }
-    checkGrad(today);
+    checkGradV5(today);
     const freqNow = settingsAt(h, today).frequency, weekly = freqNow.kind === 'weekly';
     const N = weekly ? freqNow.timesPerWeek : 0, weekCnt = weekly ? (wk === weekStart(today) ? wcnt : 0) : 0;
     if (weekly) streak = wStreak + (weekCnt >= N ? 1 : 0);
     if (sMonth === null) sMonth = 0;
     const paused = isPaused(h, today);
     const due = !paused && (weekly ? (weekCnt < N || !!doneToday) : isScheduled(h, today));
+    // 4.5 Graduierung v6: erster Tag mit 30 Tagen ohne Erinnerung und ≥ 70 % gehaltenen Terminen in den 30 Tagen bis dahin.
+    if (gradFrom) for (let k = gradFrom; k <= today && (!gradAt || k < gradAt); k = addDays(k, 1)) {
+      if (heldShare(h, days, addDays(k, -(C.GRAD_DAYS - 1)), k) >= C.GRAD_SHARE) { gradAt = k; break; }
+    }
     const graduated = !!gradAt;
+    // 4.5 Ausschleichen v6: Stärke ≥ 0,6 und 12 der letzten 14 geplanten Termine gehalten; wöchentlich: Ziel der letzten zwei Wochen erreicht.
+    let held14 = 0, of14 = 0;
+    if (weekly) { const last = weeks.slice(-2); of14 = last.length; held14 = last.filter(w => w.cnt >= w.target).length; }
+    else {
+      const keys = Object.keys(days).filter(k => days[k] !== 'off').sort().slice(-C.SUGGEST_OF);
+      of14 = keys.length; held14 = keys.filter(k => isHeld(days[k])).length;
+    }
+    const steady = weekly ? of14 === 2 && held14 === 2 : of14 === C.SUGGEST_OF && held14 >= C.SUGGEST_HELD;
     const canRepair = h.streakEnabled && !weekly && lastPrev === 'missed' && !!lastPrevKey &&
       daysBetween(lastPrevKey, today) <= C.REPAIR_DAYS && isDoneStatus(doneToday);
     return {
@@ -144,14 +180,14 @@
       month, monthTiny, year, doneToday, weekCnt, N, weekly, due, paused, graduated,
       gradDate: gradAt,
       canRepair, repairKey: canRepair ? lastPrevKey : null,
-      suggestOff: h.remindersEnabled && !paused && s >= C.SUGGEST_STRENGTH && run >= C.SUGGEST_RUN,
+      held14, of14, suggestOff: h.remindersEnabled && !paused && s >= C.SUGGEST_STRENGTH && steady,
       age: daysBetween(h.createdAt, today) + 1
     };
   }
 
   /* ---------- Gesamtzustand ableiten ---------- */
   function derive(state, today) {
-    const H = {}; state.habits.forEach(h => { H[h.id] = computeHabit(h, today); });
+    const H = {}; state.habits.forEach(h => { H[h.id] = computeHabit(h, today, state.rulesV6Since); });
     const sk = {}, byDay = {};
     state.skills.forEach(s => { sk[s.id] = 0; byDay[s.id] = {}; });
     state.habits.forEach(h => {
@@ -181,6 +217,43 @@
     return { any: C.DROP_P, rare: C.DROP_P * C.RARE_P, common: C.DROP_P * (1 - C.RARE_P), rareShare: C.RARE_P,
       harvestRare: C.RARE_P, commonItems: pool(false), rareItems: pool(true) };
   }
+
+  /* ---------- Nachtragen (4.3, v6) ----------
+   * Gestern und vorgestern lassen sich als erledigt oder Mini nachtragen und wieder zurücknehmen. Nachgetragene Tage
+   * stehen wie alle Einträge in logs (zählen voll für Stärke, Serie, XP und Ernte) und zusätzlich in lateLogs:
+   * daran erkennt die Oberfläche sie (kein Zufallsfund, Markierung im Erntekalender).
+   */
+  const isLate = (h, k) => !!(h.lateLogs && h.lateLogs[k]);
+  function canLogLate(h, k, today) {
+    const back = daysBetween(k, today);
+    if (back < 1 || back > C.LATE_DAYS || k < h.createdAt || isPaused(h, k)) return false;
+    const st = (h.logs || {})[k];
+    if (st && st !== 'repaired' && !isLate(h, k)) return false;      // am selben Tag eingetragen: bleibt, wie es ist
+    const f = settingsAt(h, k).frequency;
+    if (f.kind === 'weekdays') return f.days.includes(weekday(k));
+    if (f.kind === 'weekly' && !isDoneStatus(st)) {                  // Anti-Farming: nicht über das Wochenziel hinaus
+      const w = weekStart(k); let n = 0;
+      for (let i = 0; i < 7; i++) if (isDoneStatus((h.logs || {})[addDays(w, i)])) n++;
+      return n < f.timesPerWeek;
+    }
+    return true;
+  }
+  /** Tage, die sich für diese Gewohnheit nachtragen lassen, mit dem aktuellen Stand (null, 'done', 'tiny', 'repaired'). */
+  function lateDays(h, today) {
+    const out = [];
+    for (let back = 1; back <= C.LATE_DAYS; back++) { const k = addDays(today, -back); if (canLogLate(h, k, today)) out.push({ k, status: (h.logs || {})[k] || null, late: isLate(h, k) }); }
+    return out;
+  }
+  /** Trägt status für Tag k nach. Derselbe Status ein zweites Mal nimmt den Nachtrag zurück. Gibt false zurück, wenn k nicht erlaubt ist. */
+  function logLate(h, k, status, today) {
+    if (!isDoneStatus(status) || !canLogLate(h, k, today)) return false;
+    if (isLate(h, k) && h.logs[k] === status) { delete h.logs[k]; delete h.lateLogs[k]; return true; }
+    h.logs[k] = status; (h.lateLogs = h.lateLogs || {})[k] = true;
+    return true;
+  }
+
+  /** 4.4: Zufallsfund nur für Eintragungen am selben Tag, höchstens einmal pro Gewohnheit und Tag, nie für Nachgetragenes. */
+  const dropAllowed = (h, k, today) => k === today && !isLate(h, k) && h.rolled !== today;
 
   /* ---------- Onboarding (5.1) ---------- */
   function canAddHabit(state, today) {
@@ -253,7 +326,7 @@
       if (k > today) { cells.push({ k, col, row, v: 'future' }); continue; }
       if (h) {
         const st = D.H[h.id].days[k];
-        cells.push({ k, col, row, v: st === 'done' || st === 'tiny' || st === 'repaired' || st === 'watered' ? st : st === 'missed' ? 'empty' : k < h.createdAt ? 'before' : 'off' });
+        cells.push({ k, col, row, v: st === 'done' || st === 'tiny' || st === 'repaired' || st === 'watered' ? st : st === 'missed' ? 'empty' : k < h.createdAt ? 'before' : 'off', late: isDoneStatus(st) && isLate(h, k) });
       } else {
         let n = 0; state.habits.forEach(x => { const st = D.H[x.id].days[k]; if (st === 'done' || st === 'tiny' || st === 'repaired') n++; });
         if (state.journal.some(j => j.date === k)) n++;
@@ -283,7 +356,7 @@
     return plan > 0 && ok >= HOLD_SHARE * plan;
   }
   function betaMetrics(state, today) {
-    const D = derive(state, today), out = { date: today, habits: state.habits.length, withAnchor: 0, cohorts: {}, tiny: {}, breaks: {}, checkins: {} };
+    const D = derive(state, today), out = { date: today, rulesSince: state.rulesV6Since || null, habits: state.habits.length, withAnchor: 0, cohorts: {}, tiny: {}, breaks: {}, checkins: {} };
     out.withAnchor = state.habits.filter(h => (h.anchor || '').trim()).length;
     for (const X of [30, 66]) {
       const c = state.habits.filter(h => D.H[h.id].age >= X), day = h => addDays(h.createdAt, X - 1);
@@ -318,7 +391,7 @@
   /* ---------- Neuer Zustand, Migration, Import (F6) ---------- */
   function emptyState(today) {
     return {
-      schema: C.SCHEMA, onboarded: false, startedAt: today, sound: true, music: false, freshSeen: '', installHintSeen: false,
+      schema: C.SCHEMA, onboarded: false, startedAt: today, rulesV6Since: today, sound: true, music: false, freshSeen: '', installHintSeen: false,
       skills: [{ id: 's1', name: 'Körper', icon: 'boot', st: 0 }, { id: 's2', name: 'Geist', icon: 'book', st: 1 }, { id: 's3', name: 'Alltag', icon: 'crate', st: 3 }],
       habits: [], todos: [], journal: [], checkins: {}, chest: { items: {}, placed: [] }
     };
@@ -355,7 +428,9 @@
         if (!h.id || !h.createdAt || !Array.isArray(h.history) || !h.history.length || typeof h.logs !== 'object') return { ok: false, error: `Die Gewohnheit „${h.title || '?'}“ ist unvollständig.` };
       }
       obj.checkins = obj.checkins || {}; obj.chest = obj.chest || { items: {}, placed: [] };
-      return { ok: true, state: obj };
+      // v5 → v6: gleiches Schema, nur der Stichtag der neuen Regeln kommt dazu. Alle Eingaben bleiben unverändert.
+      const migrated = !obj.rulesV6Since; if (migrated) obj.rulesV6Since = today;
+      return { ok: true, state: obj, migrated };
     } catch (e) { return { ok: false, error: 'Die Datei konnte nicht gelesen werden.' }; }
   }
 
@@ -364,6 +439,7 @@
     dkey, parseKey, addDays, daysBetween, weekday, weekStart, seasonOf, hashStr, rng,
     xpFor, charNeed, skillNeed, lvl, unitsToNext, stageOf, settingsAt, isPaused, isScheduled,
     computeHabit, derive, rollDrop, pickItem, harvestsDue, gradRewardDue, slotsFor, dropOdds, heldAt, betaMetrics,
+    isHeld, heldShare, isLate, canLogLate, lateDays, logLate, dropAllowed,
     canAddHabit, validateHabitInput, cleanAnchor, newHabit, applyEdit, pause, resume,
     dayWeather, journalOn, currentWeather, needsCheckin, farmSleeps, yearGrid,
     emptyState, migrateV3, importState
