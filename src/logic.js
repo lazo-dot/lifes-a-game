@@ -1,7 +1,7 @@
 /* Life's a Game · Spiellogik
  * UI-frei und ohne DOM: läuft im Browser (window.LAG) und in Node (require) für Tests.
  * Alle Datumswerte sind lokale Tagesschlüssel "YYYY-MM-DD", damit die Logik 1:1 nach Dart portierbar ist.
- * Referenz: Entwicklungsleitfaden v1.2, Abschnitte 3 und 4.
+ * Referenz: Entwicklungsleitfaden v1.3, Abschnitte 3, 4 und 9.
  */
 (function (root) {
   'use strict';
@@ -84,6 +84,10 @@
     let s = 0, sMonth = null, streak = 0, run = 0, tokens = 0, prog = 0, xp = 0;
     let month = 0, monthTiny = 0, year = 0, lastPrev = null, lastPrevKey = null, doneToday = null;
     const xpByDay = {}, days = {};
+    // 4.5 Graduierung: erster Tag ab 30 Tagen ohne Erinnerung, an dem die Gewohnheit kräftig ist. Danach bleibt sie gemeistert.
+    const gradFrom = !h.remindersEnabled && h.remOffAt ? addDays(h.remOffAt, C.GRAD_DAYS) : null;
+    let gradAt = null;
+    const checkGrad = k => { if (gradFrom && !gradAt && k >= gradFrom && s >= C.SUGGEST_STRENGTH) gradAt = k; };
     // Wochen-Gewohnheiten
     let wk = null, wcnt = 0, wStreak = 0, wN = 0;
     const finishWeek = () => {
@@ -95,6 +99,7 @@
       if (target > 0) wStreak = wcnt >= target ? wStreak + 1 : 0;
     };
     for (let k = h.createdAt; k <= today; k = addDays(k, 1)) {
+      if (k > h.createdAt) checkGrad(addDays(k, -1));
       const st = logs[k], isT = k === today, set = settingsAt(h, k), f = set.frequency;
       if (k === mStart && sMonth === null) sMonth = s;
       if (isT) doneToday = st || null;
@@ -124,19 +129,20 @@
         lastPrevKey = k;
       }
     }
+    checkGrad(today);
     const freqNow = settingsAt(h, today).frequency, weekly = freqNow.kind === 'weekly';
     const N = weekly ? freqNow.timesPerWeek : 0, weekCnt = weekly ? (wk === weekStart(today) ? wcnt : 0) : 0;
     if (weekly) streak = wStreak + (weekCnt >= N ? 1 : 0);
     if (sMonth === null) sMonth = 0;
     const paused = isPaused(h, today);
     const due = !paused && (weekly ? (weekCnt < N || !!doneToday) : isScheduled(h, today));
-    const graduated = !h.remindersEnabled && !!h.remOffAt && daysBetween(h.remOffAt, today) >= C.GRAD_DAYS && s >= C.SUGGEST_STRENGTH;
+    const graduated = !!gradAt;
     const canRepair = h.streakEnabled && !weekly && lastPrev === 'missed' && !!lastPrevKey &&
       daysBetween(lastPrevKey, today) <= C.REPAIR_DAYS && isDoneStatus(doneToday);
     return {
       s, stage: stageOf(s), stageMonthStart: stageOf(sMonth), streak, run, tokens, xp, xpByDay, days,
       month, monthTiny, year, doneToday, weekCnt, N, weekly, due, paused, graduated,
-      gradDate: graduated ? addDays(h.remOffAt, C.GRAD_DAYS) : null,
+      gradDate: gradAt,
       canRepair, repairKey: canRepair ? lastPrevKey : null,
       suggestOff: h.remindersEnabled && !paused && s >= C.SUGGEST_STRENGTH && run >= C.SUGGEST_RUN,
       age: daysBetween(h.createdAt, today) + 1
@@ -169,6 +175,12 @@
   const harvestsDue = (h, d) => Math.max(0, d.stage - (h.harvestStage || 0));
   const gradRewardDue = (h, d) => d.graduated && !h.gradRewarded;
   const slotsFor = L => Math.min(12, 3 + L);
+  /** H3: Fundchancen zum Anzeigen. Gewürfelt wird höchstens einmal pro Gewohnheit und Tag bzw. einmal pro To-do. */
+  function dropOdds() {
+    const pool = rare => Object.keys(ITEMS).filter(k => ITEMS[k].rare === rare);
+    return { any: C.DROP_P, rare: C.DROP_P * C.RARE_P, common: C.DROP_P * (1 - C.RARE_P), rareShare: C.RARE_P,
+      harvestRare: C.RARE_P, commonItems: pool(false), rareItems: pool(true) };
+  }
 
   /* ---------- Onboarding (5.1) ---------- */
   function canAddHabit(state, today) {
@@ -251,6 +263,58 @@
     return { cells, cols: Math.ceil(cells.length / 7) };
   }
 
+  /* ---------- Beta-Metriken (Leitfaden 9) ----------
+   * Werden wie alles andere aus den gespeicherten Eingaben abgeleitet und nur lokal angezeigt bzw. exportiert.
+   * "Gehalten nach X Tagen": in den 14 Tagen bis Tag X mindestens die Hälfte der geplanten Termine erledigt
+   * (erledigt, Mini, nachgeholt oder Regentag). Gelöschte Gewohnheiten fehlen, weil ihre Daten weg sind.
+   */
+  const HOLD_WINDOW = 14, HOLD_SHARE = 0.5, RETURN_DAYS = 7;
+  function heldAt(h, day) {
+    const d = computeHabit(h, day), from = addDays(day, -(HOLD_WINDOW - 1));
+    if (d.weekly) {                                   // Wochen-Gewohnheiten: Erledigungen gegen anteiliges Ziel
+      let done = 0; for (const k in d.days) if (k >= from && k <= day && isDoneStatus(d.days[k])) done++;
+      return done >= HOLD_SHARE * settingsAt(h, day).frequency.timesPerWeek * HOLD_WINDOW / 7;
+    }
+    let plan = 0, ok = 0;
+    for (let k = from; k <= day; k = addDays(k, 1)) {
+      const v = d.days[k]; if (!v || v === 'off') continue;
+      plan++; if (v !== 'missed') ok++;
+    }
+    return plan > 0 && ok >= HOLD_SHARE * plan;
+  }
+  function betaMetrics(state, today) {
+    const D = derive(state, today), out = { date: today, habits: state.habits.length, withAnchor: 0, cohorts: {}, tiny: {}, breaks: {}, checkins: {} };
+    out.withAnchor = state.habits.filter(h => (h.anchor || '').trim()).length;
+    for (const X of [30, 66]) {
+      const c = state.habits.filter(h => D.H[h.id].age >= X), day = h => addDays(h.createdAt, X - 1);
+      out.cohorts['d' + X] = { eligible: c.length, held: c.filter(h => heldAt(h, day(h))).length,
+        mastered: c.filter(h => D.H[h.id].graduated && D.H[h.id].gradDate <= day(h)).length };
+    }
+    let all = 0, tiny = 0, all30 = 0, tiny30 = 0; const from30 = addDays(today, -29);
+    let breaks = 0, returned = 0; const gaps = [];
+    state.habits.forEach(h => {
+      const days = D.H[h.id].days, keys = Object.keys(days).sort();
+      keys.forEach(k => { const v = days[k]; if (!isDoneStatus(v)) return; all++; if (v === 'tiny') tiny++; if (k >= from30) { all30++; if (v === 'tiny') tiny30++; } });
+      // Serienbruch = erster verpasster Termin nach einem erledigten; Rückkehr = wieder erledigt innerhalb von 7 Tagen.
+      let prev = null;
+      keys.forEach((k, i) => {
+        const v = days[k]; if (v === 'off') return;
+        if (v === 'missed' && prev && prev !== 'missed') {
+          breaks++; const back = keys.slice(i + 1).find(x => isDoneStatus(days[x]) || days[x] === 'repaired');
+          if (back && daysBetween(k, back) <= RETURN_DAYS) { returned++; gaps.push(daysBetween(k, back)); }
+        }
+        prev = v;
+      });
+    });
+    out.tiny = { completions: all, tiny, share: all ? tiny / all : 0, last30: all30, tiny30, share30: all30 ? tiny30 / all30 : 0 };
+    gaps.sort((a, b) => a - b);
+    out.breaks = { breaks, returnedWithin7: returned, share: breaks ? returned / breaks : 0, medianDays: gaps.length ? gaps[Math.floor((gaps.length - 1) / 2)] : null };
+    const ci = state.checkins || {}, start = state.startedAt || today, span = daysBetween(start, today) + 1;
+    const keys = Object.keys(ci).filter(k => k >= start && k <= today), done = keys.filter(k => !ci[k].skipped).length;
+    out.checkins = { days: span, opened: keys.length, done, skipped: keys.length - done, share: span > 0 ? done / span : 0 };
+    return out;
+  }
+
   /* ---------- Neuer Zustand, Migration, Import (F6) ---------- */
   function emptyState(today) {
     return {
@@ -299,7 +363,7 @@
     C, STAGES, ITEMS, WEATHER,
     dkey, parseKey, addDays, daysBetween, weekday, weekStart, seasonOf, hashStr, rng,
     xpFor, charNeed, skillNeed, lvl, unitsToNext, stageOf, settingsAt, isPaused, isScheduled,
-    computeHabit, derive, rollDrop, pickItem, harvestsDue, gradRewardDue, slotsFor,
+    computeHabit, derive, rollDrop, pickItem, harvestsDue, gradRewardDue, slotsFor, dropOdds, heldAt, betaMetrics,
     canAddHabit, validateHabitInput, cleanAnchor, newHabit, applyEdit, pause, resume,
     dayWeather, journalOn, currentWeather, needsCheckin, farmSleeps, yearGrid,
     emptyState, migrateV3, importState
