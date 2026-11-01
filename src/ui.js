@@ -175,11 +175,12 @@
         <div class="ctl" data-g="days" ${f.kind === 'weekdays' ? '' : 'hidden'}>${[1, 2, 3, 4, 5, 6, 0].map(d => `<button type="button" class="chip" data-day="${d}" aria-pressed="${days.includes(d)}">${DAYS[d]}</button>`).join('')}</div>
         <div class="ctl" data-g="times" ${f.kind === 'weekly' ? '' : 'hidden'}><input class="in" type="number" min="1" max="6" value="${n}" data-f="n" style="flex:0 0 80px" aria-label="Mal pro Woche"><span>mal pro Woche, an beliebigen Tagen</span></div></div>
       <div class="step"><b>4</b><label for="${p}-tiny">Was ist die Mini-Version für schlechte Tage?</label><div class="ctl"><input class="in" id="${p}-tiny" data-f="tiny" maxlength="60" placeholder="z. B. eine einzige Dehnübung" value="${h ? esc(h.tinyVersion) : ''}"></div><p class="hint" style="grid-column:2">Eine echte kleine Handlung, nicht nur „App öffnen“.</p></div>
+      <details class="more"${h ? ' open' : ''}><summary>Fähigkeit, Aufwand und Optionen <span class="hint">(mit Vorgaben, zum Ändern antippen)</span></summary>
       <div class="step"><b>5</b><label for="${p}-skill">Zu welcher Fähigkeit gehört das?</label><div class="ctl"><select class="in" id="${p}-skill" data-f="skill">${skillOptions(h ? h.skillId : null)}</select><input class="in" data-f="newskill" maxlength="20" placeholder="Name der neuen Fähigkeit" aria-label="Name der neuen Fähigkeit" hidden></div></div>
       <div class="step"><b>6</b><span class="lab">Aufwand und Optionen</span>
         <div class="ctl">${[1, 2, 3].map(e => `<button type="button" class="chip" data-eff="${e}" aria-pressed="${eff === e}">${['Leicht', 'Mittel', 'Schwer'][e - 1]} · ${10 * e} XP</button>`).join('')}</div>
         <div class="ctl"><label class="sw"><input type="checkbox" data-f="streak" ${h ? (h.streakEnabled ? 'checked' : '') : 'checked'}> Serie zählen</label><label class="sw"><input type="checkbox" data-f="rem" ${h ? (h.remindersEnabled ? 'checked' : '') : 'checked'}> Wilma erinnert in der App</label></div>
-        <p class="hint" style="grid-column:2">Wilma zeigt dir deinen Plan, wenn du die App öffnest. Mitteilungen außerhalb der App gibt es im Prototyp noch nicht.</p></div>
+        <p class="hint" style="grid-column:2">Wilma zeigt dir deinen Plan, wenn du die App öffnest. Mitteilungen außerhalb der App gibt es im Prototyp noch nicht.</p></div></details>
       ${h ? '<p class="hint">Neuer Aufwand oder Rhythmus gilt ab heute. Bisherige Tage behalten ihre Werte.</p>' : ''}
       <div class="preview" data-f="preview">Nach ${h ? esc(h.anchor) : '___'} werde ich ${h ? esc(h.title) : '___'}.</div><div class="err" data-f="err" hidden></div>
       <div class="row-btns"><button class="btn" type="submit">${h ? 'Änderungen speichern' : 'Gewohnheit pflanzen'}</button>${h ? `<button class="btn ghost" type="button" data-act="edit-cancel">Abbrechen</button>` : ''}</div></form>`;
@@ -202,7 +203,8 @@
     const kind = form.dataset.form, i = readForm(form), err = form.querySelector('[data-f=err]'), t = today();
     const miss = L.validateHabitInput(i); if (i.skillId === '__new' && !i.newSkill) miss.push('einen Namen für die neue Fähigkeit');
     if (kind !== 'edit') { const c = L.canAddHabit(S, t); if (!c.ok) miss.push(`etwas Geduld: weitere Gewohnheiten ab ${fmt(c.unlockOn, { weekday: 'long', day: 'numeric', month: 'long' })}`); }
-    if (miss.length) { err.hidden = false; err.textContent = 'Bitte ergänze noch: ' + miss.join(', ') + '.'; au.sfx.err(); return; }
+    if (miss.length) { const more = form.querySelector('details.more'); if (more && (!i.effort || (i.skillId === '__new' && !i.newSkill))) more.open = true;   // U14: Fehler nie versteckt
+      err.hidden = false; err.textContent = 'Bitte ergänze noch: ' + miss.join(', ') + '.'; au.sfx.err(); return; }
     err.hidden = true;
     if (i.skillId === '__new') { const id = 's' + uid(); S.skills.push({ id, name: i.newSkill, icon: SP.ICONS[S.skills.length % SP.ICONS.length], st: S.skills.length }); i.skillId = id; }
     if (kind === 'edit') {
@@ -309,12 +311,14 @@
   const SCALES = [[1, 'Normal'], [1.15, 'Groß'], [1.3, 'Sehr groß']];
   function applyLook() {
     const de = document.documentElement; de.style.setProperty('--ts', S.textScale || 1);
+    if (S.readableFont) de.dataset.font = 'lesbar'; else delete de.dataset.font;
     if (S.palette === 'cb') de.dataset.palette = 'cb'; else delete de.dataset.palette;
   }
   function settingsHTML() {
     return `<h3>Darstellung</h3><div class="look"><div class="ctl" role="group" aria-label="Schriftgröße"><span class="lab">Schrift</span>${SCALES.map(([v, l]) => `<button type="button" class="chip" data-act="scale" data-v="${v}" aria-pressed="${(S.textScale || 1) === v}">${l}</button>`).join('')}</div>
       <div class="ctl" role="group" aria-label="Farben"><span class="lab">Farben</span><button type="button" class="chip" data-act="palette" data-v="" aria-pressed="${S.palette !== 'cb'}">Standard</button><button type="button" class="chip" data-act="palette" data-v="cb" aria-pressed="${S.palette === 'cb'}">Gut unterscheidbar</button></div>
-      <p class="hint">„Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p></div>`;
+      <div class="ctl" role="group" aria-label="Schriftart"><span class="lab">Schriftart</span><button type="button" class="chip" data-act="font" data-v="" aria-pressed="${!S.readableFont}">Pixel</button><button type="button" class="chip" data-act="font" data-v="1" aria-pressed="${!!S.readableFont}">Lesbare Schrift</button></div>
+      <p class="hint">„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p></div>`;
   }
 
   /* ---------- Beta-Metriken (H5) ---------- */
@@ -637,6 +641,7 @@
         case 'unlock-go': S.unlockSeen = true; save(); selectTab($('#t-habits')); R.today(); break;
         case 'unlock-no': S.unlockSeen = true; save(); R.today(); break;
         case 'scale': S.textScale = +el.dataset.v; applyLook(); save(); R.progress(); au.sfx.tick(); break;
+        case 'font': S.readableFont = !!el.dataset.v || undefined; applyLook(); save(); R.progress(); au.sfx.tick(); break;
         case 'palette': S.palette = el.dataset.v || undefined; applyLook(); save(); R.progress(); scene.refresh(true); au.sfx.tick(); break;
         case 'metrics-save': { const a = document.createElement('a'), url = URL.createObjectURL(new Blob([metricsJSON()], { type: 'application/json' }));
           a.href = url; a.download = `lifes-a-game-beta-${t}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); break; }

@@ -380,3 +380,16 @@ label.due{display:grid;gap:2px;font-size:0.9375rem;color:var(--text-soft)}
 .cal-legend.full i{flex:none;margin-top:3px}
 .cal-legend.full b{font-weight:400;color:var(--text)}
 button.tok span{margin-left:6px;font-family:var(--f-body);font-size:inherit}
+
+/* v7: Schritte 5–6 einklappbar (U14) */
+details.more{display:grid;gap:12px;border-top:2px dashed var(--panel-3);padding-top:8px}
+details.more>summary{cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:0.9375rem;color:var(--wood-lt);list-style-position:inside}
+details.more>summary .hint{display:inline;font-family:var(--f-body);font-weight:400;font-size:1.0625rem}
+details.more[open]>summary{margin-bottom:8px}
+details.more .step{margin-top:12px}
+
+/* v7: Option „Lesbare Schrift“ (U16): Fließtext in der Systemschrift, etwas kleiner als VT323 bei gleicher rem-Angabe */
+:root[data-font="lesbar"]{--f-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+:root[data-font="lesbar"] body{line-height:1.3;font-size-adjust:0.45}
+/* Pixel-Schrift (Überschriften, Zahlen, Knöpfe) behält ihre Größe */
+:root[data-font="lesbar"] :is(h1,h2,h3,h4,b,strong,button,summary,.badge,.plank,.cal b,.lvl-badge,.stat-line .t,.skill .lv,.npc-name,.step>b,.entry header,.week-review b,.tile strong,.say .who,.fx,.late-day){font-size-adjust:none}
