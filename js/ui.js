@@ -1,0 +1,566 @@
+/* Life's a Game · Oberfläche
+ * Rendering und Ereignisse. Spielregeln kommen ausschließlich aus LAG (logic.js).
+ */
+(function (root) {
+  'use strict';
+  const L = root.LAG, SP = root.LAGSprites, Store = root.LAGStore, img = SP.img, esc = SP.esc;
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const reduce = !!(root.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const today = () => L.dkey(new Date()), hour = () => new Date().getHours();
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  const WNAME = { sonnig: 'Sonnig', heiter: 'Heiter', bewoelkt: 'Bewölkt', regen: 'Regen', gewitter: 'Gewitter' };
+  const DAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const PROMPTS = ['Was lief heute gut?', 'Worüber hast du dich gefreut?', 'Was hat dir Energie gegeben, was hat sie gekostet?', 'Was nimmst du dir für morgen vor?', 'Wofür bist du heute dankbar?', 'Was hast du heute über dich gelernt?', 'Welche kleine Sache hat den Tag besser gemacht?'];
+  const IDEAS = [
+    { title: 'Ein Glas Wasser trinken', anchor: 'dem Aufstehen', tiny: 'Drei Schlucke', time: '07:00', skill: 0 },
+    { title: '5 Minuten dehnen', anchor: 'dem ersten Kaffee', tiny: 'Eine Dehnübung', time: '08:00', skill: 0 },
+    { title: '10 Minuten lesen', anchor: 'dem Zähneputzen am Abend', tiny: 'Eine Seite lesen', time: '22:00', skill: 1 },
+    { title: 'Spazieren gehen', anchor: 'dem Mittagessen', tiny: 'Einmal um den Block', time: '13:00', skill: 0 },
+    { title: 'Fünf Minuten aufräumen', anchor: 'dem Abendessen', tiny: 'Einen Gegenstand wegräumen', time: '19:00', skill: 2 },
+    { title: 'Jemandem schreiben', anchor: 'der Mittagspause', tiny: 'Eine kurze Nachricht schicken', time: '12:30', skill: 2 }
+  ];
+
+  let S = null, D = null, realState = null, scene = null, au = null, preview = null;
+  const U = { npcIdx: 0, selWeather: null, editingJournal: false, draft: '', promptShift: 0, renaming: null, editHabit: null, wipeArmed: false, showExport: false,
+    importPending: null, calHabit: '', calYear: null, lastTodoSkill: null, obStep: null, ci: null, undo: null };
+
+  /* ---------- Hilfen ---------- */
+  const skillById = id => S.skills.find(s => s.id === id) || S.skills[0];
+  const styleOf = s => SP.STYLES[(s ? s.st : 0) % SP.STYLES.length];
+  const freqText = f => f.kind === 'daily' ? 'Täglich' : f.kind === 'weekly' ? f.timesPerWeek + '× pro Woche' : f.days.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAYS[d]).join(', ');
+  const planText = h => 'Nach ' + h.anchor + ': ' + h.title;
+  const fmt = (k, o = { weekday: 'short', day: 'numeric', month: 'short' }) => L.parseKey(k).toLocaleDateString('de-DE', o);
+  const active = () => S.habits.filter(h => !h.archivedAt);
+  const portrait = () => img('wilma', 5, '').replace('class="pi"', 'class="pi portrait"');
+  const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = () => navigator.standalone === true || (root.matchMedia && matchMedia('(display-mode: standalone)').matches);
+
+  /* ---------- Speichern ---------- */
+  let saveT = 0;
+  const canSave = () => S && !S.demo && S.onboarded;
+  function save() { if (!canSave()) return; clearTimeout(saveT); saveT = setTimeout(() => Store.save(S), 250); }
+  function flush() { if (canSave()) { clearTimeout(saveT); Store.save(S); } }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  root.addEventListener('pagehide', flush);
+
+  const derive = () => (D = L.derive(S, today()));
+  const weather = () => L.currentWeather(S, today(), preview);
+  function phase() { const hr = hour(); if (L.farmSleeps(hr)) return 'night'; if (L.journalOn(S, today())) return hr >= 20 ? 'night' : 'evening'; return hr < 9 ? 'morning' : hr < 18 ? 'day' : 'evening'; }
+
+  /* ---------- Effekte ---------- */
+  function floatText(txt, x, y, cls) { const d = document.createElement('div'); d.className = 'fx ' + cls; d.textContent = txt; d.style.left = x + 'px'; d.style.top = (y - 14) + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 1050); }
+  function sparks(x, y, colors, n = 10) {
+    if (reduce) return;
+    for (let i = 0; i < n; i++) { const s = document.createElement('div'); s.className = 'sparkle'; s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.background = colors[i % colors.length]; document.body.appendChild(s);
+      const a = Math.random() * Math.PI * 2, r = 24 + Math.random() * 36; s.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${Math.cos(a) * r}px,${Math.sin(a) * r - 20}px)`, opacity: 0 }], { duration: 650, easing: 'steps(8)', fill: 'forwards' }); setTimeout(() => s.remove(), 700); }
+  }
+  const pointOf = (ev, el) => { if (ev && ev.clientX) return [ev.clientX, ev.clientY]; const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top]; };
+  let toastT = 0, toastQ = [], toastBusy = false;
+  function toast(html, action, ms = 4200) { toastQ.push({ html, action, ms }); if (!toastBusy) nextToast(); }
+  function nextToast() {
+    const t0 = $('.toast'); if (t0) t0.remove(); const item = toastQ.shift(); if (!item) { toastBusy = false; return; } toastBusy = true;
+    const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.innerHTML = item.html + (item.action ? `<button class="btn sm" type="button">${esc(item.action.label)}</button>` : ''); document.body.appendChild(t);
+    if (item.action) t.querySelector('button').onclick = () => { item.action.fn(); clearTimeout(toastT); nextToast(); };
+    clearTimeout(toastT); toastT = setTimeout(nextToast, toastQ.length ? Math.min(item.ms, 2600) : item.ms);
+  }
+  function levelUp(what, text) {
+    au.sfx.level();
+    const o = document.createElement('div'); o.className = 'levelup'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-label', 'Aufgestiegen');
+    o.innerHTML = `<div class="frame">${img('gem', 5, '')}<h2>Aufgestiegen!</h2><div class="what">${esc(what)}</div><p>${esc(text)}</p><button class="btn" type="button">Weiter</button></div>`;
+    document.body.appendChild(o); const b = o.querySelector('button'); b.focus();
+    const r = o.querySelector('.frame').getBoundingClientRect(); [0, 250, 500].forEach(t => setTimeout(() => sparks(r.left + r.width / 2, r.top + 40, ['#f4d58e', '#7fcf8a', '#fff3b0', '#c99cf2'], 16), t));
+    const close = () => o.remove(); b.onclick = close; o.addEventListener('click', e => { if (e.target === o) close(); }); o.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  }
+
+  /* ---------- Belohnungen ---------- */
+  const snapshot = () => ({ c: D.char.l, s: Object.fromEntries(S.skills.map(s => [s.id, D.levels[s.id].l])) });
+  function grant(type) { S.chest.items[type] = (S.chest.items[type] || 0) + 1; }
+  function afterAction(before, skillId, pt, xp, info) {
+    derive(); save();
+    if (xp > 0) { floatText('+' + xp + ' XP', pt[0], pt[1], 'xp'); sparks(pt[0], pt[1], ['#7fcf8a', '#c8f2cc', '#fffaf0'], 8); }
+    if (info) toast(info);
+    checkRewards(pt);
+    const sk = skillId ? skillById(skillId) : null;
+    if (D.char.l > before.c) setTimeout(() => levelUp('Level ' + D.char.l, `Auf deinem Hof ist jetzt Platz für ${L.slotsFor(D.char.l)} Dekorationen.`), 450);
+    else if (sk && D.levels[sk.id].l > before.s[sk.id]) setTimeout(() => levelUp(sk.name + ' · Stufe ' + D.levels[sk.id].l, 'Das Gebäude dieser Fähigkeit wächst auf deinem Hof.'), 450);
+  }
+  function rollDrop(pt) {
+    const type = L.rollDrop(Math.random); if (!type) return; grant(type); save();
+    setTimeout(() => { au.sfx.drop(); floatText('Fund: ' + L.ITEMS[type].name, pt[0], pt[1] - 24, 'drop'); sparks(pt[0], pt[1] - 20, ['#c99cf2', '#f4d58e', '#ffffff'], 12); }, 650);
+    toast(`${img(type, 3, '')}<span><b>Fund!</b> ${L.ITEMS[type].name}${L.ITEMS[type].rare ? ' (selten)' : ''} liegt jetzt in deiner Truhe.</span>`);
+  }
+  /** B2 Ernte bei neuer Wachstumsstufe, B4 Fund bei „Gemeistert“. */
+  function checkRewards(pt) {
+    let any = false;
+    S.habits.forEach(h => {
+      const d = D.H[h.id], n = L.harvestsDue(h, d);
+      if (n > 0) {
+        h.harvestStage = d.stage; any = true; const got = [];
+        for (let i = 0; i < n; i++) { const t = L.pickItem(Math.random, Math.random() < L.C.RARE_P); grant(t); got.push(L.ITEMS[t].name); }
+        if (scene) scene.glowBed(h.id); setTimeout(() => au.sfx.harvest(), 300);
+        toast(`${img('p' + d.stage, 4, '', { F: styleOf(skillById(h.skillId)).c, f: styleOf(skillById(h.skillId)).dk })}<span><b>Ernte!</b> „${esc(h.title)}“ ist jetzt ${L.STAGES[d.stage][1]}. In der Truhe: ${esc(got.join(', '))}.</span>`, null, 5200);
+      }
+      if (L.gradRewardDue(h, d)) {
+        h.gradRewarded = true; any = true; const t = L.pickItem(Math.random, true); grant(t);
+        toast(`${img('gem', 3, '')}<span><b>Gemeistert!</b> „${esc(h.title)}“ hält ohne Erinnerung. Als Dank liegt ${L.ITEMS[t].name} in deiner Truhe.</span>`, null, 6000);
+      }
+    });
+    if (any) { save(); R.chestBadge(); if (pt && !reduce) sparks(pt[0], pt[1] - 10, ['#f4d58e', '#7fcf8a'], 10); }
+  }
+  function logHabit(h, status, pt) {
+    const t = today(), prev = h.logs[t], H0 = D.H[h.id], before = snapshot();
+    if (prev === status) { delete h.logs[t]; au.sfx.soft(); derive(); save(); refresh(); return; }   // A9: still zurückbuchen
+    if (H0.weekly && !prev && H0.weekCnt >= H0.N) { au.sfx.err(); toast('<span><b>Wochenziel schon erreicht.</b> Mehr bringt diese Woche keine zusätzlichen XP. Genieß die Pause.</span>'); return; }
+    h.logs[t] = status; status === 'tiny' ? au.sfx.tiny() : au.sfx.check(); if (S.chest.placed.some(p => p.itemId === 'chicken')) au.sfx.cluck();
+    derive(); const Hn = D.H[h.id], sk = skillById(h.skillId), units = L.unitsToNext(D.levels[sk.id], h.effort);
+    const gained = Math.max(0, L.xpFor(h.effort, status) - (prev ? L.xpFor(h.effort, prev) : 0));
+    const info = `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${L.xpFor(h.effort, status)} XP</b> · ${esc(h.title)}: ${Hn.weekly ? Hn.weekCnt + ' von ' + Hn.N + ' diese Woche' : Hn.month + '× diesen Monat'}${status === 'tiny' ? ' · Mini zählt voll für die Stärke' : ''} · noch ${units} ${units === 1 ? 'Einheit' : 'Einheiten'} bis Stufe ${D.levels[sk.id].l + 1}</span>`;
+    if (!prev && h.rolled !== t) { h.rolled = t; rollDrop(pt); }
+    afterAction(before, h.skillId, pt, gained, info); refresh();
+    const row = document.querySelector(`[data-hid="${h.id}"]`); if (row) row.classList.add('pop');
+  }
+
+  /* ---------- Gewohnheits-Formular (Onboarding, Neu, Bearbeiten) ---------- */
+  function skillOptions(sel) { return S.skills.map(s => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${esc(s.name)}</option>`).join('') + (S.skills.length < L.C.MAX_SKILLS ? '<option value="__new">+ Neue Fähigkeit …</option>' : ''); }
+  function habitForm(p, h) {
+    const f = h ? h.frequency : { kind: 'daily' }, days = f.kind === 'weekdays' ? f.days : [1, 2, 3, 4, 5], n = f.kind === 'weekly' ? f.timesPerWeek : 3, eff = h ? h.effort : 2;
+    return `<form class="hform" data-form="${p}" novalidate>
+      <div class="step"><b>1</b><label for="${p}-title">Was möchtest du tun?</label><div class="ctl"><input class="in" id="${p}-title" data-f="title" maxlength="60" placeholder="z. B. 10 Minuten dehnen" value="${h ? esc(h.title) : ''}"></div></div>
+      <div class="step"><b>2</b><label for="${p}-anchor">Wann genau? Nach welcher Routine?</label><div class="ctl"><span class="pre">Nach</span><input class="in" id="${p}-anchor" data-f="anchor" maxlength="60" placeholder="dem ersten Kaffee" value="${h ? esc(h.anchor) : ''}"><input class="in" type="time" data-f="time" aria-label="Ungefähre Uhrzeit der Routine (optional)" value="${h ? esc(h.anchorTime) : ''}"></div></div>
+      <div class="step"><b>3</b><span class="lab">Wie oft ist realistisch?</span>
+        <div class="ctl">${[['daily', 'Täglich'], ['weekdays', 'An bestimmten Tagen'], ['weekly', 'X-mal pro Woche']].map(([k, l]) => `<button type="button" class="chip" data-freq="${k}" aria-pressed="${f.kind === k}">${l}</button>`).join('')}</div>
+        <div class="ctl" data-g="days" ${f.kind === 'weekdays' ? '' : 'hidden'}>${[1, 2, 3, 4, 5, 6, 0].map(d => `<button type="button" class="chip" data-day="${d}" aria-pressed="${days.includes(d)}">${DAYS[d]}</button>`).join('')}</div>
+        <div class="ctl" data-g="times" ${f.kind === 'weekly' ? '' : 'hidden'}><input class="in" type="number" min="1" max="6" value="${n}" data-f="n" style="flex:0 0 80px" aria-label="Mal pro Woche"><span>mal pro Woche, an beliebigen Tagen</span></div></div>
+      <div class="step"><b>4</b><label for="${p}-tiny">Was ist die Mini-Version für schlechte Tage?</label><div class="ctl"><input class="in" id="${p}-tiny" data-f="tiny" maxlength="60" placeholder="z. B. eine einzige Dehnübung" value="${h ? esc(h.tinyVersion) : ''}"></div><p class="hint" style="grid-column:2">Eine echte kleine Handlung, nicht nur „App öffnen“.</p></div>
+      <div class="step"><b>5</b><label for="${p}-skill">Zu welcher Fähigkeit gehört das?</label><div class="ctl"><select class="in" id="${p}-skill" data-f="skill">${skillOptions(h ? h.skillId : null)}</select><input class="in" data-f="newskill" maxlength="20" placeholder="Name der neuen Fähigkeit" aria-label="Name der neuen Fähigkeit" hidden></div></div>
+      <div class="step"><b>6</b><span class="lab">Aufwand und Optionen</span>
+        <div class="ctl">${[1, 2, 3].map(e => `<button type="button" class="chip" data-eff="${e}" aria-pressed="${eff === e}">${['Leicht', 'Mittel', 'Schwer'][e - 1]} · ${10 * e} XP</button>`).join('')}</div>
+        <div class="ctl"><label class="sw"><input type="checkbox" data-f="streak" ${h ? (h.streakEnabled ? 'checked' : '') : 'checked'}> Serie zählen</label><label class="sw"><input type="checkbox" data-f="rem" ${h ? (h.remindersEnabled ? 'checked' : '') : 'checked'}> Erinnerung</label></div></div>
+      ${h ? '<p class="hint">Neuer Aufwand oder Rhythmus gilt ab heute. Bisherige Tage behalten ihre Werte.</p>' : ''}
+      <div class="preview" data-f="preview">Nach ${h ? esc(h.anchor) : '___'} werde ich ${h ? esc(h.title) : '___'}.</div><div class="err" data-f="err" hidden></div>
+      <div class="row-btns"><button class="btn" type="submit">${h ? 'Änderungen speichern' : 'Gewohnheit pflanzen'}</button>${h ? `<button class="btn ghost" type="button" data-act="edit-cancel">Abbrechen</button>` : ''}</div></form>`;
+  }
+  function readForm(form) {
+    const q = s => form.querySelector(s), pressed = sel => [...form.querySelectorAll(sel)].filter(b => b.getAttribute('aria-pressed') === 'true');
+    const kind = (pressed('[data-freq]')[0] || {}).dataset.freq || 'daily';
+    const frequency = kind === 'weekly' ? { kind, timesPerWeek: Math.round(+q('[data-f=n]').value || 0) } : kind === 'weekdays' ? { kind, days: pressed('[data-day]').map(b => +b.dataset.day) } : { kind };
+    return { title: q('[data-f=title]').value, anchor: q('[data-f=anchor]').value, anchorTime: q('[data-f=time]').value, tinyVersion: q('[data-f=tiny]').value, frequency,
+      skillId: q('[data-f=skill]').value, newSkill: q('[data-f=newskill]').value.trim(), effort: +((pressed('[data-eff]')[0] || {}).dataset || {}).eff || 0,
+      streakEnabled: q('[data-f=streak]').checked, remindersEnabled: q('[data-f=rem]').checked };
+  }
+  function fillIdea(form, idea) {
+    const q = s => form.querySelector(s);
+    q('[data-f=title]').value = idea.title; q('[data-f=anchor]').value = idea.anchor; q('[data-f=tiny]').value = idea.tiny; q('[data-f=time]').value = idea.time;
+    const sk = S.skills[idea.skill]; if (sk) q('[data-f=skill]').value = sk.id; updatePreview(form); q('[data-f=title]').focus();
+  }
+  function updatePreview(form) { const i = readForm(form); form.querySelector('[data-f=preview]').textContent = `Nach ${L.cleanAnchor(i.anchor) || '___'} werde ich ${i.title.trim() || '___'}.`; }
+  function submitForm(form) {
+    const kind = form.dataset.form, i = readForm(form), err = form.querySelector('[data-f=err]'), t = today();
+    const miss = L.validateHabitInput(i); if (i.skillId === '__new' && !i.newSkill) miss.push('einen Namen für die neue Fähigkeit');
+    if (kind !== 'edit') { const c = L.canAddHabit(S, t); if (!c.ok) miss.push(`etwas Geduld: weitere Gewohnheiten ab ${fmt(c.unlockOn, { weekday: 'long', day: 'numeric', month: 'long' })}`); }
+    if (miss.length) { err.hidden = false; err.textContent = 'Bitte ergänze noch: ' + miss.join(', ') + '.'; au.sfx.err(); return; }
+    err.hidden = true;
+    if (i.skillId === '__new') { const id = 's' + uid(); S.skills.push({ id, name: i.newSkill, icon: SP.ICONS[S.skills.length % SP.ICONS.length], st: S.skills.length }); i.skillId = id; }
+    if (kind === 'edit') {
+      const h = S.habits.find(x => x.id === U.editHabit); L.applyEdit(h, i, t); U.editHabit = null; au.sfx.place();
+      toast(`<span><b>Gespeichert.</b> „${esc(h.title)}“ ist aktualisiert.</span>`);
+    } else {
+      const h = L.newHabit(i, t, uid()); S.habits.push(h); au.sfx.place();
+      if (kind === 'new') toast(`${img('p1', 3, '')}<span><b>Gepflanzt!</b> Auf deinem Hof wächst jetzt ein neues Beet.</span>`);
+    }
+    derive(); save(); if (kind === 'ob') showOnboarding('habits'); refresh(); scene.refresh();
+  }
+
+  /* ---------- Overlays ---------- */
+  const overlay = html => { $('#overlay').innerHTML = html ? `<div class="overlay">${html}</div>` : ''; const f = $('#overlay .frame'); if (f) { const t = f.querySelector('h2'); if (t) { t.tabIndex = -1; t.focus(); } } };
+  function showOnboarding(step) {
+    U.obStep = step; const n = S.habits.length;
+    const dots = ['welcome', 'habits', 'done'].map(s => `<i class="${s === step || (step === 'done') || (step === 'habits' && s === 'welcome') ? 'on' : ''}"></i>`).join('');
+    let h = `<div class="frame" role="dialog" aria-modal="true" aria-labelledby="obT"><div class="steps" aria-hidden="true">${dots}</div>`;
+    if (step === 'welcome') {
+      const v3 = Store.legacyV3();
+      h += `<div class="say">${portrait()}<div><div class="who">Wilma · Nachbarin</div><h2 id="obT">Willkommen auf deinem Hof!</h2></div></div>
+        <div class="say"><span></span><div style="display:grid;gap:8px">
+          <p>Jede Gewohnheit wird hier zu einem Beet. Je beständiger du sie pflegst, desto kräftiger wächst sie.</p>
+          <p>Verpasst du einen Tag, wächst die Pflanze nur etwas langsamer. Auf diesem Hof stirbt nichts.</p>
+          <p>Wir fangen klein an: mit höchstens drei Gewohnheiten, jede an einer Routine, die du schon hast.</p></div></div>
+        <div class="row-btns"><button class="btn" type="button" data-act="ob-start">Hof anlegen</button><button class="btn alt" type="button" data-act="demo-start">Erst eine Demo ansehen</button></div>
+        ${v3 ? `<div class="banner info"><span class="sp">Auf diesem Gerät gibt es eigene Daten aus Version 3 (${(v3.habits || []).length} Gewohnheiten).</span><button class="btn sm" type="button" data-act="ob-v3">Übernehmen</button></div>` : ''}
+        <div class="row-btns"><button class="btn ghost" type="button" data-act="import-open">Sicherung importieren</button></div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden><div class="err" id="importErr" hidden></div>`;
+    } else if (step === 'habits') {
+      h += `<div class="say">${portrait()}<div><div class="who">Wilma</div><h2 id="obT">Was soll auf deinem Hof wachsen?</h2><p>Such dir bis zu drei Gewohnheiten aus. Nach der ersten Woche kannst du weitere pflanzen.</p></div></div>`;
+      if (n) h += `<h3>Gepflanzt · ${n} von ${L.C.START_HABITS}</h3><div class="planted">${S.habits.map(x => `<div>${img('p0', 3, '')}<span>${esc(planText(x))}</span><button class="del" type="button" data-act="ob-remove" data-id="${x.id}" aria-label="${esc(x.title)} entfernen">×</button></div>`).join('')}</div>`;
+      if (n < L.C.START_HABITS) h += `<h3>Ideen zum Anpassen</h3><div class="ideas">${IDEAS.map((x, i) => `<button type="button" class="chip idea" data-act="idea" data-i="${i}">${esc(x.title)} · nach ${esc(x.anchor)}</button>`).join('')}</div>${habitForm('ob', null)}`;
+      else h += `<p class="hint">Drei Beete sind ein guter Anfang. Mehr Platz gibt es nach der ersten Woche.</p>`;
+      h += `<div class="row-btns"><button class="btn" type="button" data-act="ob-next" ${n ? '' : 'disabled'}>Weiter</button><button class="btn ghost" type="button" data-act="ob-back">Zurück</button></div>`;
+    } else {
+      h += `<div class="say">${portrait()}<div><div class="who">Wilma</div><h2 id="obT">Dein Hof ist bereit.</h2></div></div>
+        <div class="ci-list"><div>${img('sonnig', 3, '')}<span><b>Morgens</b> zeigt dir ein kurzer Check-in deine Pläne für den Tag. Er dauert keine halbe Minute und lässt sich überspringen.</span></div>
+        <div>${img('gem', 3, '')}<span><b>Tagsüber</b> hakst du im Tab „Heute“ ab. An schlechten Tagen zählt die Mini-Version voll.</span></div>
+        <div>${img('bewoelkt', 3, '')}<span><b>Abends</b> schließt du den Tag im Logbuch ab und wählst sein Wetter.</span></div></div>
+        <div class="row-btns"><button class="btn" type="button" data-act="ob-finish">Zum Hof</button></div>`;
+    }
+    overlay(h + '</div>');
+  }
+  function finishOnboarding() {
+    const t = today(); S.onboarded = true; S.startedAt = t; S.checkins[t] = { skipped: true };
+    overlay(''); derive(); flush(); refresh(); scene.refresh(true);
+    toast(`${portrait().replace('portrait', '')}<span><b>Wilma:</b> Schön, dass du da bist. Ich schau ab und zu vorbei.</span>`);
+  }
+  function startDemo() { realState = S; S = root.LAGDemo.demoState(today()); preview = null; overlay(''); $('#demoBar').hidden = false; derive(); refresh(); scene.refresh(true); }
+  function endDemo() { S = realState; realState = null; $('#demoBar').hidden = true; derive(); refresh(); scene.refresh(true); if (!S.onboarded) showOnboarding('welcome'); }
+
+  function showCheckin() {
+    U.ci = U.ci || { todos: new Set(S.todos.filter(t => !t.doneAt && t.dueDate === today()).map(t => t.id)), weather: null };
+    const due = active().filter(h => D.H[h.id].due && !D.H[h.id].doneToday), open = S.todos.filter(t => !t.doneAt);
+    const minutes = s => { if (!s) return 9999; const [a, b] = s.split(':').map(Number); return a * 60 + b; };
+    due.sort((a, b) => minutes(a.anchorTime) - minutes(b.anchorTime));
+    overlay(`<div class="frame" role="dialog" aria-modal="true" aria-labelledby="ciT">
+      <div class="say">${portrait()}<div><div class="who">Wilma</div><h2 id="ciT">Guten ${hour() < 11 ? 'Morgen' : 'Tag'}!</h2><p>Das steht heute an. Dauert keine halbe Minute.</p></div></div>
+      <h3>Deine Pläne für heute</h3>
+      <div class="ci-list">${due.length ? due.map(h => { const st = styleOf(skillById(h.skillId)); return `<div>${img('p' + D.H[h.id].stage, 3, '', { F: st.c, f: st.dk })}<span class="plan">${esc(planText(h))}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) : ''}</span></div>`; }).join('') : '<div>Heute steht keine Gewohnheit an.</div>'}</div>
+      <h3>Welche To-dos nimmst du dir vor? Optional, bis zu drei</h3>
+      <div class="ideas">${open.length ? open.map(t => `<button type="button" class="chip" data-act="ci-todo" data-id="${t.id}" aria-pressed="${U.ci.todos.has(t.id)}">${esc(t.title)}</button>`).join('') : '<span class="hint">Keine offenen To-dos.</span>'}</div>
+      <form class="add" id="ciTodoForm"><input class="in" id="ciTodo" maxlength="90" placeholder="Neues To-do für heute" aria-label="Neues To-do für heute"><button class="btn alt" type="submit">Hinzufügen</button></form>
+      <h3>Wie fühlst du dich? Optional</h3>
+      <div class="weather" role="group" aria-label="Stimmung als Wetter">${L.WEATHER.map(w => `<button type="button" class="wbtn" data-act="ci-weather" data-w="${w}" aria-pressed="${U.ci.weather === w}">${img(w, 4, '')}${WNAME[w]}</button>`).join('')}</div>
+      <div class="row-btns"><button class="btn" type="button" data-act="ci-done">Los geht's</button><button class="btn ghost" type="button" data-act="ci-skip">Überspringen</button></div></div>`);
+  }
+  function closeCheckin(done) {
+    const t = today();
+    if (done) { S.checkins[t] = { todos: [...U.ci.todos], weather: U.ci.weather }; S.todos.forEach(x => { if (U.ci.todos.has(x.id)) x.dueDate = t; }); }
+    else S.checkins[t] = { skipped: true };
+    U.ci = null; overlay(''); derive(); save(); refresh(); scene.refresh();
+  }
+
+  /* ---------- Erntekalender ---------- */
+  function calendarHTML() {
+    const t = today(), year = U.calYear || t.slice(0, 4), hid = U.calHabit && S.habits.some(h => h.id === U.calHabit) ? U.calHabit : '';
+    const g = L.yearGrid(S, D, hid || null, year, t), firstYear = Math.min(+S.startedAt.slice(0, 4), ...S.habits.map(h => +h.createdAt.slice(0, 4)));
+    const label = { done: 'erledigt', tiny: 'Mini-Version', repaired: 'nachgeholt', watered: 'Regentag', empty: 'offen', off: 'nicht geplant', before: 'noch nicht angelegt', future: '', none: '' };
+    let months = ''; for (let m = 1; m <= 12; m++) { const k = `${year}-${String(m).padStart(2, '0')}-01`, c = g.cells.find(x => x.k === k); if (c) months += `<span class="m" style="grid-column:${c.col + 2}">${fmt(k, { month: 'short' }).replace('.', '')}</span>`; }
+    const wd = [['Mo', 0], ['Mi', 2], ['Fr', 4]].map(([l, r]) => `<span class="wd" style="grid-row:${r + 2}">${l}</span>`).join('');
+    const cells = g.cells.map(c => { if (c.v === 'none') return ''; const tip = typeof c.v === 'number' ? `${c.v === 0 ? 'nichts' : c.v === 4 ? '5 oder mehr' : c.v === 3 ? '3–4' : c.v} erledigt` : label[c.v];
+      return `<i class="v-${c.v}${c.k === t ? ' v-today' : ''}" style="grid-column:${c.col + 2};grid-row:${c.row + 2}"${tip ? ` title="${fmt(c.k)}: ${tip}"` : ''}></i>`; }).join('');
+    let stat;
+    if (hid) { const days = Object.entries(D.H[hid].days).filter(([k]) => k.startsWith(year)); const done = days.filter(([, v]) => v === 'done').length, tiny = days.filter(([, v]) => v === 'tiny').length, rep = days.filter(([, v]) => v === 'repaired' || v === 'watered').length;
+      stat = `${done + tiny} erledigt in ${year}${tiny ? `, davon ${tiny} als Mini-Version` : ''}${rep ? ` · ${rep} gerettet` : ''}`; }
+    else { const n = g.cells.filter(c => typeof c.v === 'number' && c.v > 0).length; stat = `${n} ${n === 1 ? 'Tag' : 'Tage'} in ${year} mit mindestens einer Erledigung`; }
+    const legend = hid ? [['done', 'erledigt'], ['tiny', 'Mini'], ['repaired', 'nachgeholt'], ['watered', 'Regentag'], ['empty', 'offen'], ['off', 'nicht geplant']].map(([v, l]) => `<span><i class="v-${v}"></i>${l}</span>`).join('')
+      : `<span>wenig</span>${[0, 1, 2, 3, 4].map(v => `<i class="v-${v}"></i>`).join('')}<span>viel</span>`;
+    return `<div class="harvest"><div class="ctl"><select class="in" id="calHabit" aria-label="Kalender für">${[['', 'Alle Gewohnheiten'], ...S.habits.map(h => [h.id, h.title + (h.archivedAt ? ' (pausiert)' : '')])].map(([v, l]) => `<option value="${v}" ${v === hid ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+      <button class="btn ghost" type="button" data-act="cal-prev" ${+year <= firstYear ? 'disabled' : ''} aria-label="Vorheriges Jahr">‹</button><span>${year}</span><button class="btn ghost" type="button" data-act="cal-next" ${year >= t.slice(0, 4) ? 'disabled' : ''} aria-label="Nächstes Jahr">›</button></div>
+      <div class="cal-scroll"><div class="cal-grid" style="--cols:${g.cols}" role="img" aria-label="Erntekalender ${year}: ${esc(stat)}">${months}${wd}${cells}</div></div>
+      <div class="hint">${esc(stat)}</div><div class="cal-legend">${legend}</div></div>`;
+  }
+
+  /* ---------- Bereiche ---------- */
+  const R = {
+    cal() { const d = new Date(), w = weather(); $('#cal').innerHTML = `${img(w, 3, WNAME[w])}<span><b>${L.seasonOf(d.getMonth())}</b> · Tag ${d.getDate()} · ${d.toLocaleDateString('de-DE', { weekday: 'long' })} · ${WNAME[w]}</span>`; },
+    hud() {
+      const c = D.char; $('#lvlNum').textContent = c.l; $('#xpText').textContent = c.into + ' / ' + c.need + ' XP'; $('#xpBar').style.width = Math.round(c.into / c.need * 100) + '%';
+      const w = $('#xpBarWrap'); w.setAttribute('aria-valuenow', c.into); w.setAttribute('aria-valuemin', 0); w.setAttribute('aria-valuemax', c.need);
+      let best = null; S.skills.forEach(s => { const hs = active().filter(h => h.skillId === s.id); if (!hs.length) return; const eff = Math.round(hs.reduce((a, h) => a + h.effort, 0) / hs.length), u = L.unitsToNext(D.levels[s.id], eff); if (!best || u < best.u) best = { s, u }; });
+      $('#nearText').textContent = best ? `Noch ${best.u} ${best.u === 1 ? 'Einheit' : 'Einheiten'} bis ${best.s.name} Stufe ${D.levels[best.s.id].l + 1}` : '';
+      const open = active().filter(h => D.H[h.id].due && !D.H[h.id].doneToday).length + S.todos.filter(t => !t.doneAt && (!t.dueDate || t.dueDate <= today())).length;
+      $('#nToday').textContent = open || ''; $('#nToday').hidden = !open;
+      $('#footNote').textContent = S.demo ? 'Demo-Hof · nichts wird gespeichert' : 'Speichert nur auf diesem Gerät · Sicherung unter Fortschritt';
+      $('#soundBtn').textContent = 'Effekte: ' + (S.sound ? 'an' : 'aus'); $('#soundBtn').setAttribute('aria-pressed', S.sound);
+      $('#musicBtn').textContent = 'Musik: ' + (S.music ? 'an' : 'aus'); $('#musicBtn').setAttribute('aria-pressed', S.music);
+      R.chestBadge();
+    },
+    chestBadge() { const n = Object.values(S.chest.items).reduce((a, b) => a + b, 0); $('#nChest').textContent = n || ''; $('#nChest').hidden = !n; },
+    legend() { const a = active(); $('#legend').innerHTML = S.skills.map(s => `<span>${img(s.icon, 2, '')}${esc(s.name)} · Stufe ${D.levels[s.id].l}</span>`).join('') + (a.length ? `<span>Beete: ${Math.min(a.length, L.C.MAX_BEDS)} von ${a.length}</span>` : ''); },
+    skills() {
+      $('#skills').innerHTML = S.skills.map(s => {
+        const l = D.levels[s.id], st = styleOf(s), sty = `--c:${st.c};--hi:${st.hi};--dk:${st.dk}`;
+        if (U.renaming === s.id) return `<div class="skill" style="${sty}"><button class="iconbtn" type="button" data-act="icon" data-sid="${s.id}" title="Symbol wechseln">${img(s.icon, 3, 'Symbol wechseln')}</button><input class="in" id="renameIn" value="${esc(s.name)}" maxlength="20" aria-label="Name der Fähigkeit"><button class="btn sm ren" type="button" data-act="renok">OK</button></div>`;
+        return `<div class="skill" style="${sty}">${img(s.icon, 3, '')}<div class="stat-line"><span>${esc(s.name)} <span class="lv">Stufe ${l.l}</span></span><span>${l.into}/${l.need}</span></div><button class="iconbtn ren" type="button" data-act="ren" data-sid="${s.id}" aria-label="${esc(s.name)} umbenennen">Ändern</button><div class="bar sm sk"><i style="width:${Math.round(l.into / l.need * 100)}%"></i></div></div>`;
+      }).join('') + (S.skills.length < L.C.MAX_SKILLS ? `<div><button class="btn ghost" type="button" data-act="addskill">+ Neue Fähigkeit</button></div>` : '');
+      const ri = $('#renameIn'); if (ri) { ri.focus(); ri.select(); }
+    },
+    today() {
+      const t = today(), ym = t.slice(0, 7), minutes = s => { if (!s) return 9999; const [a, b] = s.split(':').map(Number); return a * 60 + b; };
+      const due = active().filter(h => D.H[h.id].due).sort((a, b) => (!!D.H[a.id].doneToday - !!D.H[b.id].doneToday) || (minutes(a.anchorTime) - minutes(b.anchorTime)));
+      const free = active().filter(h => !D.H[h.id].due);
+      let h = `<h2>Heute</h2><p class="sub">Hake ab, was du geschafft hast. Die Mini-Version zählt an schlechten Tagen voll für die Stärke deiner Gewohnheit.</p>`;
+      if (!S.demo && isIOS() && !standalone() && !S.installHintSeen) h += `<div class="banner info"><span class="sp"><b>Als App installieren:</b> Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach läuft dein Hof offline und kann später Erinnerungen schicken.</span><button class="btn sm" type="button" data-act="install-ok">Verstanden</button></div>`;
+      const c = L.canAddHabit(S, t);
+      if (c.ok && active().length >= L.C.START_HABITS && !S.unlockSeen && !S.demo) h += `<div class="banner"><span class="sp">Eine Woche geschafft! Wenn du magst, kannst du jetzt weitere Gewohnheiten pflanzen.</span><button class="btn sm" type="button" data-act="unlock-go">Gewohnheit pflanzen</button><button class="btn ghost" type="button" data-act="unlock-no">Später</button></div>`;
+      if (new Date().getDate() <= 3 && S.freshSeen !== ym && S.startedAt < ym + '-01') h += `<div class="banner"><span class="sp">Ein neuer Monat beginnt, ein guter Moment für einen frischen Start. Möchtest du eine Gewohnheit anpassen oder neu anfangen?</span><button class="btn sm" type="button" data-act="fresh-go">Gewohnheiten ansehen</button><button class="btn ghost" type="button" data-act="fresh-no">Später</button></div>`;
+      if (!S.checkins[t] && hour() >= 5) h += `<div class="row-btns"><button class="btn ghost" type="button" data-act="ci-open">Check-in für heute öffnen</button></div>`;
+      h += '<h3>Gewohnheiten</h3><div class="list">' + (due.length ? due.map(habitRow).join('') : `<div class="empty">${active().length ? 'Heute steht keine Gewohnheit an.' : 'Noch keine Gewohnheit. Unter „Gewohnheiten“ kannst du eine pflanzen.'}</div>`) + '</div>';
+      if (free.length) h += `<h3>Heute frei</h3><div class="list">${free.map(x => { const d = D.H[x.id]; return `<div class="row off"><span></span><div><div class="row-title">${esc(x.title)}</div><div class="meta"><span>${d.weekly ? `Wochenziel erreicht: ${d.weekCnt} von ${d.N}` : 'Heute nicht geplant · ' + freqText(x.frequency)}</span></div></div><span></span></div>`; }).join('')}</div>`;
+      h += `<h3>To-dos</h3><form class="add" id="todoForm"><input class="in" id="tTitle" placeholder="Neue Aufgabe, z. B. Steuerunterlagen sortieren" maxlength="90" aria-label="Aufgabe">
+        <select class="in" id="tEff" aria-label="Aufwand"><option value="1">Leicht · 10 XP</option><option value="2" selected>Mittel · 20 XP</option><option value="3">Schwer · 30 XP</option></select>
+        <select class="in" id="tSkill" aria-label="Fähigkeit">${S.skills.map(s => `<option value="${s.id}" ${s.id === U.lastTodoSkill ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+        <input class="in" type="date" id="tDue" aria-label="Geplant für (optional)" title="Geplant für (optional)"><button class="btn" type="submit">Hinzufügen</button></form>`;
+      const open = S.todos.filter(x => !x.doneAt).sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999')), doneT = S.todos.filter(x => x.doneAt === t);
+      const trow = x => { const s = skillById(x.skillId); const plan = x.dueDate ? (x.dueDate === t ? 'Für heute geplant' : 'Geplant für ' + fmt(x.dueDate)) : '';
+        return `<div class="row${x.doneAt ? ' done' : ''}" data-tid="${x.id}"><button class="chk" type="button" data-act="todo" aria-pressed="${!!x.doneAt}" aria-label="${x.doneAt ? 'Als offen markieren' : 'Erledigen'}: ${esc(x.title)}"></button>
+          <div>${plan && !x.doneAt ? `<div class="planned">${plan}</div>` : ''}<div class="row-title">${esc(x.title)}</div><div class="meta"><span>${img(s.icon, 2, '')}${esc(s.name)}</span><span>+${10 * x.effort} XP</span></div></div><div class="side"><button class="del" type="button" data-act="deltodo" aria-label="Aufgabe löschen">×</button></div></div>`; };
+      h += `<div class="list">${open.length ? open.map(trow).join('') : '<div class="empty">Keine offenen To-dos.</div>'}${doneT.map(trow).join('')}</div>`;
+      $('#p-today').innerHTML = h;
+    },
+    habits() {
+      const t = today(), c = L.canAddHabit(S, t), act = active(), paused = S.habits.filter(h => h.archivedAt);
+      let h = `<h2>Gewohnheiten</h2><p class="sub">Jede Gewohnheit hängt an einer Routine, die du schon hast. Auf dem Hof wird daraus ein Beet, das mit der Gewohnheitsstärke wächst. Erinnerungen bringt im Prototyp Wilma zur Ankerzeit.</p>`;
+      if (U.editHabit === null) {
+        if (c.ok) h += `<h3>Neue Gewohnheit</h3><div class="ideas">${IDEAS.map((x, i) => `<button type="button" class="chip idea" data-act="idea" data-i="${i}">${esc(x.title)}</button>`).join('')}</div>${habitForm('new', null)}`;
+        else h += `<div class="say">${portrait()}<div><div class="who">Wilma</div><p>Drei Beete sind für den Anfang genug. Ab ${fmt(c.unlockOn, { weekday: 'long', day: 'numeric', month: 'long' })} kannst du weitere pflanzen. Bis dahin: Lass die ersten richtig Wurzeln schlagen.</p></div></div>`;
+      }
+      h += act.length ? `<h3>Aktiv · ${act.length}</h3><div class="list">${act.map(habitCard).join('')}</div>` : '';
+      if (paused.length) h += `<h3>Pausiert · ${paused.length}</h3><p class="hint">Pausierte Gewohnheiten zählen nicht als verpasst und behalten ihre Stärke.</p><div class="list">${paused.map(habitCard).join('')}</div>`;
+      $('#p-habits').innerHTML = h;
+      if (U.editHabit) { const f = $('[data-form="edit"]'); if (f) f.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }
+    },
+    journal() {
+      const t = today(), cur = L.journalOn(S, t);
+      let h = `<h2>Logbuch</h2><p class="sub">Ein Eintrag pro Tag schließt den Tag ab. Es gibt nur ein paar XP dafür, das Schreiben selbst ist der Gewinn. Wähl das Wetter deines Tages, Hof und Musik passen sich an.</p>`;
+      if (cur && !U.editingJournal) h += `<div class="closed">${img('gem', 2, '')} Tag abgeschlossen. Auf deinem Hof bricht der Abend an.</div><div class="entry"><header>${img(cur.weather, 3, '')} Heute · ${WNAME[cur.weather]}</header><p>${esc(cur.text)}</p><div><button class="btn alt" type="button" data-act="editj">Bearbeiten</button></div></div>`;
+      else {
+        const pr = PROMPTS[(new Date().getDate() + U.promptShift) % PROMPTS.length], w = U.selWeather || weather();
+        h += `<div style="display:grid;gap:12px"><div class="weather" role="group" aria-label="Wie war dein Tag?">${L.WEATHER.map(id => `<button type="button" class="wbtn" data-act="weather" data-w="${id}" aria-pressed="${w === id}">${img(id, 4, '')}${WNAME[id]}</button>`).join('')}</div>
+          <div class="prompt">Frage des Tages: ${pr} <button class="iconbtn" type="button" data-act="prompt">Andere Frage</button></div>
+          <textarea class="in" id="jText" placeholder="Schreib ein paar Zeilen über deinen Tag …" aria-label="Logbuch-Eintrag">${cur ? esc(cur.text) : esc(U.draft)}</textarea>
+          <div class="row-btns"><button class="btn" type="button" data-act="savej">${cur ? 'Speichern' : 'Tag abschließen · +' + L.C.JOURNAL_XP + ' XP'}</button>${cur ? '<button class="btn ghost" type="button" data-act="editj-cancel">Abbrechen</button>' : ''}</div></div>`;
+      }
+      const wk = L.weekStart(t), inWeek = k => L.weekStart(k) === wk, ents = S.journal.filter(j => inWeek(j.date));
+      let doneW = 0, tinyW = 0; S.habits.forEach(x => { for (const k in x.logs) if (inWeek(k)) { if (x.logs[k] === 'done') doneW++; else if (x.logs[k] === 'tiny') tinyW++; } });
+      const wc = {}; ents.forEach(j => wc[j.weather] = (wc[j.weather] || 0) + 1); const topW = Object.entries(wc).sort((a, b) => b[1] - a[1])[0];
+      const bestH = S.habits.map(x => [x, Object.keys(x.logs).filter(k => inWeek(k) && (x.logs[k] === 'done' || x.logs[k] === 'tiny')).length]).sort((a, b) => b[1] - a[1])[0];
+      h += `<div class="week-review"><b>Wochenrückblick</b><span>${ents.length} ${ents.length === 1 ? 'Eintrag' : 'Einträge'} · ${doneW + tinyW} erledigte Termine${tinyW ? `, davon ${tinyW} als Mini-Version` : ''}</span>${topW ? `<span>Häufigstes Wetter: ${WNAME[topW[0]]}</span>` : ''}${bestH && bestH[1] ? `<span>Am häufigsten: ${esc(bestH[0].title)} (${bestH[1]}×)</span>` : ''}</div>`;
+      const past = S.journal.filter(j => j.date !== t).sort((a, b) => b.date.localeCompare(a.date));
+      if (past.length) h += '<h3>Tagebuch im Farmhaus</h3><div class="list">' + past.map(j => `<div class="entry"><header>${img(j.weather, 3, '')} ${fmt(j.date, { weekday: 'long', day: 'numeric', month: 'long' })}</header><p>${esc(j.text)}</p></div>`).join('') + '</div>';
+      $('#p-journal').innerHTML = h;
+    },
+    progress() {
+      const t = today(), ym = t.slice(0, 7), mName = new Date().toLocaleDateString('de-DE', { month: 'long' });
+      let done = 0, tiny = 0, grown = 0; S.habits.forEach(x => { const d = D.H[x.id]; done += d.month; tiny += d.monthTiny; if (d.stage > d.stageMonthStart) grown++; });
+      const grads = S.habits.filter(x => D.H[x.id].graduated), jm = S.journal.filter(j => j.date.startsWith(ym)).length;
+      let h = `<h2>Fortschritt</h2><p class="sub">Du vergleichst dich hier nur mit dir selbst. Gezählt wird, was du wirklich getan hast.</p>
+        <h3>Erntekalender</h3>${calendarHTML()}
+        <h3>Monatsrückblick ${mName}</h3><div class="tiles"><div class="tile"><strong>${done}</strong><span>erledigte Termine</span></div><div class="tile"><strong>${tiny}</strong><span>davon Mini-Versionen</span></div><div class="tile"><strong>${grown}</strong><span>Pflanzen gewachsen</span></div><div class="tile"><strong>${grads.length}</strong><span>gemeistert</span></div><div class="tile"><strong>${jm}</strong><span>Logbuch-Einträge</span></div></div>
+        <h3>Verlauf der Fähigkeiten · letzte 30 Tage</h3><div class="list">`;
+      const keys = [...Array(30)].map((_, i) => L.addDays(t, i - 29));
+      S.skills.forEach(s => { const st = styleOf(s), b = D.byDay[s.id]; let acc = 0; const vals = keys.map(k => acc += b[k] || 0), max = Math.max(1, acc);
+        const line = vals.map((v, i) => (i / 29 * 200).toFixed(1) + ',' + (36 - v / max * 32).toFixed(1)).join(' ');
+        h += `<div class="spark">${img(s.icon, 3, '')}<svg viewBox="0 0 200 40" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)}: ${acc} XP in 30 Tagen"><line x1="0" y1="38" x2="200" y2="38" stroke="#3a5450" stroke-width="1" vector-effect="non-scaling-stroke"/><polygon points="0,38 ${line} 200,38" fill="${st.c}" opacity=".18"/><polyline points="${line}" fill="none" stroke="${st.c}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="r">${esc(s.name)}<br>+${acc} XP</div></div>`; });
+      h += `</div><h3>Ruhmeshalle</h3>` + (grads.length ? `<div class="hall">${grads.map(g => `<div>${img('gem', 3, '')}<span>${esc(g.title)} · gemeistert am ${fmt(D.H[g.id].gradDate, { day: 'numeric', month: 'long' })}</span></div>`).join('')}</div>` : '<div class="empty">Noch keine gemeisterte Gewohnheit. Hält eine Gewohnheit 30 Tage ohne Erinnerung, landet sie hier.</div>');
+      h += `<h3>Deine Daten</h3><div class="data">${S.demo ? '<p class="hint">Im Demo-Hof sind Sicherung und Löschen ausgeschaltet.</p>' : `
+        <p class="hint">Alles bleibt auf diesem Gerät. Eine Sicherung ist eine Textdatei mit allen Daten, mit der du deinen Hof später wiederherstellen kannst.</p>
+        <div class="row-btns"><button class="btn alt" type="button" data-act="export">${U.showExport ? 'Sicherung ausblenden' : 'Sicherung erstellen'}</button><button class="btn alt" type="button" data-act="import-open">Sicherung importieren</button><button class="btn ghost" type="button" data-act="wipe">${U.wipeArmed ? 'Wirklich alles löschen? Nochmal tippen' : 'Alles löschen'}</button></div>
+        ${U.showExport ? `<textarea class="in" id="exportTxt" readonly aria-label="Sicherung">${esc(JSON.stringify(S))}</textarea><div class="row-btns"><button class="btn sm" type="button" data-act="copy">In die Zwischenablage kopieren</button></div>` : ''}
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+        <details><summary class="hint" style="cursor:pointer">Oder Sicherungstext einfügen</summary><div style="display:grid;gap:8px;margin-top:8px"><textarea class="in" id="importTxt" aria-label="Sicherungstext"></textarea><div><button class="btn sm" type="button" data-act="import-paste">Prüfen</button></div></div></details>
+        <div class="err" id="importErr" hidden></div>
+        ${U.importPending ? `<div class="banner info"><span class="sp">Die Sicherung enthält ${U.importPending.habits.length} Gewohnheiten, ${U.importPending.todos.length} To-dos und ${U.importPending.journal.length} Logbuch-Einträge. Sie ersetzt die Daten auf diesem Gerät.</span><button class="btn sm" type="button" data-act="import-apply">Wiederherstellen</button><button class="btn ghost" type="button" data-act="import-cancel">Abbrechen</button></div>` : ''}
+        ${isIOS() && !standalone() ? '<p class="hint">Tipp: In Safari über „Teilen“ → „Zum Home-Bildschirm“ wird der Hof zur App, die offline läuft.</p>' : ''}`}</div>`;
+      $('#p-progress').innerHTML = h;
+      const sc = $('#p-progress .cal-scroll'); if (sc) sc.scrollLeft = (U.calYear || t.slice(0, 4)) === t.slice(0, 4) ? sc.scrollWidth : 0;
+    },
+    chest() {
+      const cap = L.slotsFor(D.char.l), used = S.chest.placed.filter(p => !L.ITEMS[p.itemId].animal).length, sleep = L.farmSleeps(hour());
+      let h = `<h2>Truhe</h2><p class="sub">Bei jeder Erledigung kann etwas für deinen Hof auftauchen, und jede neue Wachstumsstufe bringt eine Ernte. Funde lassen sich weder kaufen noch erzwingen.</p>`;
+      if (sleep) h += `<div class="sleep">Die Farm schläft. Ab 6 Uhr kannst du wieder dekorieren. Abhaken geht natürlich jederzeit.</div>`;
+      h += `<h3>Funde · ${used} von ${cap} Plätzen belegt</h3>`;
+      const inv = Object.entries(S.chest.items).filter(([, n]) => n > 0);
+      h += inv.length ? `<div class="inv">${inv.map(([k, n]) => { const it = L.ITEMS[k], full = !it.animal && used >= cap; return `<div class="item${it.rare ? ' r' : ''}"><div class="pv">${img(k, 4, '')}</div><h4>${it.name}<span class="badge ${it.rare ? 'rare' : 'com'}">${it.rare ? 'selten' : 'häufig'}</span></h4><div class="cnt">${n}× in der Truhe</div><button class="btn sm" type="button" data-act="place" data-type="${k}" ${sleep || full ? 'disabled' : ''}>${full ? 'Kein Platz frei' : 'Aufstellen'}</button></div>`; }).join('')}</div>`
+        : '<div class="empty">Die Truhe ist leer. Erledige Gewohnheiten und To-dos, manchmal taucht dabei etwas auf.</div>';
+      h += '<h3>Auf dem Hof</h3>' + (S.chest.placed.length ? `<div class="inv">${S.chest.placed.map((p, i) => `<div class="item${L.ITEMS[p.itemId].rare ? ' r' : ''}"><div class="pv">${img(p.itemId, 4, '')}</div><h4>${L.ITEMS[p.itemId].name}</h4><div class="cnt">${L.ITEMS[p.itemId].animal ? 'Läuft frei herum' : 'Platz ' + (p.slot + 1)}</div><button class="btn sm alt" type="button" data-act="stash" data-i="${i}" ${sleep ? 'disabled' : ''}>Einlagern</button></div>`).join('')}</div>` : '<div class="empty">Noch nichts aufgestellt.</div>');
+      h += `<p class="hint">Mit jedem Level wird ein weiterer Deko-Platz frei (Level ${D.char.l}: ${cap} Plätze).</p>`;
+      $('#p-chest').innerHTML = h;
+    },
+    npc() { $('#npcFace').innerHTML = portrait(); const l = nudges(); $('#npcText').textContent = l[U.npcIdx % l.length]; }
+  };
+  function habitRow(h) {
+    const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), done = d.doneToday === 'done', tiny = d.doneToday === 'tiny';
+    return `<div class="row${done || tiny ? ' done' : ''}" data-hid="${h.id}">
+      <button class="chk${tiny ? ' tiny' : ''}" type="button" data-act="hdone" data-id="${h.id}" aria-pressed="${done || tiny}" aria-label="${done || tiny ? 'Rückgängig' : 'Erledigt'}: ${esc(h.title)}"></button>
+      <div><div class="plan">Nach ${esc(h.anchor)}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) : ''}</div><div class="row-title">${esc(h.title)}</div>
+      <div class="meta"><span>${img('p' + d.stage, 2, '', { F: st.c, f: st.dk })}${L.STAGES[d.stage][1]} · ${Math.round(d.s * 100)} %</span><span>${img(sk.icon, 2, '')}${esc(sk.name)} +${10 * h.effort}</span>
+      <span>${d.weekly ? `${d.weekCnt} von ${d.N} diese Woche` : `${d.month}× diesen Monat`}</span>
+      ${h.streakEnabled && d.streak ? `<span>${img('flame', 2, '')}${d.streak}${d.weekly ? ' Wo.' : ''}</span>` : ''}${h.streakEnabled && !d.weekly ? `<span class="tok" title="Regentage retten automatisch einen verpassten Tag" aria-label="Regentage: ${d.tokens} von 2">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</span>` : ''}</div>
+      ${d.canRepair ? `<div class="repair">Gestern ist ausgefallen. Mach heute eine Runde extra, dann bleibt deine Serie bestehen. <button class="btn sm" type="button" data-act="repair" data-id="${h.id}">Extra-Runde erledigt</button></div>` : ''}</div>
+      <div class="side"><button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" title="${esc(h.tinyVersion)}">Mini: ${esc(h.tinyVersion)}</button></div></div>`;
+  }
+  function habitCard(h) {
+    if (U.editHabit === h.id) return `<div class="hcard"><div class="hd"><div class="row-title">„${esc(h.title)}“ bearbeiten</div></div>${habitForm('edit', h)}</div>`;
+    const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), stageName = L.STAGES[d.stage][1], pct = Math.round(d.s * 100);
+    return `<div class="hcard${d.graduated ? ' grad' : ''}${h.archivedAt ? ' paused' : ''}">
+      <div class="hd">${img('p' + d.stage, 5, stageName, { F: st.c, f: st.dk })}<div class="row-title">${esc(h.title)}</div>${d.graduated ? '<span class="badge gold">Gemeistert</span>' : ''}${h.archivedAt ? '<span class="badge com">Pausiert</span>' : ''}</div>
+      <div class="plan">${esc(planText(h))}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) + ' Uhr' : ''}</div>
+      <dl class="kv"><dt>Rhythmus</dt><dd>${freqText(h.frequency)} · Aufwand ${h.effort} (${10 * h.effort} XP)</dd><dt>Mini-Version</dt><dd>${esc(h.tinyVersion)}</dd><dt>Fähigkeit</dt><dd>${esc(sk.name)}</dd>
+      <dt>Stärke</dt><dd>${pct} % · ${stageName} · Tag ${d.age} von etwa 66</dd>${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : (d.streak === 1 ? 'Termin' : 'Termine')}${d.weekly ? '' : ` · Regentage <span class="tok" aria-label="${d.tokens} von 2">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</span>`}</dd>` : ''}<dt>Gesamt</dt><dd>${d.year}× dieses Jahr</dd>
+      <dt>Erinnerung</dt><dd>${h.remindersEnabled ? 'an' : h.remOffAt ? `aus seit ${L.daysBetween(h.remOffAt, today())} Tagen${!d.graduated ? ' (30 für „Gemeistert“)' : ''}` : 'aus'}</dd></dl>
+      <div class="bar sm sk" style="--c:${st.c};--hi:${st.hi};--dk:${st.dk}" role="progressbar" aria-label="Gewohnheitsstärke" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+      ${d.suggestOff ? `<div class="suggest">Läuft fast von allein: ${d.run}× in Folge. Erinnerung abschalten? Hältst du die Gewohnheit danach 30 Tage, gilt sie als gemeistert. <button class="btn sm" type="button" data-act="remoff" data-id="${h.id}">Abschalten</button></div>` : ''}
+      <div class="row-btns">${h.archivedAt ? `<button class="btn sm" type="button" data-act="resume" data-id="${h.id}">Fortsetzen</button>` : `<button class="btn sm alt" type="button" data-act="edit" data-id="${h.id}">Bearbeiten</button><button class="btn sm alt" type="button" data-act="pause" data-id="${h.id}">Pausieren</button>`}<button class="btn ghost" type="button" data-act="delhabit" data-id="${h.id}">Löschen</button></div></div>`;
+  }
+  function refresh(...parts) { if (!S) return; if (!parts.length) parts = ['cal', 'hud', 'legend', 'skills', 'today', 'habits', 'journal', 'progress', 'chest', 'npc']; parts.forEach(p => R[p]()); }
+
+  function nudges() {
+    const t = today(), now = new Date(), hr = now.getHours(), mins = hr * 60 + now.getMinutes(), list = [], w = weather();
+    if (L.farmSleeps(hr)) return ['Die Farm schläft. Gute Nacht, morgen geht es weiter.'];
+    if (!active().length) return ['Noch ist es ruhig hier. Unter „Gewohnheiten“ kannst du dein erstes Beet pflanzen.'];
+    const open = active().filter(h => D.H[h.id].due && !D.H[h.id].doneToday);
+    open.forEach(h => { if (h.anchorTime && h.remindersEnabled) { const [a, b] = h.anchorTime.split(':').map(Number); if (Math.abs(a * 60 + b - mins) <= 75) list.push(planText(h) + '.'); } });
+    S.habits.forEach(h => { const d = D.H[h.id]; if (d.graduated && L.daysBetween(d.gradDate, t) < 7) list.push(`Glückwunsch! „${h.title}“ ist gemeistert. Das klappt jetzt ganz ohne Erinnerung.`); });
+    const wk = L.weekStart(t);
+    active().forEach(h => { const d = D.H[h.id]; if (d.weekly) { if (d.weekCnt >= d.N) list.push(`Wochenziel geschafft: ${h.title}, ${d.weekCnt} von ${d.N}.`); } else { const c = Object.keys(h.logs).filter(k => L.weekStart(k) === wk && (h.logs[k] === 'done' || h.logs[k] === 'tiny')).length; if (c >= 4) list.push(`Du hast diese Woche schon ${c}× „${h.title}“ geschafft!`); } });
+    if (hr >= 18 && open.length) list.push(`Langer Tag? Die Mini-Version zählt auch: ${open[0].tinyVersion}.`);
+    active().forEach(h => { if (D.H[h.id].suggestOff) list.push(`„${h.title}“ läuft fast von allein. Magst du die Erinnerung abschalten?`); });
+    const sk = S.skills.map(s => [s, L.unitsToNext(D.levels[s.id], 2)]).sort((a, b) => a[1] - b[1])[0]; if (sk && sk[1] <= 2) list.push(`Noch ${sk[1]} ${sk[1] === 1 ? 'Einheit' : 'Einheiten'}, dann wächst dein ${sk[0].name}-Gebäude.`);
+    if (w === 'regen' || w === 'gewitter') list.push('Bei dem Wetter bleibt man gern drinnen. Eine kleine Aufgabe am Schreibtisch geht immer.');
+    if (w === 'sonnig' && hr < 18) list.push('Was für ein Tag! Der Hof glänzt in der Sonne.');
+    if (!L.journalOn(S, t) && hr >= 19) list.push('Magst du den Tag mit ein paar Zeilen im Logbuch abschließen?');
+    if (!list.length) list.push(open.length ? `Guten ${hr < 11 ? 'Morgen' : 'Tag'}! Was davon passt als Erstes zu deinem Tag?` : 'Alles erledigt für heute. Dein Hof sieht prächtig aus.');
+    return list;
+  }
+
+  /* ---------- Import ---------- */
+  function handleImportText(txt, onboarding) {
+    const err = $('#importErr'); let obj = null; try { obj = JSON.parse(txt); } catch (e) { obj = undefined; }
+    const r = obj === undefined ? { ok: false, error: 'Das ist keine gültige Sicherung (kein lesbarer Text).' } : L.importState(obj, today());
+    if (!r.ok) { if (err) { err.hidden = false; err.textContent = r.error; } au.sfx.err(); return; }
+    if (onboarding) { applyImport(r.state); return; }
+    U.importPending = r.state; R.progress();
+  }
+  function applyImport(state) { state.onboarded = true; S = state; U.importPending = null; derive(); flush(); overlay(''); refresh(); scene.refresh(true); toast('<span><b>Wiederhergestellt.</b> Dein Hof ist wieder da.</span>'); }
+
+  /* ---------- Ereignisse ---------- */
+  const tabs = () => $$('.tab');
+  function selectTab(b, focus) {
+    tabs().forEach(x => { const on = x === b; x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1; }); $$('.panel').forEach(p => p.hidden = p.id !== 'p-' + b.dataset.tab); if (focus) b.focus();
+    if (b.dataset.tab !== 'journal' && preview) { preview = null; scene.refresh(); R.cal(); }
+    if (b.dataset.tab === 'progress') R.progress();
+    au.sfx.page();
+  }
+  function commitRename() { const s = S.skills.find(x => x.id === U.renaming), v = ($('#renameIn') || {}).value; if (s && v && v.trim()) s.name = v.trim().slice(0, 20); U.renaming = null; save(); refresh(); scene.refresh(); au.sfx.tick(); }
+  function deleteHabit(h) {
+    const idx = S.habits.indexOf(h); S.habits.splice(idx, 1); if (U.editHabit === h.id) U.editHabit = null; au.sfx.soft(); derive(); save(); refresh(); scene.refresh();
+    toast(`<span><b>Gelöscht.</b> „${esc(h.title)}“ ist entfernt.</span>`, { label: 'Rückgängig', fn: () => { S.habits.splice(Math.min(idx, S.habits.length), 0, h); derive(); save(); refresh(); scene.refresh(); } }, 6000);
+  }
+
+  function bind() {
+    tabs().forEach((b, i) => { b.addEventListener('click', () => selectTab(b)); b.addEventListener('keydown', e => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); const all = tabs(); selectTab(all[(i + d + all.length) % all.length], true); } }); });
+    $('#npc').addEventListener('click', () => { U.npcIdx++; au.sfx.page(); R.npc(); });
+    $('#soundBtn').addEventListener('click', () => { S.sound = !S.sound; save(); R.hud(); if (S.sound) au.sfx.tick(); });
+    $('#musicBtn').addEventListener('click', () => { S.music = !S.music; save(); R.hud(); if (S.music) au.Music.start(weather()); else au.Music.stop(); });
+    document.addEventListener('pointerdown', function once() { if (S && S.music && !au.Music.playing) au.Music.start(weather()); document.removeEventListener('pointerdown', once); });
+
+    document.addEventListener('input', e => { const el = e.target; if (el.id === 'jText') U.draft = el.value; const f = el.closest && el.closest('[data-form]'); if (f && (el.dataset.f === 'title' || el.dataset.f === 'anchor')) updatePreview(f); });
+    document.addEventListener('keydown', e => { if (e.target.id === 'renameIn') { if (e.key === 'Enter') { e.preventDefault(); commitRename(); } if (e.key === 'Escape') { U.renaming = null; R.skills(); } } });
+    document.addEventListener('change', e => {
+      const el = e.target;
+      if (el.dataset.f === 'skill') { const f = el.closest('[data-form]'), ns = f.querySelector('[data-f=newskill]'); ns.hidden = el.value !== '__new'; if (!ns.hidden) ns.focus(); }
+      if (el.id === 'calHabit') { U.calHabit = el.value; R.progress(); }
+      if (el.id === 'importFile' && el.files[0]) { const r = new FileReader(); r.onload = () => handleImportText(String(r.result), U.obStep === 'welcome' && !S.onboarded); r.readAsText(el.files[0]); el.value = ''; }
+    });
+    document.addEventListener('submit', e => {
+      const f = e.target; e.preventDefault();
+      if (f.dataset.form) { submitForm(f); return; }
+      if (f.id === 'todoForm') {
+        const t = $('#tTitle').value.trim(); if (!t) { au.sfx.err(); $('#tTitle').focus(); return; }
+        U.lastTodoSkill = $('#tSkill').value; const due = $('#tDue').value || undefined;
+        S.todos.unshift({ id: uid(), title: t, effort: +$('#tEff').value, skillId: U.lastTodoSkill, dueDate: due }); au.sfx.tick(); save(); refresh('today', 'hud'); $('#tTitle').focus(); return;
+      }
+      if (f.id === 'ciTodoForm') {
+        const t = $('#ciTodo').value.trim(); if (!t) return; const id = uid(); S.todos.unshift({ id, title: t, effort: 1, skillId: S.skills[0].id });
+        if (U.ci.todos.size < 3) U.ci.todos.add(id); au.sfx.tick(); showCheckin();
+      }
+    });
+    document.addEventListener('click', e => {
+      const chip = e.target.closest('[data-form] [data-freq], [data-form] [data-day], [data-form] [data-eff]');
+      if (chip) {
+        const form = chip.closest('[data-form]');
+        if (chip.dataset.freq) { form.querySelectorAll('[data-freq]').forEach(b => b.setAttribute('aria-pressed', b === chip)); form.querySelector('[data-g=days]').hidden = chip.dataset.freq !== 'weekdays'; form.querySelector('[data-g=times]').hidden = chip.dataset.freq !== 'weekly'; if (form.dataset.form !== 'edit') form.querySelector('[data-f=streak]').checked = chip.dataset.freq !== 'weekly'; }
+        else if (chip.dataset.day) chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') !== 'true');
+        else form.querySelectorAll('[data-eff]').forEach(b => b.setAttribute('aria-pressed', b === chip));
+        au.sfx.tick(); return;
+      }
+      const el = e.target.closest('[data-act]'); if (!el || el.tagName === 'INPUT' || el.disabled) return;
+      const act = el.dataset.act, t = today(), pt = pointOf(e, el), habit = () => S.habits.find(x => x.id === el.dataset.id);
+      switch (act) {
+        case 'hdone': { const h = habit(); logHabit(h, h.logs[t] === 'tiny' ? 'tiny' : 'done', pt); scene.refresh(); break; }
+        case 'htiny': logHabit(habit(), 'tiny', pt); scene.refresh(); break;
+        case 'repair': { const h = habit(), d = D.H[h.id]; if (d.repairKey) { h.logs[d.repairKey] = 'repaired'; au.sfx.tiny(); toast(`${img('flame', 3, '')}<span><b>Serie gerettet.</b> Der verpasste Tag ist nachgeholt.</span>`); derive(); save(); refresh(); } break; }
+        case 'todo': { const row = el.closest('[data-tid]'), x = S.todos.find(y => y.id === row.dataset.tid), before = snapshot();
+          if (x.doneAt) { delete x.doneAt; au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); break; }
+          x.doneAt = t; au.sfx.check(); if (!x.rolled) { x.rolled = true; rollDrop(pt); } derive(); const sk = skillById(x.skillId);
+          afterAction(before, x.skillId, pt, 10 * x.effort, `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${10 * x.effort} XP</b> · ${esc(x.title)} erledigt</span>`); refresh(); scene.refresh(); break; }
+        case 'deltodo': { const row = el.closest('[data-tid]'), i = S.todos.findIndex(y => y.id === row.dataset.tid), x = S.todos.splice(i, 1)[0]; au.sfx.soft(); derive(); save(); refresh();
+          toast(`<span><b>Gelöscht.</b> „${esc(x.title)}“</span>`, { label: 'Rückgängig', fn: () => { S.todos.splice(i, 0, x); derive(); save(); refresh(); } }); break; }
+        case 'idea': { const f = el.closest('.frame, .panel').querySelector('[data-form="ob"], [data-form="new"]'); if (f) { fillIdea(f, IDEAS[+el.dataset.i]); au.sfx.tick(); } break; }
+        case 'edit': U.editHabit = el.dataset.id; R.habits(); break;
+        case 'edit-cancel': U.editHabit = null; R.habits(); break;
+        case 'pause': { const h = habit(); L.pause(h, t); au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); toast(`<span><b>Pausiert.</b> „${esc(h.title)}“ ruht, bis du sie fortsetzt.</span>`); break; }
+        case 'resume': { const h = habit(); L.resume(h, t); au.sfx.place(); derive(); save(); refresh(); scene.refresh(); toast(`<span><b>Weiter geht's.</b> „${esc(h.title)}“ ist wieder aktiv.</span>`); break; }
+        case 'delhabit': deleteHabit(habit()); break;
+        case 'remoff': { const h = habit(); h.remindersEnabled = false; h.remOffAt = t; au.sfx.place(); toast(`${img('gem', 3, '')}<span><b>Erinnerung aus.</b> Hältst du „${esc(h.title)}“ jetzt 30 Tage, ist sie gemeistert.</span>`); derive(); save(); refresh(); break; }
+        case 'ren': U.renaming = el.dataset.sid; R.skills(); break;
+        case 'renok': commitRename(); break;
+        case 'icon': { const s = S.skills.find(x => x.id === el.dataset.sid), v = ($('#renameIn') || {}).value; s.icon = SP.ICONS[(SP.ICONS.indexOf(s.icon) + 1) % SP.ICONS.length]; R.skills(); if (v != null) $('#renameIn').value = v; au.sfx.tick(); save(); R.legend(); scene.refresh(); break; }
+        case 'addskill': { if (S.skills.length >= L.C.MAX_SKILLS) break; const id = 's' + uid(); S.skills.push({ id, name: 'Neue Fähigkeit', icon: SP.ICONS[S.skills.length % SP.ICONS.length], st: S.skills.length }); U.renaming = id; derive(); save(); refresh(); scene.refresh(); break; }
+        case 'weather': U.selWeather = el.dataset.w; preview = U.selWeather; au.sfx.tick(); $$('.wbtn[data-act=weather]').forEach(b => b.setAttribute('aria-pressed', b.dataset.w === U.selWeather)); scene.refresh(); R.cal(); R.npc(); break;
+        case 'prompt': U.promptShift++; au.sfx.page(); R.journal(); break;
+        case 'editj': U.editingJournal = true; U.selWeather = L.journalOn(S, t).weather; au.sfx.page(); R.journal(); break;
+        case 'editj-cancel': U.editingJournal = false; preview = null; R.journal(); scene.refresh(); break;
+        case 'savej': { const txt = ($('#jText').value || '').trim(); if (!txt) { au.sfx.err(); $('#jText').focus(); break; }
+          const cur = L.journalOn(S, t), w = U.selWeather || weather(); preview = null;
+          if (cur) { cur.text = txt; cur.weather = w; U.editingJournal = false; au.sfx.tick(); derive(); save(); }
+          else { const before = snapshot(); S.journal.push({ date: t, weather: w, text: txt, promptId: String((new Date().getDate() + U.promptShift) % PROMPTS.length) }); U.draft = ''; au.sfx.check(); afterAction(before, null, pt, L.C.JOURNAL_XP, `${img('gem', 3, '')}<span><b>Tag abgeschlossen.</b> Dein Eintrag liegt jetzt im Tagebuch im Farmhaus.</span>`); }
+          refresh(); scene.refresh(); break; }
+        case 'cal-prev': U.calYear = String(+(U.calYear || t.slice(0, 4)) - 1); R.progress(); break;
+        case 'cal-next': U.calYear = String(+(U.calYear || t.slice(0, 4)) + 1); R.progress(); break;
+        case 'export': U.showExport = !U.showExport; R.progress(); break;
+        case 'copy': { const ta = $('#exportTxt'); try { navigator.clipboard.writeText(ta.value).then(() => toast('<span><b>Kopiert.</b> Speichere den Text zum Beispiel in einer Notiz oder Datei.</span>'), () => { ta.select(); toast('<span>Der Text ist markiert. Kopiere ihn mit Cmd+C.</span>'); }); } catch (err) { ta.select(); } break; }
+        case 'import-open': { const f = $('#importFile'); if (f) f.click(); break; }
+        case 'import-paste': handleImportText(($('#importTxt') || {}).value || '', false); break;
+        case 'import-apply': applyImport(U.importPending); break;
+        case 'import-cancel': U.importPending = null; R.progress(); break;
+        case 'wipe': if (U.wipeArmed) { U.wipeArmed = false; U.showExport = false; Store.clear(); S = L.emptyState(t); derive(); refresh(); scene.refresh(true); showOnboarding('welcome'); }
+          else { U.wipeArmed = true; R.progress(); setTimeout(() => { if (U.wipeArmed) { U.wipeArmed = false; R.progress(); } }, 4000); } break;
+        case 'place': { if (L.farmSleeps(hour()) || !S.chest.items[el.dataset.type]) break; const type = el.dataset.type;
+          if (L.ITEMS[type].animal) S.chest.placed.push({ itemId: type }); else { const used = new Set(S.chest.placed.map(p => p.slot)), cap = L.slotsFor(D.char.l); let slot = -1; for (let i = 0; i < cap; i++) if (!used.has(i)) { slot = i; break; } if (slot < 0) { au.sfx.err(); break; } S.chest.placed.push({ itemId: type, slot }); }
+          if (!--S.chest.items[type]) delete S.chest.items[type]; au.sfx.place(); save(); refresh('chest', 'hud'); scene.refresh(); break; }
+        case 'stash': { if (L.farmSleeps(hour())) break; const p = S.chest.placed.splice(+el.dataset.i, 1)[0]; S.chest.items[p.itemId] = (S.chest.items[p.itemId] || 0) + 1; au.sfx.tick(); save(); refresh('chest', 'hud'); scene.refresh(); break; }
+        case 'fresh-go': S.freshSeen = t.slice(0, 7); save(); selectTab($('#t-habits')); R.today(); break;
+        case 'fresh-no': S.freshSeen = t.slice(0, 7); save(); R.today(); break;
+        case 'unlock-go': S.unlockSeen = true; save(); selectTab($('#t-habits')); R.today(); break;
+        case 'unlock-no': S.unlockSeen = true; save(); R.today(); break;
+        case 'install-ok': S.installHintSeen = true; save(); R.today(); break;
+        // Onboarding
+        case 'ob-start': showOnboarding('habits'); break;
+        case 'ob-back': showOnboarding('welcome'); break;
+        case 'ob-next': showOnboarding('done'); break;
+        case 'ob-finish': finishOnboarding(); break;
+        case 'ob-remove': S.habits = S.habits.filter(x => x.id !== el.dataset.id); derive(); showOnboarding('habits'); scene.refresh(); break;
+        case 'ob-v3': { const v3 = Store.legacyV3(); if (v3) applyImport(L.migrateV3(v3, t)); break; }
+        case 'demo-start': startDemo(); break;
+        case 'demo-end': endDemo(); break;
+        // Check-in
+        case 'ci-open': showCheckin(); break;
+        case 'ci-todo': { const id = el.dataset.id; if (U.ci.todos.has(id)) U.ci.todos.delete(id); else if (U.ci.todos.size < 3) U.ci.todos.add(id); else { au.sfx.err(); break; } el.setAttribute('aria-pressed', U.ci.todos.has(id)); au.sfx.tick(); break; }
+        case 'ci-weather': U.ci.weather = U.ci.weather === el.dataset.w ? null : el.dataset.w; $$('[data-act=ci-weather]').forEach(b => b.setAttribute('aria-pressed', b.dataset.w === U.ci.weather)); au.sfx.tick(); break;
+        case 'ci-done': closeCheckin(true); break;
+        case 'ci-skip': closeCheckin(false); break;
+      }
+    });
+  }
+
+  /* ---------- Start ---------- */
+  function boot(state) {
+    S = state || L.emptyState(today());
+    au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
+    derive();
+    scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
+    bind(); refresh(); scene.start();
+    if (!S.onboarded) showOnboarding('welcome');
+    else { checkRewards(null); if (L.needsCheckin(S, today(), hour())) showCheckin(); }
+    let lastDay = today();
+    setInterval(() => { if (today() !== lastDay) { lastDay = today(); U.editingJournal = false; U.selWeather = null; preview = null; derive(); refresh(); if (S.onboarded && !$('#overlay').innerHTML && L.needsCheckin(S, today(), hour())) showCheckin(); } R.cal(); R.npc(); scene.refresh(); }, 30000);
+  }
+  root.LAGUI = { boot };
+})(typeof self !== 'undefined' ? self : this);

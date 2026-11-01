@@ -1,0 +1,1661 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Life's a Game</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=VT323&display=swap">
+<style>
+/* Life's a Game · Oberfläche
+   Layout: Hof in Draufsicht links mit Charakter und Fähigkeiten, holzgerahmte Schiefer-Panels rechts.
+   Bewusst nur ein Farbschema (eine dunkle Spielwelt). */
+:root{
+  --bg-a:#0d1719; --bg-b:#14231f; --bg-check:#16262a; --edge:#0a1013;
+  --panel-dk:#141f24; --panel:#1b2a2f; --panel-2:#24373a; --panel-3:#3a5450; --panel-in:#121d21;
+  --wood:#d4a25a; --wood-lt:#f4d58e; --wood-dk:#76502a;
+  --text:#f1e9d6; --text-soft:#9fb4ad; --ink-dk:#2a1708;
+  --leaf:#7fcf8a; --leaf-dk:#367a4c; --leaf-hi:#c8f2cc;
+  --water:#6fa8d0; --water-dk:#2f4f6e; --red:#e8604f; --rare:#c99cf2; --repair:#e0a85a; --rain:#5a7ea8;
+  --c0:#1c2a2e; --c1:#2f5a3e; --c2:#3f7f50; --c3:#5aa866; --c4:#8fd88f;
+  --dim:rgba(6,10,12,.78);
+  --f-display:"Pixelify Sans","Courier New",monospace; --f-body:"VT323","Courier New",monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{margin:0;color:var(--text);font-family:var(--f-body);font-size:21px;line-height:1.15;background-color:var(--bg-a);
+  background-image:linear-gradient(45deg,var(--bg-check) 25%,transparent 25%,transparent 75%,var(--bg-check) 75%),linear-gradient(45deg,var(--bg-check) 25%,transparent 25%,transparent 75%,var(--bg-check) 75%),linear-gradient(180deg,var(--bg-a),var(--bg-b));
+  background-size:32px 32px,32px 32px,100% 100%;background-position:0 0,16px 16px,0 0;background-attachment:fixed;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(18px + env(safe-area-inset-top,0px)) calc(64px + env(safe-area-inset-bottom,0px))}
+canvas,img.pi{image-rendering:pixelated;image-rendering:crisp-edges}
+img.pi{display:inline-block;vertical-align:middle;flex:none}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px dashed var(--wood-lt);outline-offset:2px}
+::placeholder{color:var(--text-soft);opacity:.75}
+
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:18px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+.logo{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(30px,6vw,46px);line-height:1;color:var(--wood-lt);text-shadow:0 3px 0 var(--wood-dk),3px 0 0 var(--edge),-3px 0 0 var(--edge),0 -3px 0 var(--edge),0 6px 0 var(--edge)}
+.top-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cal{display:flex;align-items:center;gap:8px;font-size:22px}
+.cal b{font-family:var(--f-display);font-weight:600;color:var(--wood-lt);font-size:16px;letter-spacing:.06em;text-transform:uppercase}
+.demo-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 12px;border:2px dashed var(--rare);color:#e6d6fa;font-size:20px}
+.demo-bar span{flex:1 1 240px}
+
+.main{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:960px){.main{grid-template-columns:minmax(0,480px) minmax(0,1fr);align-items:start}}
+.col{display:grid;gap:18px;min-width:0}
+.frame{position:relative;padding:18px;border:3px solid var(--edge);color:var(--text);
+  background:linear-gradient(var(--wood-lt),var(--wood-lt)) left 6px top 6px/3px 3px no-repeat,linear-gradient(var(--wood-lt),var(--wood-lt)) right 6px top 6px/3px 3px no-repeat,linear-gradient(var(--wood-lt),var(--wood-lt)) left 6px bottom 6px/3px 3px no-repeat,linear-gradient(var(--wood-lt),var(--wood-lt)) right 6px bottom 6px/3px 3px no-repeat,linear-gradient(180deg,var(--panel-2),var(--panel) 55%,var(--panel-dk));
+  box-shadow:inset 0 0 0 2px var(--wood),inset 0 0 0 3px var(--wood-dk);
+  clip-path:polygon(4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px),0 4px,4px 4px)}
+.plank{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--wood-lt)}
+.plank::before{content:"";width:6px;height:6px;background:var(--wood);transform:rotate(45deg);flex:none}
+.plank::after{content:"";flex:1;height:2px;background:linear-gradient(90deg,var(--wood-dk),transparent)}
+
+.scene{padding:6px}
+.scene canvas{display:block;width:100%;aspect-ratio:16/10;max-width:100%;background:#4a845c}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 6px 2px;font-size:17px;color:var(--text-soft)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+
+.stat-row{display:flex;align-items:center;gap:14px}
+.lvl-badge{flex:none;width:72px;height:72px;display:grid;place-items:center;align-content:center;background:radial-gradient(circle at 40% 35%,var(--panel-3),var(--panel-dk) 70%);border:3px solid var(--edge);box-shadow:inset 0 0 0 3px var(--wood),inset 0 0 0 5px var(--wood-dk);clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%)}
+.lvl-badge small{font-family:var(--f-display);font-size:11px;letter-spacing:.12em;text-transform:uppercase;line-height:1;color:var(--text-soft)}
+.lvl-badge strong{font-family:var(--f-display);font-size:30px;line-height:1;color:var(--wood-lt);text-shadow:0 2px 0 var(--wood-dk)}
+.stat-main{flex:1;min-width:0;display:grid;gap:7px}
+.stat-line{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums}
+.stat-line .t{font-family:var(--f-display);font-weight:600;font-size:16px;color:var(--wood-lt)}
+.near{font-size:19px;color:var(--leaf)}
+.bar{position:relative;height:18px;background:var(--edge);border:2px solid var(--edge);box-shadow:0 0 0 2px var(--wood-dk);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(to bottom,var(--leaf-hi) 0 25%,var(--leaf) 25% 70%,var(--leaf-dk) 70%);transition:width .5s steps(12)}
+.bar.sm{height:12px;box-shadow:0 0 0 1px var(--panel-3)}
+.bar.sk>i{background:linear-gradient(to bottom,var(--hi) 0 25%,var(--c) 25% 70%,var(--dk) 70%)}
+
+.skills{display:grid;gap:11px;margin-top:12px}
+.skill{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+.skill>img,.skill>.iconbtn{grid-row:span 2}
+.skill .stat-line{font-size:20px}
+.skill .lv{font-family:var(--f-display);font-size:13px;color:var(--text-soft)}
+.skill .bar{grid-column:2}
+.skill .ren{grid-row:span 2;grid-column:3}
+.iconbtn{background:none;border:2px solid transparent;padding:2px 6px;color:var(--text-soft);cursor:pointer;font-family:var(--f-display);font-size:14px}
+.iconbtn:hover{color:var(--wood-lt);border-color:var(--panel-3)}
+
+.npc{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;width:100%;text-align:left;cursor:pointer;background:var(--panel-in);border:2px solid var(--panel-3);padding:10px;color:var(--text)}
+.npc:hover{border-color:var(--wood-dk)}
+.portrait{width:56px;height:56px;border:2px solid var(--edge);box-shadow:0 0 0 2px var(--wood);image-rendering:pixelated}
+.npc-name{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--wood-lt)}
+.npc-text{font-size:21px;margin-top:2px;min-height:2.3em}
+.npc-more{font-size:17px;color:var(--text-soft);margin-top:4px}
+
+.panel-wrap{min-width:0}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;position:relative;z-index:2;margin-bottom:-3px;padding-left:10px}
+.tab{font-family:var(--f-display);font-weight:600;font-size:15px;background:var(--panel-dk);color:var(--text-soft);border:3px solid var(--edge);border-bottom:none;padding:8px 12px;cursor:pointer}
+.tab:hover{color:var(--text)}
+.tab[aria-selected="true"]{background:var(--panel-2);color:var(--wood-lt);box-shadow:inset 0 2px 0 var(--wood);padding-bottom:11px}
+.tab .n{display:inline-block;min-width:1.4em;margin-left:5px;padding:0 4px;background:var(--leaf-dk);color:var(--leaf-hi);font-size:12px;line-height:1.5;text-align:center}
+.panel{min-height:460px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-content:start}
+.panel h2,.overlay h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:27px;color:var(--wood-lt);text-shadow:0 2px 0 var(--edge);text-wrap:balance}
+.panel h3,.overlay h3{margin:4px 0 0;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-soft)}
+.sub{margin:-8px 0 0;color:var(--text-soft);font-size:20px;max-width:62ch}
+.hint{margin:0;color:var(--text-soft);font-size:19px;max-width:62ch}
+
+.add{display:flex;flex-wrap:wrap;gap:8px}
+.add .in{flex:1 1 200px}
+.in{background:var(--panel-in);border:2px solid var(--panel-3);box-shadow:inset 2px 2px 0 var(--edge);padding:7px 10px;font-size:21px;min-width:0;color:var(--text)}
+.in:focus{border-color:var(--wood);outline:none}
+select.in,input[type=date].in,input[type=time].in{flex:0 1 auto;cursor:pointer}
+textarea.in{width:100%;min-height:120px;resize:vertical;line-height:1.2}
+
+.btn{font-family:var(--f-display);font-weight:600;font-size:16px;background:var(--wood);color:var(--ink-dk);border:3px solid var(--edge);cursor:pointer;padding:8px 14px;box-shadow:inset -3px -3px 0 var(--wood-dk),inset 3px 3px 0 var(--wood-lt)}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(2px);box-shadow:inset 3px 3px 0 var(--wood-dk)}
+.btn.alt{background:var(--panel-3);color:var(--text);box-shadow:inset -3px -3px 0 var(--panel-dk),inset 3px 3px 0 #5a7a74}
+.btn.sm{font-size:13px;padding:5px 9px;border-width:2px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn.ghost{background:var(--panel-dk);color:var(--text-soft);border:2px solid var(--panel-3);box-shadow:none;font-size:14px;padding:6px 10px}
+.btn.ghost[aria-pressed="true"]{color:var(--wood-lt);border-color:var(--wood-dk)}
+.row-btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.list{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:10px 10px 10px 12px;background:var(--panel-in);border:2px solid var(--panel-3)}
+.row.pop{animation:pop .35s steps(4)}
+@keyframes pop{40%{transform:scale(1.025)}}
+.row-title{font-size:22px;overflow-wrap:anywhere}
+.row.done .row-title{color:var(--leaf-hi)}
+.row.off{opacity:.62}
+.plan{font-size:18px;color:var(--wood-lt)}
+.meta{display:flex;flex-wrap:wrap;gap:3px 12px;margin-top:3px;font-size:18px;color:var(--text-soft);font-variant-numeric:tabular-nums}
+.meta span{display:inline-flex;align-items:center;gap:5px}
+.side{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.chk{width:34px;height:34px;padding:0;border:2px solid var(--edge);background:var(--panel-dk);box-shadow:inset 0 0 0 2px var(--panel-3);cursor:pointer;display:grid;place-items:center}
+.chk:hover{box-shadow:inset 0 0 0 2px var(--wood-dk)}
+.chk[aria-pressed="true"]{background:var(--leaf);box-shadow:inset -3px -3px 0 var(--leaf-dk),inset 3px 3px 0 var(--leaf-hi)}
+.chk.tiny[aria-pressed="true"]{background:var(--water);box-shadow:inset -3px -3px 0 #3a6a90,inset 3px 3px 0 #bfe0f6}
+.chk[aria-pressed="true"]::after{content:"";width:18px;height:14px;background:var(--edge);clip-path:polygon(0 43%,22% 43%,22% 64%,33% 64%,33% 79%,44% 79%,44% 64%,56% 64%,56% 43%,67% 43%,67% 21%,78% 21%,78% 0,100% 0,100% 21%,89% 21%,89% 43%,78% 43%,78% 64%,67% 64%,67% 86%,56% 86%,56% 100%,33% 100%,33% 86%,22% 86%,22% 79%,11% 79%,11% 64%,0 64%)}
+.minib{font-family:var(--f-display);font-size:13px;padding:3px 7px;background:var(--panel-dk);color:var(--water);border:2px solid var(--water-dk);cursor:pointer;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.minib[aria-pressed="true"]{background:var(--water-dk);color:#e6f4ff}
+.del{background:none;border:none;padding:4px 6px;font-family:var(--f-display);font-size:18px;color:var(--text-soft);cursor:pointer;line-height:1}
+.del:hover{color:var(--red)}
+.empty{padding:18px;border:2px dashed var(--panel-3);color:var(--text-soft);text-align:center;font-size:20px}
+.tok{display:inline-flex;gap:2px}
+.tok i{width:7px;height:9px;background:var(--water);clip-path:polygon(50% 0,100% 60%,80% 100%,20% 100%,0 60%)}
+.tok i.e{background:var(--panel-3)}
+.repair{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;padding:8px 10px;border:2px dashed var(--water-dk);color:#cfe6f6;font-size:19px}
+.banner{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px;background:rgba(127,207,138,.1);border:2px solid var(--leaf-dk);color:var(--leaf-hi);font-size:20px}
+.banner .sp{flex:1 1 100%}
+.banner.info{background:rgba(111,168,208,.1);border-color:var(--water-dk);color:#d6ecfa}
+.planned{font-size:17px;color:var(--wood-lt)}
+
+.hform{display:grid;gap:12px;padding:14px;background:var(--panel-in);border:2px solid var(--panel-3)}
+.step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 10px;align-items:start}
+.step>b{font-family:var(--f-display);font-size:14px;width:26px;height:26px;display:grid;place-items:center;background:var(--wood-dk);color:var(--wood-lt);border:2px solid var(--edge)}
+.step label,.step .lab{font-size:20px;color:var(--text)}
+.step .ctl{grid-column:2;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.step .ctl .in{flex:1 1 180px}
+.pre{font-size:21px;color:var(--wood-lt)}
+.chip{font-family:var(--f-display);font-size:14px;padding:5px 9px;background:var(--panel-dk);color:var(--text-soft);border:2px solid var(--panel-3);cursor:pointer}
+.chip[aria-pressed="true"]{color:var(--ink-dk);background:var(--wood);border-color:var(--edge)}
+.chip.idea{color:var(--text);text-align:left}
+.preview{font-size:21px;color:var(--leaf-hi);padding:8px 10px;border-left:3px solid var(--leaf)}
+.err{color:#ffb4a8;font-size:19px}
+.sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:19px;color:var(--text-soft)}
+.sw input{appearance:none;-webkit-appearance:none;width:34px;height:18px;background:var(--panel-dk);border:2px solid var(--panel-3);position:relative;cursor:pointer;margin:0}
+.sw input::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;background:var(--text-soft)}
+.sw input:checked{background:var(--leaf-dk);border-color:var(--leaf)}
+.sw input:checked::after{left:18px;background:var(--leaf-hi)}
+
+.hcard{display:grid;gap:8px;padding:12px;background:var(--panel-in);border:2px solid var(--panel-3)}
+.hcard.grad{border-color:var(--wood)}
+.hcard.paused{opacity:.85;border-style:dashed}
+.hcard .hd{display:flex;align-items:center;gap:10px}
+.hcard .hd .row-title{flex:1;min-width:0}
+.badge{font-family:var(--f-display);font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border:2px solid currentColor;white-space:nowrap}
+.badge.gold{color:var(--wood-lt)} .badge.rare{color:var(--rare)} .badge.com{color:var(--text-soft)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;font-size:19px;margin:0}
+.kv dt{color:var(--text-soft)} .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.toggles{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.suggest{padding:8px 10px;border:2px solid var(--leaf-dk);color:var(--leaf-hi);font-size:19px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.weather{display:flex;gap:6px;flex-wrap:wrap}
+.wbtn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 8px;background:var(--panel-in);border:2px solid var(--panel-3);cursor:pointer;font-size:17px;min-width:70px;color:var(--text)}
+.wbtn[aria-pressed="true"]{border-color:var(--wood);box-shadow:inset 0 -3px 0 var(--wood);color:var(--wood-lt)}
+.prompt{font-size:20px;color:var(--text-soft)}
+.entry{padding:12px;background:var(--panel-in);border:2px solid var(--panel-3);display:grid;gap:6px}
+.entry header{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--wood-lt)}
+.entry p{margin:0;font-size:21px;white-space:pre-wrap;overflow-wrap:anywhere;max-width:62ch}
+.closed{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(127,207,138,.1);border:2px solid var(--leaf-dk);color:var(--leaf-hi);font-size:20px}
+.week-review{display:grid;gap:4px;padding:12px;border:2px solid var(--wood-dk);background:rgba(212,162,90,.07);font-size:20px}
+.week-review b{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--wood-lt)}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.tile{padding:10px 12px;background:var(--panel-in);border:2px solid var(--panel-3);display:grid;gap:2px}
+.tile strong{font-family:var(--f-display);font-size:30px;line-height:1;color:var(--wood-lt);font-variant-numeric:tabular-nums}
+.tile span{font-size:18px;color:var(--text-soft)}
+.spark{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:8px 10px;background:var(--panel-in);border:2px solid var(--panel-3)}
+.spark svg{width:100%;height:40px;display:block}
+.spark .r{text-align:right;font-size:18px;color:var(--text-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hall{display:grid;gap:6px}
+.hall div{display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid var(--wood-dk);background:rgba(212,162,90,.08);font-size:20px}
+.data{display:grid;gap:10px}
+.data textarea{min-height:100px;font-size:16px}
+
+/* Erntekalender */
+.harvest{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:10px;padding:12px;background:var(--panel-in);border:2px solid var(--panel-3)}
+.harvest .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cal-scroll{overflow-x:auto;padding-bottom:4px}
+.cal-grid{display:grid;grid-template-columns:22px repeat(var(--cols),9px);grid-template-rows:14px repeat(7,9px);gap:2px;width:max-content;font-size:13px;color:var(--text-soft)}
+.cal-grid .m{grid-row:1;white-space:nowrap;line-height:14px}
+.cal-grid .wd{grid-column:1;line-height:9px;font-size:11px}
+.cal-grid i{display:block;width:9px;height:9px}
+.v-none,.v-future,.v-before{background:transparent}
+.v-future{box-shadow:inset 0 0 0 1px rgba(159,180,173,.12)}
+.v-off{background:transparent;box-shadow:inset 0 0 0 1px rgba(159,180,173,.22)}
+.v-empty,.v-0{background:var(--c0)}
+.v-1{background:var(--c1)} .v-2{background:var(--c2)} .v-3{background:var(--c3)} .v-4{background:var(--c4)}
+.v-done{background:var(--leaf)} .v-tiny{background:var(--water)} .v-repaired{background:var(--repair)} .v-watered{background:var(--rain)}
+.v-today{outline:2px solid var(--wood-lt);outline-offset:1px}
+.v-before{box-shadow:inset 0 0 0 1px rgba(159,180,173,.1)}
+h2[tabindex="-1"]:focus{outline:none}
+.cal-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:17px;color:var(--text-soft)}
+.cal-legend span{display:inline-flex;align-items:center;gap:6px}
+.cal-legend i{width:10px;height:10px;display:inline-block}
+
+.inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.item{display:grid;gap:6px;align-content:start;padding:12px;background:var(--panel-in);border:2px solid var(--panel-3)}
+.item.r{border-color:#6a4e8a}
+.item .pv{height:62px;display:grid;place-items:center;background:repeating-conic-gradient(#4a845c 0 25%,#4f8a62 0 50%) 0 0/16px 16px;border:2px solid var(--edge)}
+.item h4{margin:0;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--wood-lt);display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+.item .cnt{color:var(--text-soft);font-size:18px}
+.item .btn{width:100%}
+.sleep{padding:10px 12px;border:2px solid #3a3a6a;background:rgba(80,80,160,.12);color:#cfd0f6;font-size:20px}
+.foot{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;color:var(--text-soft);font-size:19px}
+
+/* Overlays: Onboarding, Check-in */
+.overlay{position:fixed;inset:0;z-index:80;background:var(--dim);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overflow:auto}
+.overlay>.frame{max-width:660px;width:100%;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;max-height:calc(100dvh - 32px);overflow:auto;animation:popin .3s steps(4)}
+.say{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+.say p{margin:0;font-size:21px;max-width:58ch}
+.say .who{font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--wood-lt);margin-bottom:4px}
+.ideas{display:flex;flex-wrap:wrap;gap:6px}
+.steps{display:flex;gap:6px}
+.steps i{width:22px;height:6px;background:var(--panel-3)}
+.steps i.on{background:var(--wood)}
+.planted{display:grid;gap:6px}
+.planted div{display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid var(--leaf-dk);font-size:20px}
+.planted div span{flex:1;min-width:0;overflow-wrap:anywhere}
+.ci-list{display:grid;gap:4px;font-size:20px}
+.ci-list div{display:flex;gap:8px;align-items:center}
+.ci-list .plan{font-size:20px}
+
+.fx{position:fixed;z-index:90;pointer-events:none;font-family:var(--f-display);font-weight:700;font-size:24px;white-space:nowrap;text-shadow:2px 0 0 var(--edge),-2px 0 0 var(--edge),0 2px 0 var(--edge),0 -2px 0 var(--edge);animation:rise 1s steps(10) forwards}
+.fx.xp{color:var(--leaf-hi)} .fx.drop{color:var(--rare)}
+@keyframes rise{0%{transform:translate(-50%,0)}100%{transform:translate(-50%,-56px);opacity:0}}
+.sparkle{position:fixed;z-index:89;width:5px;height:5px;pointer-events:none}
+.toast{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:95;width:max-content;max-width:min(560px,calc(100% - 32px));display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--panel-dk);border:3px solid var(--edge);box-shadow:inset 0 0 0 2px var(--wood),0 6px 0 rgba(0,0,0,.35);font-size:20px;animation:tin .25s steps(3)}
+@keyframes tin{from{transform:translate(-50%,20px);opacity:0}}
+.toast b{color:var(--wood-lt);font-family:var(--f-display);font-weight:600;font-size:15px}
+.toast .btn{flex:none}
+.levelup{position:fixed;inset:0;z-index:96;display:grid;place-items:center;background:var(--dim);padding:16px}
+.levelup .frame{max-width:380px;width:100%;text-align:center;display:grid;gap:10px;justify-items:center;animation:popin .4s steps(5)}
+@keyframes popin{0%{transform:scale(.6)}70%{transform:scale(1.04)}100%{transform:scale(1)}}
+.levelup h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:38px;color:var(--wood-lt);text-shadow:0 3px 0 var(--wood-dk)}
+.levelup .what{font-family:var(--f-display);font-weight:600;font-size:21px}
+.levelup p{margin:0;font-size:21px;color:var(--text-soft)}
+
+@media (max-width:540px){
+  .row{grid-template-columns:auto minmax(0,1fr)}
+  .row .side{grid-column:2;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start}
+  .tab{font-size:13px;padding:7px 8px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1 class="logo">Life's a Game</h1>
+    <div class="top-r">
+      <div class="cal" id="cal"></div>
+      <button class="btn ghost" id="musicBtn" type="button" aria-pressed="false">Musik: aus</button>
+      <button class="btn ghost" id="soundBtn" type="button" aria-pressed="true">Effekte: an</button>
+    </div>
+  </header>
+  <div class="demo-bar" id="demoBar" hidden><span>Du siehst einen Demo-Hof mit erfundenen Daten. Hier wird nichts gespeichert.</span><button class="btn sm" type="button" data-act="demo-end">Demo beenden</button></div>
+
+  <div class="main">
+    <div class="col">
+      <div class="frame scene">
+        <canvas id="scene" width="256" height="160" aria-label="Dein Hof von oben: ein Beet pro Gewohnheit, ein Gebäude pro Fähigkeit"></canvas>
+        <div class="legend" id="legend"></div>
+      </div>
+      <section class="frame" aria-label="Charakter">
+        <div class="stat-row">
+          <div class="lvl-badge"><small>Level</small><strong id="lvlNum">1</strong></div>
+          <div class="stat-main">
+            <div class="stat-line"><span class="t">Erfahrung</span><span id="xpText">0 / 100 XP</span></div>
+            <div class="bar" role="progressbar" aria-label="Erfahrung bis zum nächsten Level" id="xpBarWrap"><i id="xpBar"></i></div>
+            <div class="near" id="nearText"></div>
+          </div>
+        </div>
+      </section>
+      <section class="frame" aria-label="Fähigkeiten">
+        <div class="plank">Fähigkeiten</div>
+        <div class="skills" id="skills"></div>
+      </section>
+      <button class="npc" id="npc" type="button" aria-live="polite">
+        <span class="npc-face" id="npcFace"></span>
+        <div><div class="npc-name">Wilma · Nachbarin</div><div class="npc-text" id="npcText"></div><div class="npc-more">Antippen für mehr</div></div>
+      </button>
+    </div>
+
+    <div class="panel-wrap">
+      <div class="tabs" role="tablist" aria-label="Bereiche">
+        <button class="tab" role="tab" id="t-today" data-tab="today" aria-controls="p-today" aria-selected="true">Heute<span class="n" id="nToday"></span></button>
+        <button class="tab" role="tab" id="t-habits" data-tab="habits" aria-controls="p-habits" aria-selected="false" tabindex="-1">Gewohnheiten</button>
+        <button class="tab" role="tab" id="t-journal" data-tab="journal" aria-controls="p-journal" aria-selected="false" tabindex="-1">Logbuch</button>
+        <button class="tab" role="tab" id="t-progress" data-tab="progress" aria-controls="p-progress" aria-selected="false" tabindex="-1">Fortschritt</button>
+        <button class="tab" role="tab" id="t-chest" data-tab="chest" aria-controls="p-chest" aria-selected="false" tabindex="-1">Truhe<span class="n" id="nChest"></span></button>
+      </div>
+      <div class="frame panel" id="p-today" role="tabpanel" aria-labelledby="t-today"></div>
+      <div class="frame panel" id="p-habits" role="tabpanel" aria-labelledby="t-habits" hidden></div>
+      <div class="frame panel" id="p-journal" role="tabpanel" aria-labelledby="t-journal" hidden></div>
+      <div class="frame panel" id="p-progress" role="tabpanel" aria-labelledby="t-progress" hidden></div>
+      <div class="frame panel" id="p-chest" role="tabpanel" aria-labelledby="t-chest" hidden></div>
+    </div>
+  </div>
+  <footer class="foot"><span id="footNote">Speichert nur auf diesem Gerät.</span><span>Prototyp V4</span></footer>
+</div>
+<div id="overlay"></div>
+
+<script>
+/* Life's a Game · Spiellogik
+ * UI-frei und ohne DOM: läuft im Browser (window.LAG) und in Node (require) für Tests.
+ * Alle Datumswerte sind lokale Tagesschlüssel "YYYY-MM-DD", damit die Logik 1:1 nach Dart portierbar ist.
+ * Referenz: Entwicklungsleitfaden v1.2, Abschnitte 3 und 4.
+ */
+(function (root) {
+  'use strict';
+
+  /* ---------- Konstanten (Leitfaden 4) ---------- */
+  const C = {
+    SCHEMA: 4,
+    EMA_A: 0.044,          // 4.2 Stärke pro geplantem Termin
+    MAX_TOKENS: 2,         // 4.3 Regentage
+    TOKEN_EVERY: 7,        // 4.3 1 Token je 7 erledigte Termine
+    REPAIR_DAYS: 2,        // 4.3 Reparatur innerhalb 48 h
+    DROP_P: 0.12,          // 4.4 Überraschungsfund
+    RARE_P: 0.2,           // 4.4 Anteil seltener Funde
+    JOURNAL_XP: 10,        // 5.3 kleine XP 1×/Tag
+    MAX_SKILLS: 6,
+    MAX_BEDS: 12,
+    START_HABITS: 3,       // 5.1 Onboarding max. 3
+    UNLOCK_DAYS: 7,        // 5.1 weitere nach der ersten Woche
+    GRAD_DAYS: 30,         // 4.5 Graduierung
+    SUGGEST_STRENGTH: 0.8, // 4.5 Ausschleichen
+    SUGGEST_RUN: 14,
+    CHECKIN_UNTIL_HOUR: 14 // 4.6 Morgen-Check-in nur bis zum frühen Nachmittag anbieten
+  };
+  const STAGES = [[0.15, 'Keim'], [0.35, 'Setzling'], [0.6, 'Jungpflanze'], [0.9, 'Blüte'], [2, 'Ausgewachsen']];
+  const ITEMS = {
+    flowers: { name: 'Blumenbeet', rare: false }, bench: { name: 'Holzbank', rare: false }, lantern: { name: 'Laterne', rare: false },
+    barrel: { name: 'Fass', rare: false }, pot: { name: 'Blumentopf', rare: false }, sign: { name: 'Wegweiser', rare: false }, hay: { name: 'Heuballen', rare: false },
+    scarecrow: { name: 'Vogelscheuche', rare: true }, beehive: { name: 'Bienenstock', rare: true }, well: { name: 'Brunnen', rare: true },
+    chicken: { name: 'Huhn', rare: true, animal: true }, duck: { name: 'Ente', rare: true, animal: true }
+  };
+  const WEATHER = ['sonnig', 'heiter', 'bewoelkt', 'regen', 'gewitter'];
+
+  /* ---------- Datum (nur Tagesschlüssel) ---------- */
+  const pad = n => String(n).padStart(2, '0');
+  const dkey = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const parseKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d, 12); };
+  const addDays = (k, n) => { const d = parseKey(k); d.setDate(d.getDate() + n); return dkey(d); };
+  const daysBetween = (a, b) => Math.round((parseKey(b) - parseKey(a)) / 864e5);
+  const weekday = k => parseKey(k).getDay();                 // 0 = Sonntag
+  const weekStart = k => addDays(k, -((weekday(k) + 6) % 7)); // Montag
+  const seasonOf = m => (m >= 2 && m <= 4 ? 'Frühling' : m >= 5 && m <= 7 ? 'Sommer' : m >= 8 && m <= 10 ? 'Herbst' : 'Winter');
+
+  /* ---------- Zufall (deterministisch, injizierbar) ---------- */
+  const hashStr = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+  /* ---------- XP & Level (4.1) ---------- */
+  const xpFor = (effort, status) => (status === 'done' ? 10 * effort : status === 'tiny' ? 5 * effort : 0);
+  const charNeed = L => Math.round(100 * Math.pow(L, 1.5));
+  const skillNeed = L => Math.round(50 * Math.pow(L, 1.5));
+  function lvl(total, need) { let l = 1; while (total >= need(l)) { total -= need(l); l++; } return { l, into: total, need: need(l) }; }
+  const unitsToNext = (level, effort) => Math.max(1, Math.ceil((level.need - level.into) / (10 * effort)));
+  const stageOf = s => STAGES.findIndex(([t]) => s < t);
+  const ema = (s, x) => s * (1 - C.EMA_A) + C.EMA_A * x;
+
+  /* ---------- Gewohnheit: Einstellungen über die Zeit ----------
+   * Aufwand und Frequenz können bearbeitet werden. Damit alte Termine nicht rückwirkend
+   * anders zählen, speichert history die Einstellungen ab einem Datum.
+   */
+  function settingsAt(h, k) {
+    let cur = h.history[0];
+    for (const e of h.history) { if (e.from <= k) cur = e; else break; }
+    return cur;
+  }
+  const isPaused = (h, k) => (h.pauses || []).some(p => p.from <= k && (!p.to || k < p.to));
+  function isScheduled(h, k) {
+    if (k < h.createdAt || isPaused(h, k)) return false;
+    const f = settingsAt(h, k).frequency;
+    return f.kind !== 'weekdays' || f.days.includes(weekday(k));
+  }
+  const isDoneStatus = st => st === 'done' || st === 'tiny';
+
+  /* ---------- Kernberechnung pro Gewohnheit ----------
+   * Die Logs sind die einzige Quelle der Wahrheit. Stärke, Serie, Regentage, XP und Kalender
+   * werden daraus abgeleitet (statt gespeichert), damit Rückgängig und Bearbeiten nie inkonsistent werden.
+   */
+  function computeHabit(h, today) {
+    const ym = today.slice(0, 7), y = today.slice(0, 4), mStart = ym + '-01';
+    const logs = h.logs || {};
+    let s = 0, sMonth = null, streak = 0, run = 0, tokens = 0, prog = 0, xp = 0;
+    let month = 0, monthTiny = 0, year = 0, lastPrev = null, lastPrevKey = null, doneToday = null;
+    const xpByDay = {}, days = {};
+    // Wochen-Gewohnheiten
+    let wk = null, wcnt = 0, wStreak = 0, wN = 0;
+    const finishWeek = () => {
+      if (wk === null) return;
+      let active = 0;
+      for (let i = 0; i < 7; i++) { const d = addDays(wk, i); if (d >= h.createdAt && !isPaused(h, d)) active++; }
+      const target = Math.min(wN, Math.ceil(wN * active / 7));     // A11: anteilig in angebrochenen Wochen
+      for (let i = Math.min(wcnt, target); i < target; i++) s = ema(s, 0);
+      if (target > 0) wStreak = wcnt >= target ? wStreak + 1 : 0;
+    };
+    for (let k = h.createdAt; k <= today; k = addDays(k, 1)) {
+      const st = logs[k], isT = k === today, set = settingsAt(h, k), f = set.frequency;
+      if (k === mStart && sMonth === null) sMonth = s;
+      if (isT) doneToday = st || null;
+      if (f.kind === 'weekly') {
+        const w = weekStart(k);
+        if (w !== wk) { finishWeek(); wk = w; wcnt = 0; wN = settingsAt(h, w < h.createdAt ? h.createdAt : w).frequency.timesPerWeek; }
+        if (isPaused(h, k)) continue;
+        if (isDoneStatus(st) && wcnt < wN) {                       // A5: XP nur für geplante Termine
+          wcnt++; s = ema(s, 1);
+          const x = xpFor(set.effort, st); xp += x; xpByDay[k] = x; days[k] = st;
+          if (k.startsWith(y)) year++; if (k.startsWith(ym)) { month++; if (st === 'tiny') monthTiny++; }
+        }
+        continue;
+      }
+      if (!isScheduled(h, k)) { if (!isPaused(h, k)) days[k] = 'off'; continue; }
+      if (isDoneStatus(st)) {
+        s = ema(s, 1); streak++; run++;
+        if (++prog >= C.TOKEN_EVERY) { prog = 0; tokens = Math.min(C.MAX_TOKENS, tokens + 1); }
+        const x = xpFor(set.effort, st); xp += x; xpByDay[k] = x; days[k] = st;
+        if (k.startsWith(y)) year++; if (k.startsWith(ym)) { month++; if (st === 'tiny') monthTiny++; }
+        if (!isT) { lastPrev = st; lastPrevKey = k; }
+      } else if (st === 'repaired') {
+        s = ema(s, 1); streak++; run = 0; days[k] = 'repaired'; lastPrev = st; lastPrevKey = k;
+      } else if (!isT) {
+        if (h.streakEnabled && tokens > 0) { tokens--; s = ema(s, 1); run = 0; days[k] = 'watered'; lastPrev = 'watered'; }
+        else { s = ema(s, 0); streak = 0; run = 0; days[k] = 'missed'; lastPrev = 'missed'; }
+        lastPrevKey = k;
+      }
+    }
+    const freqNow = settingsAt(h, today).frequency, weekly = freqNow.kind === 'weekly';
+    const N = weekly ? freqNow.timesPerWeek : 0, weekCnt = weekly ? (wk === weekStart(today) ? wcnt : 0) : 0;
+    if (weekly) streak = wStreak + (weekCnt >= N ? 1 : 0);
+    if (sMonth === null) sMonth = 0;
+    const paused = isPaused(h, today);
+    const due = !paused && (weekly ? (weekCnt < N || !!doneToday) : isScheduled(h, today));
+    const graduated = !h.remindersEnabled && !!h.remOffAt && daysBetween(h.remOffAt, today) >= C.GRAD_DAYS && s >= C.SUGGEST_STRENGTH;
+    const canRepair = h.streakEnabled && !weekly && lastPrev === 'missed' && !!lastPrevKey &&
+      daysBetween(lastPrevKey, today) <= C.REPAIR_DAYS && isDoneStatus(doneToday);
+    return {
+      s, stage: stageOf(s), stageMonthStart: stageOf(sMonth), streak, run, tokens, xp, xpByDay, days,
+      month, monthTiny, year, doneToday, weekCnt, N, weekly, due, paused, graduated,
+      gradDate: graduated ? addDays(h.remOffAt, C.GRAD_DAYS) : null,
+      canRepair, repairKey: canRepair ? lastPrevKey : null,
+      suggestOff: h.remindersEnabled && !paused && s >= C.SUGGEST_STRENGTH && run >= C.SUGGEST_RUN,
+      age: daysBetween(h.createdAt, today) + 1
+    };
+  }
+
+  /* ---------- Gesamtzustand ableiten ---------- */
+  function derive(state, today) {
+    const H = {}; state.habits.forEach(h => { H[h.id] = computeHabit(h, today); });
+    const sk = {}, byDay = {};
+    state.skills.forEach(s => { sk[s.id] = 0; byDay[s.id] = {}; });
+    state.habits.forEach(h => {
+      if (sk[h.skillId] === undefined) return;
+      sk[h.skillId] += H[h.id].xp;
+      const b = byDay[h.skillId]; for (const k in H[h.id].xpByDay) b[k] = (b[k] || 0) + H[h.id].xpByDay[k];
+    });
+    state.todos.forEach(t => {
+      if (!t.doneAt || sk[t.skillId] === undefined) return;
+      const x = 10 * t.effort; sk[t.skillId] += x; byDay[t.skillId][t.doneAt] = (byDay[t.skillId][t.doneAt] || 0) + x;
+    });
+    const total = Object.values(sk).reduce((a, b) => a + b, 0) + state.journal.length * C.JOURNAL_XP;
+    const levels = {}; state.skills.forEach(s => { levels[s.id] = lvl(sk[s.id], skillNeed); });
+    return { H, sk, byDay, levels, total, char: lvl(total, charNeed) };
+  }
+
+  /* ---------- Funde (4.4) ---------- */
+  function pickItem(rand, rare) { const pool = Object.keys(ITEMS).filter(k => ITEMS[k].rare === rare); return pool[Math.floor(rand() * pool.length)]; }
+  function rollDrop(rand) { if (rand() >= C.DROP_P) return null; return pickItem(rand, rand() < C.RARE_P); }
+  /** B2: neue Wachstumsstufe = garantierter Fund. Hochwassermarke verhindert Mehrfach-Ernte nach Rückgängig. */
+  const harvestsDue = (h, d) => Math.max(0, d.stage - (h.harvestStage || 0));
+  const gradRewardDue = (h, d) => d.graduated && !h.gradRewarded;
+  const slotsFor = L => Math.min(12, 3 + L);
+
+  /* ---------- Onboarding (5.1) ---------- */
+  function canAddHabit(state, today) {
+    const active = state.habits.filter(h => !h.archivedAt).length;
+    if (active < C.START_HABITS) return { ok: true };
+    const since = state.startedAt ? daysBetween(state.startedAt, today) : 0;
+    if (since >= C.UNLOCK_DAYS) return { ok: true };
+    return { ok: false, unlockOn: addDays(state.startedAt || today, C.UNLOCK_DAYS) };
+  }
+  function validateHabitInput(i) {
+    const miss = [];
+    if (!i.title || !i.title.trim()) miss.push('was du tun möchtest');
+    if (!i.anchor || !i.anchor.trim()) miss.push('nach welcher Routine');
+    if (!i.tinyVersion || !i.tinyVersion.trim()) miss.push('eine Mini-Version');
+    if (i.frequency && i.frequency.kind === 'weekdays' && !(i.frequency.days || []).length) miss.push('mindestens einen Wochentag');
+    if (i.frequency && i.frequency.kind === 'weekly' && !(i.frequency.timesPerWeek >= 1 && i.frequency.timesPerWeek <= 6)) miss.push('1 bis 6 Mal pro Woche');
+    if (![1, 2, 3].includes(i.effort)) miss.push('einen Aufwand');
+    return miss;
+  }
+  const cleanAnchor = a => String(a || '').trim().replace(/^nach\s+/i, '');
+  function newHabit(i, today, id) {
+    return {
+      id, title: i.title.trim(), anchor: cleanAnchor(i.anchor), anchorTime: i.anchorTime || '', tinyVersion: i.tinyVersion.trim(),
+      frequency: i.frequency, skillId: i.skillId, effort: i.effort, streakEnabled: !!i.streakEnabled, remindersEnabled: !!i.remindersEnabled,
+      remOffAt: i.remindersEnabled ? null : today, createdAt: today, history: [{ from: today, effort: i.effort, frequency: i.frequency }],
+      pauses: [], logs: {}, harvestStage: 0, gradRewarded: false, rolled: ''
+    };
+  }
+  /** F7: Bearbeiten. Aufwand/Frequenz gelten ab heute, ältere Termine behalten ihre Werte. */
+  function applyEdit(h, i, today) {
+    const changedSched = h.effort !== i.effort || JSON.stringify(h.frequency) !== JSON.stringify(i.frequency);
+    h.title = i.title.trim(); h.anchor = cleanAnchor(i.anchor); h.anchorTime = i.anchorTime || ''; h.tinyVersion = i.tinyVersion.trim(); h.skillId = i.skillId;
+    if (h.streakEnabled !== !!i.streakEnabled) h.streakEnabled = !!i.streakEnabled;
+    if (h.remindersEnabled !== !!i.remindersEnabled) { h.remindersEnabled = !!i.remindersEnabled; h.remOffAt = h.remindersEnabled ? null : today; }
+    if (changedSched) {
+      h.effort = i.effort; h.frequency = i.frequency;
+      const last = h.history[h.history.length - 1];
+      if (last.from === today) { last.effort = i.effort; last.frequency = i.frequency; }
+      else h.history.push({ from: today, effort: i.effort, frequency: i.frequency });
+    }
+    return h;
+  }
+  function pause(h, today) { if (h.archivedAt) return h; h.archivedAt = today; (h.pauses = h.pauses || []).push({ from: today, to: null }); return h; }
+  function resume(h, today) {
+    const p = (h.pauses || []).find(x => !x.to); if (p) { if (p.from === today) h.pauses.splice(h.pauses.indexOf(p), 1); else p.to = today; }
+    delete h.archivedAt; return h;
+  }
+
+  /* ---------- Check-in & Welt (4.6, 5.4) ---------- */
+  function dayWeather(key) {
+    const r = rng(hashStr(key + 'wx'))(), s = seasonOf(parseKey(key).getMonth());
+    const w = { Frühling: [.25, .3, .2, .2, .05], Sommer: [.4, .3, .1, .1, .1], Herbst: [.15, .25, .3, .22, .08], Winter: [.15, .2, .4, .2, .05] }[s];
+    let a = 0; for (let i = 0; i < 5; i++) { a += w[i]; if (r < a) return WEATHER[i]; } return 'heiter';
+  }
+  const journalOn = (state, k) => state.journal.find(j => j.date === k);
+  const currentWeather = (state, today, preview) =>
+    preview || (journalOn(state, today) || {}).weather || ((state.checkins || {})[today] || {}).weather || dayWeather(today);
+  const needsCheckin = (state, today, hour) =>
+    !!state.onboarded && !(state.checkins || {})[today] && hour >= 5 && hour < C.CHECKIN_UNTIL_HOUR && state.habits.some(h => !h.archivedAt);
+  const farmSleeps = hour => hour >= 22 || hour < 6;
+
+  /* ---------- Erntekalender (5.5) ---------- */
+  /** Liefert ein Jahresraster: Spalten = Wochen (Mo–So), Zellen mit Status bzw. Intensität 0–4. */
+  function yearGrid(state, D, habitId, yearStr, today) {
+    const first = yearStr + '-01-01', last = yearStr + '-12-31', start = weekStart(first), cells = [];
+    const h = habitId ? state.habits.find(x => x.id === habitId) : null;
+    for (let k = start, i = 0; k <= last || i % 7; k = addDays(k, 1), i++) {
+      const col = Math.floor(i / 7), row = i % 7;
+      if (k < first || k > last) { cells.push({ k, col, row, v: 'none' }); continue; }
+      if (k > today) { cells.push({ k, col, row, v: 'future' }); continue; }
+      if (h) {
+        const st = D.H[h.id].days[k];
+        cells.push({ k, col, row, v: st === 'done' || st === 'tiny' || st === 'repaired' || st === 'watered' ? st : st === 'missed' ? 'empty' : k < h.createdAt ? 'before' : 'off' });
+      } else {
+        let n = 0; state.habits.forEach(x => { const st = D.H[x.id].days[k]; if (st === 'done' || st === 'tiny' || st === 'repaired') n++; });
+        if (state.journal.some(j => j.date === k)) n++;
+        cells.push({ k, col, row, v: n === 0 ? 0 : n === 1 ? 1 : n === 2 ? 2 : n <= 4 ? 3 : 4 });
+      }
+    }
+    return { cells, cols: Math.ceil(cells.length / 7) };
+  }
+
+  /* ---------- Neuer Zustand, Migration, Import (F6) ---------- */
+  function emptyState(today) {
+    return {
+      schema: C.SCHEMA, onboarded: false, startedAt: today, sound: true, music: false, freshSeen: '', installHintSeen: false,
+      skills: [{ id: 's1', name: 'Körper', icon: 'boot', st: 0 }, { id: 's2', name: 'Geist', icon: 'book', st: 1 }, { id: 's3', name: 'Alltag', icon: 'crate', st: 3 }],
+      habits: [], todos: [], journal: [], checkins: {}, chest: { items: {}, placed: [] }
+    };
+  }
+  /** v3 → v4: Feldnamen an Leitfaden 3 angleichen, Historie und Pausen ergänzen. */
+  function migrateV3(v3, today) {
+    const s = emptyState(today);
+    s.onboarded = true; s.sound = v3.sound !== false; s.music = !!v3.music; s.skills = v3.skills || s.skills;
+    s.startedAt = (v3.habits || []).reduce((a, h) => (h.createdAt < a ? h.createdAt : a), today);
+    s.habits = (v3.habits || []).map(h => {
+      const frequency = h.freq.kind === 'weekly' ? { kind: 'weekly', timesPerWeek: h.freq.n } : h.freq.kind === 'weekdays' ? { kind: 'weekdays', days: h.freq.days } : { kind: 'daily' };
+      const n = {
+        id: h.id, title: h.title, anchor: h.anchor, anchorTime: h.anchorTime || '', tinyVersion: h.tiny || '', frequency, skillId: h.skillId,
+        effort: h.effort, streakEnabled: !!h.streak, remindersEnabled: !!h.rem, remOffAt: h.remOffAt || null, createdAt: h.createdAt,
+        history: [{ from: h.createdAt, effort: h.effort, frequency }], pauses: [], logs: Object.assign({}, h.log), harvestStage: 0, gradRewarded: false, rolled: h.rolled || ''
+      };
+      n.harvestStage = computeHabit(n, today).stage; // keine Ernte-Flut nach dem Umzug
+      n.gradRewarded = computeHabit(n, today).graduated;
+      return n;
+    });
+    s.todos = (v3.todos || []).map(t => ({ id: t.id, title: t.title, effort: t.effort, skillId: t.skillId, doneAt: t.doneAt, rolled: !!t.rolled }));
+    s.journal = v3.journal || [];
+    s.chest = { items: Object.assign({}, v3.inv), placed: (v3.placed || []).map(p => ({ itemId: p.type, slot: p.slot })) };
+    return s;
+  }
+  /** Prüft importierte Daten. Gibt { ok, state | error } zurück. */
+  function importState(obj, today) {
+    try {
+      if (!obj || typeof obj !== 'object') return { ok: false, error: 'Die Datei enthält keine gültigen Daten.' };
+      if (obj.v === 3) return { ok: true, state: migrateV3(obj, today) };
+      if (obj.schema !== C.SCHEMA) return { ok: false, error: 'Diese Datei stammt aus einer unbekannten Version.' };
+      for (const key of ['skills', 'habits', 'todos', 'journal']) if (!Array.isArray(obj[key])) return { ok: false, error: `Der Bereich „${key}“ fehlt oder ist beschädigt.` };
+      for (const h of obj.habits) {
+        if (!h.id || !h.createdAt || !Array.isArray(h.history) || !h.history.length || typeof h.logs !== 'object') return { ok: false, error: `Die Gewohnheit „${h.title || '?'}“ ist unvollständig.` };
+      }
+      obj.checkins = obj.checkins || {}; obj.chest = obj.chest || { items: {}, placed: [] };
+      return { ok: true, state: obj };
+    } catch (e) { return { ok: false, error: 'Die Datei konnte nicht gelesen werden.' }; }
+  }
+
+  const LAG = {
+    C, STAGES, ITEMS, WEATHER,
+    dkey, parseKey, addDays, daysBetween, weekday, weekStart, seasonOf, hashStr, rng,
+    xpFor, charNeed, skillNeed, lvl, unitsToNext, stageOf, settingsAt, isPaused, isScheduled,
+    computeHabit, derive, rollDrop, pickItem, harvestsDue, gradRewardDue, slotsFor,
+    canAddHabit, validateHabitInput, cleanAnchor, newHabit, applyEdit, pause, resume,
+    dayWeather, journalOn, currentWeather, needsCheckin, farmSleeps, yearGrid,
+    emptyState, migrateV3, importState
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = LAG; else root.LAG = LAG;
+})(typeof self !== 'undefined' ? self : this);
+
+/* Life's a Game · Speicher
+ * IndexedDB (F5) mit localStorage als Rückfallebene, falls IndexedDB blockiert ist (z. B. privates Fenster).
+ */
+(function (root) {
+  'use strict';
+  const DB = 'lifes-a-game', STORE = 'kv', KEY = 'state-v4', LS = 'lag4:';
+  let dbp = null;
+  function open() {
+    return new Promise((res, rej) => {
+      if (!root.indexedDB) return rej(new Error('IndexedDB nicht verfügbar'));
+      const r = root.indexedDB.open(DB, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore(STORE);
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  function tx(mode, fn) {
+    dbp = dbp || open();
+    return dbp.then(db => new Promise((res, rej) => {
+      const t = db.transaction(STORE, mode), st = t.objectStore(STORE), req = fn(st);
+      t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    }));
+  }
+  const lsGet = k => { try { const v = localStorage.getItem(LS + k); return v ? JSON.parse(v) : undefined; } catch (e) { return undefined; } };
+  const lsSet = k => v => { try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch (e) { /* voll oder gesperrt */ } };
+  async function get(k) { try { const v = await tx('readonly', s => s.get(k)); return v === undefined ? lsGet(k) : v; } catch (e) { return lsGet(k); } }
+  async function set(k, v) { try { await tx('readwrite', s => s.put(v, k)); } catch (e) { lsSet(k)(v); } }
+  async function del(k) { try { await tx('readwrite', s => s.delete(k)); } catch (e) { /* egal */ } try { localStorage.removeItem(LS + k); } catch (e) { /* egal */ } }
+  function legacyV3() { try { const r = localStorage.getItem('lifes-a-game-v3'); const o = r ? JSON.parse(r) : null; return o && o.v === 3 && !o.example ? o : null; } catch (e) { return null; } }
+  root.LAGStore = { load: () => get(KEY), save: v => set(KEY, v), clear: () => del(KEY), legacyV3 };
+})(typeof self !== 'undefined' ? self : this);
+
+/* Life's a Game · Pixel-Sprites (geteilt von Szene und Oberfläche) */
+(function (root) {
+  'use strict';
+  const O = '#1e2a30';
+  const MAPS = {
+    gem: { m: ["...oo...", "..oGGo..", ".oGwGGo.", "oGwGGGgo", "oGGGGggo", ".oGGggo.", "..oggo..", "...oo..."], p: { o: '#0f3d24', G: '#7fcf8a', g: '#367a4c', w: '#e0ffe4' } },
+    flame: { m: ["...r....", "..rr....", "..rro...", ".rrooro.", ".rooyor.", "rooyyoor", "royyyyor", ".rryyrr."], p: { r: '#c4382a', o: '#f08a24', y: '#ffd84a' } },
+    boot: { m: ["..oooo..", "..oRRo..", "..oRRo..", "..oRRo..", "..oRRoo.", ".oRRRRRo", "oRRRRRRo", "oooooooo"], p: { o: '#3a0e16', R: '#e0605a' } },
+    book: { m: ["oooooooo", "oBBBBBBo", "oBwwwwBo", "oBBBBBBo", "oBwwwBBo", "oBBBBBBo", "oBBBBBBo", "oooooooo"], p: { o: '#101f4d', B: '#5a8fe0', w: '#dfe9ff' } },
+    flower: { m: ["..pp....", ".pyyp...", "..pp.pp.", "..g.pyyp", "..g..pp.", "..gg.g..", "...ggg..", "....g..."], p: { p: '#f080c0', y: '#ffe066', g: '#4cb05a' } },
+    crate: { m: ["oooooooo", "oWWWWWWo", "oWoWWoWo", "oWWooWWo", "oWWooWWo", "oWoWWoWo", "oWWWWWWo", "oooooooo"], p: { o: '#3a2010', W: '#d99a5a' } },
+    heart: { m: [".oo..oo.", "oHHooHHo", "oHwHHHHo", "oHHHHHHo", ".oHHHHo.", "..oHHo..", "...oo...", "........"], p: { o: '#4e0e1e', H: '#f0607a', w: '#ffd0d8' } },
+    note: { m: ["....oooo", "...oNNNo", "...oNooo", "...oN...", "...oN...", ".oooN...", "oNNNo...", ".ooo...."], p: { o: '#2a1a4a', N: '#b48cf0' } },
+    pan: { m: ["........", ".oooo...", "oPPPPo..", "oPwPPooo", "oPPPPoWW", ".oooo.oo", "........", "........"], p: { o: '#2a2a2a', P: '#5a6070', w: '#9aa4b4', W: '#a8693a' } },
+    coin: { m: ["..oooo..", ".oYYYYo.", "oYwYYYdo", "oYwYYYdo", "oYYYYYdo", "oYYYYddo", ".oddddo.", "..oooo.."], p: { o: '#5a2e10', Y: '#f6c64a', w: '#fff3b0', d: '#d18a1e' } },
+    sonnig: { m: ["y..y..y.", ".y.yy.y.", "..yyyy..", "yyyYYyyy", ".yyYYyy.", "..yyyy..", ".y.yy.y.", "y..y..y."], p: { y: '#f0a81c', Y: '#ffe27a' } },
+    heiter: { m: ["..y.y...", "...yyy..", "..yyyyy.", ".gggyyy.", "gwwwwgy.", "gwwwwwg.", ".ggggggg", "........"], p: { y: '#f0a81c', w: '#ffffff', g: '#8a98ab' } },
+    bewoelkt: { m: ["........", "..ggg...", ".gwwwg..", "gwwwwwgg", "gwwwwwwg", ".gggggg.", "........", "........"], p: { w: '#ffffff', g: '#8d9ab0' } },
+    regen: { m: [".ggggg..", "gwwwwwg.", "gggggggg", "........", ".b..b..b", "b..b..b.", "........", ".b..b..."], p: { w: '#e8eef5', g: '#7d8ba0', b: '#6aa8ff' } },
+    gewitter: { m: [".ggggg..", "gGGGGGgg", "gggggggg", "...yy...", "..yy....", ".yyyy...", "...yy...", "..y....."], p: { g: '#5d6678', G: '#818ca0', y: '#ffd84a' } },
+    p0: { m: [".....", ".....", ".....", ".l.l.", "..G..", "....."], p: { l: '#a8f2a0', G: '#3fa356' } },
+    p1: { m: [".....", "..l..", ".lGl.", "..G..", "..G..", "....."], p: { l: '#a8f2a0', G: '#3fa356' } },
+    p2: { m: ["..l..", ".lGl.", "lGGGl", ".lGl.", "..G..", "....."], p: { l: '#a8f2a0', G: '#3fa356' } },
+    p3: { m: [".FwF.", "lGFGl", "lGGGl", ".lGl.", "..G..", "....."], p: { l: '#a8f2a0', G: '#3fa356', w: '#fff6e0' } },
+    p4: { m: [".FFF.", "FwFFf", "lFFfl", ".lGl.", "..G..", "....."], p: { l: '#a8f2a0', G: '#3fa356', w: '#fff6e0' } },
+    farmerA: { m: ["..HHHH..", ".HHHHHH.", "HhhhhhhH", "..SSSS..", "..SeeS..", "..SSSS..", ".CCCCCC.", "SCCCCCCS", "..CCCC..", "..PPPP..", "..P..P..", "..F..F.."], p: { H: '#f0cf74', h: '#c99a3e', S: '#f6c9a0', e: O, C: '#3f7fbf', P: '#4a3f6b', F: '#5a3a28' } },
+    farmerB: { m: ["..HHHH..", ".HHHHHH.", "HhhhhhhH", "..SSSS..", "..SeeS..", "..SSSS..", ".CCCCCC.", "SCCCCCCS", "..CCCC..", "..PPPP..", ".P....P.", ".F....F."], p: { H: '#f0cf74', h: '#c99a3e', S: '#f6c9a0', e: O, C: '#3f7fbf', P: '#4a3f6b', F: '#5a3a28' } },
+    flowers: { m: ["oooooooo", "oPyPyPyo", "oGgGgGgo", "oyPyPyPo", "oGgGgGgo", "oooooooo"], p: { o: '#5a3a28', P: '#f080b0', y: '#ffe066', G: '#3f7a4c', g: '#5f9c5a' } },
+    bench: { m: ["oooooooooo", "oWWWWWWWWo", "oooooooooo", "oWWWWWWWWo", "oooooooooo", ".o......o.", ".o......o."], p: { o: '#3a2414', W: '#c08a50' } },
+    lantern: { m: ["..oo..", ".oyyo.", ".oYYo.", ".oyyo.", "..oo..", "..oo..", "..oo..", ".oooo."], p: { o: '#222428', y: '#f6c64a', Y: '#fff3b0' } },
+    barrel: { m: [".oooo.", "oWWWWo", "oBBBBo", "oWWWWo", "oBBBBo", "oWWWWo", ".oooo."], p: { o: '#2a1a10', W: '#a8693a', B: '#5a3a20' } },
+    pot: { m: ["gGgGg.", "GgGgG.", ".oRRo.", ".oRRo.", "..oo.."], p: { g: '#5f9c5a', G: '#3f7a4c', o: '#5a2a1a', R: '#c0603a' } },
+    sign: { m: ["oooooo", "oWWWWo", "oWkkWo", "oooooo", "..oo..", "..oo.."], p: { o: '#2a1a10', W: '#c99a5a', k: '#5a3a20' } },
+    hay: { m: [".oooooo.", "oYyYyYyo", "oyYyYyYo", "oYyYyYyo", ".oooooo."], p: { o: '#7a5a2a', Y: '#e8c56a', y: '#c99a3e' } },
+    scarecrow: { m: ["..HHH...", ".HHHHH..", "..SSS...", "WTTTTTW.", "..TTT...", "...W....", "...W...."], p: { H: '#f0cf74', S: '#e2c27c', T: '#5a7bbf', W: '#7a4a24' } },
+    chicken: { m: ["..r..", ".www.", "wwwwy", ".www.", "..y.."], p: { r: '#e0483a', w: '#fffaf0', y: '#f08a24' } },
+    duck: { m: ["..gg..", ".gGgy.", "wwwww.", ".www.."], p: { g: '#2f7a4a', G: '#3fa060', y: '#f0a020', w: '#fffaf0' } },
+    beehive: { m: [".oooo.", "oYYYYo", "oyyyyo", "oYYYYo", "oyyyyo", "oooooo"], p: { o: '#5a3a10', Y: '#f0c860', y: '#c8962a' } },
+    well: { m: ["RRRRRRRR", "o......o", "oSSSSSSo", "oSbbbbSo", "oSbbbbSo", "oSSSSSSo", ".oooooo."], p: { R: '#7a4e30', o: '#2a2a30', S: '#9aa0a8', b: '#2f4f6e' } },
+    wilma: { m: ["bbbbbbbbbbbb", "bbbooooooobb", "bboggggggGob", "boggSSSSgGgo", "bogSSSSSSgGo", "boSkkSSkkSgo", "boSkeSSekSgo", "bboSSSmSSsob", "bbboSSSSsobb", "bboTTTTTttob", "boTTTTTTTtto", "boTTTTTTTtto"], p: { o: O, g: '#c9c3dc', G: '#9a92b8', S: '#f0c39a', s: '#d09a7a', k: '#4a3a5a', e: O, m: '#c05a5a', T: '#5a9a7a', t: '#3e7a5e', b: '#3a5a48' } }
+  };
+  const STYLES = [{ c: '#e0605a', hi: '#f6a69c', dk: '#93291f' }, { c: '#5a8fe0', hi: '#a8c6f6', dk: '#24498f' }, { c: '#f080c0', hi: '#f8bcdc', dk: '#a33a75' }, { c: '#d99a5a', hi: '#f0c896', dk: '#8a5530' }, { c: '#f0607a', hi: '#f8a8b6', dk: '#9b1f33' }, { c: '#b48cf0', hi: '#dcc8fa', dk: '#5e3a9a' }];
+  const ICONS = ['boot', 'book', 'flower', 'crate', 'heart', 'note', 'pan', 'coin'];
+  const cache = new Map(), urls = new Map();
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function sprite(name, pal, flip) {
+    const key = name + '|' + (pal ? JSON.stringify(pal) : '') + (flip ? 'f' : ''); let c = cache.get(key); if (c) return c;
+    const mp = MAPS[name], p = Object.assign({}, mp.p, pal || {}), w = Math.max(...mp.m.map(r => r.length));
+    c = document.createElement('canvas'); c.width = w; c.height = mp.m.length; const x = c.getContext('2d');
+    mp.m.forEach((row, j) => { for (let i = 0; i < row.length; i++) { const col = p[row[i]]; if (col) { x.fillStyle = col; x.fillRect(flip ? w - 1 - i : i, j, 1, 1); } } });
+    cache.set(key, c); return c;
+  }
+  function img(name, scale = 2, alt = '', pal) {
+    const key = name + scale + (pal ? JSON.stringify(pal) : ''), s = sprite(name, pal); let u = urls.get(key);
+    if (!u) { const c = document.createElement('canvas'); c.width = s.width * scale; c.height = s.height * scale; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(s, 0, 0, c.width, c.height); u = c.toDataURL(); urls.set(key, u); }
+    return `<img class="pi" src="${u}" alt="${esc(alt)}" width="${s.width * scale}" height="${s.height * scale}">`;
+  }
+  root.LAGSprites = { O, MAPS, STYLES, ICONS, sprite, img, esc };
+})(typeof self !== 'undefined' ? self : this);
+
+/* Life's a Game · Klang
+ * Effekte und generative Klaviermusik je Wetter. Kennt keinen Spielzustand, nur zwei Rückfragen (opts).
+ */
+(function (root) {
+  'use strict';
+  function createAudio(opts) {
+    // opts.soundOn(), opts.musicOn(), opts.isNight()
+    let AC = null, noiseBuf = null;
+    function audio() { try { AC = AC || new (root.AudioContext || root.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) { return null; } return AC; }
+    function tone(f, d, o = {}) {
+      if (!opts.soundOn()) return; const a = audio(); if (!a) return;
+      const { type = 'square', to = null, vol = .06, at = 0 } = o, t = a.currentTime + at, os = a.createOscillator(), g = a.createGain();
+      os.type = type; os.frequency.setValueAtTime(f, t); if (to) os.frequency.exponentialRampToValueAtTime(to, t + d);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); os.connect(g); g.connect(a.destination); os.start(t); os.stop(t + d + .03);
+    }
+    const sfx = {
+      check() { tone(523, .07, { to: 784 }); tone(1047, .1, { at: .07, vol: .05 }); },
+      tiny() { tone(440, .07, { to: 660, type: 'triangle', vol: .06 }); tone(880, .09, { at: .07, type: 'triangle', vol: .045 }); },
+      level() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, .12, { at: i * .09, vol: .055 })); tone(1047, .5, { at: .5, type: 'triangle', vol: .08 }); tone(1568, .5, { at: .5, type: 'triangle', vol: .045 }); },
+      drop() { [1319, 1568, 1976, 2637].forEach((f, i) => tone(f, .08, { at: i * .06, type: 'triangle', vol: .05 })); },
+      harvest() { [659, 784, 988, 1319].forEach((f, i) => tone(f, .1, { at: i * .08, type: 'triangle', vol: .06 })); },
+      tick() { tone(880, .03, { vol: .02 }); },
+      soft() { tone(523, .05, { type: 'triangle', vol: .03 }); },          // A9: leises, neutrales Rückgängig
+      err() { tone(220, .12, { type: 'triangle', vol: .035 }); },
+      place() { tone(330, .05, { type: 'triangle', vol: .06 }); tone(494, .08, { at: .05, type: 'triangle', vol: .05 }); },
+      cluck() { tone(720, .05, { to: 520, type: 'triangle', vol: .06, at: .3 }); tone(820, .06, { to: 600, type: 'triangle', vol: .06, at: .38 }); },
+      page() { tone(300, .04, { type: 'triangle', vol: .035 }); tone(500, .05, { type: 'triangle', vol: .025, at: .04 }); }
+    };
+    function noise(a) { if (noiseBuf) return noiseBuf; noiseBuf = a.createBuffer(1, a.sampleRate * 2, a.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return noiseBuf; }
+    function thunder() {
+      if (!opts.soundOn() && !opts.musicOn()) return; const a = audio(); if (!a) return; const t = a.currentTime + .35 + Math.random() * .6;
+      const src = a.createBufferSource(); src.buffer = noise(a); const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 160; const g = a.createGain();
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.5, t + .08); g.gain.exponentialRampToValueAtTime(.001, t + 2.6); src.connect(lp); lp.connect(g); g.connect(a.destination); src.start(t); src.stop(t + 2.7);
+    }
+
+    const Music = (() => {
+      let ctx = null, master, bus, wave, rainGain, timer = null, nextT = 0, step = 0, mood = 'heiter', melIdx = 10, playing = false;
+      const SCALES = { ionian: [0, 2, 4, 5, 7, 9, 11], lydian: [0, 2, 4, 6, 7, 9, 11], dorian: [0, 2, 3, 5, 7, 9, 10], aeolian: [0, 2, 3, 5, 7, 8, 10], phrygian: [0, 1, 3, 5, 7, 8, 10] };
+      const MOODS = {
+        sonnig: { bpm: 100, key: 60, scale: 'ionian', prog: [0, 4, 5, 3], bars: 1, style: 'arp', mel: .55, vel: .55, rain: 0 },
+        heiter: { bpm: 84, key: 55, scale: 'lydian', prog: [0, 1, 5, 4], bars: 1, style: 'broken', mel: .4, vel: .5, rain: 0 },
+        bewoelkt: { bpm: 70, key: 57, scale: 'dorian', prog: [0, 3, 0, 6], bars: 2, style: 'rolled', mel: .3, vel: .45, rain: 0 },
+        regen: { bpm: 60, key: 50, scale: 'aeolian', prog: [0, 5, 2, 6], bars: 2, style: 'sparse', mel: .28, vel: .42, rain: .035 },
+        gewitter: { bpm: 78, key: 52, scale: 'phrygian', prog: [0, 1, 0, 6], bars: 2, style: 'ostinato', mel: .16, vel: .5, rain: .06 }
+      };
+      const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+      function build() {
+        ctx = audio(); if (!ctx) return false;
+        const real = new Float32Array([0, 1, .55, .3, .17, .1, .06, .035, .02]); wave = ctx.createPeriodicWave(real, new Float32Array(real.length));
+        master = ctx.createGain(); master.gain.value = 0; const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3; master.connect(comp); comp.connect(ctx.destination);
+        bus = ctx.createGain(); const dry = ctx.createGain(); dry.gain.value = .72; const wet = ctx.createGain(); wet.gain.value = .38;
+        const conv = ctx.createConvolver(), len = Math.floor(ctx.sampleRate * 2.8), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+        for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.8); }
+        conv.buffer = ir; bus.connect(dry); dry.connect(master); bus.connect(conv); conv.connect(wet); wet.connect(master);
+        const src = ctx.createBufferSource(); src.buffer = noise(ctx); src.loop = true; const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1000;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 7000; rainGain = ctx.createGain(); rainGain.gain.value = 0; src.connect(hp); hp.connect(lp); lp.connect(rainGain); rainGain.connect(master); src.start();
+        return true;
+      }
+      function note(m, t, dur, vel) {
+        const f = mtof(m), o = ctx.createOscillator(), flt = ctx.createBiquadFilter(), g = ctx.createGain(); o.setPeriodicWave(wave); o.frequency.value = f;
+        flt.type = 'lowpass'; flt.frequency.setValueAtTime(Math.min(9000, f * 8 + 1400), t); flt.frequency.exponentialRampToValueAtTime(Math.max(320, f * 1.6), t + 1.1);
+        const end = Math.min(Math.max(.7, Math.min(4, 3.4 * Math.pow(262 / f, .5))), dur + .9);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel * .2, t + .006); g.gain.exponentialRampToValueAtTime(vel * .07, t + .28); g.gain.exponentialRampToValueAtTime(.0001, t + end);
+        o.connect(flt); flt.connect(g); g.connect(bus); o.start(t); o.stop(t + end + .05);
+      }
+      const chordTones = (M, d) => [0, 2, 4, 6].map(k => { const i = d + k, sc = SCALES[M.scale]; return M.key + sc[i % 7] + 12 * Math.floor(i / 7); });
+      const scaleNote = (M, i) => { const sc = SCALES[M.scale]; return M.key + sc[((i % 7) + 7) % 7] + 12 * Math.floor(i / 7); };
+      function schedule() {
+        const M = MOODS[mood], night = opts.isNight(), e = 60 / (M.bpm * (night ? .85 : 1)) / 2, v = M.vel * (night ? .75 : 1);
+        while (nextT < ctx.currentTime + .2) {
+          const s = step % 8, bar = Math.floor(step / 8), ch = chordTones(M, M.prog[Math.floor(bar / M.bars) % M.prog.length]), b = ch[0] - 12, t = nextT + (s % 2 ? e * .06 : 0) + (Math.random() - .5) * .008, R = Math.random;
+          switch (M.style) {
+            case 'arp': if (s === 0) note(b, t, e * 8, v * .75); if (s === 4) note(b + 7, t, e * 4, v * .45); note(ch[[0, 1, 2, 3, 2, 1, 2, 1][s]], t, e * 2, v * .42); break;
+            case 'broken': if (s === 0 || s === 4) note(b, t, e * 4, v * .65); note(ch[[0, 2, 1, 2, 0, 2, 1, 2][s]] + 12, t, e * 2, v * .36); break;
+            case 'rolled': if (s === 0) { note(b, t, e * 8, v * .7); ch.forEach((n, i) => note(n + 12, t + i * .04, e * 8, v * .38)); } if (s === 4) ch.slice(0, 3).forEach((n, i) => note(n + 12, t + i * .05, e * 4, v * .26)); if (s === 6 && R() < .35) note(ch[3] + 24, t, e * 2, v * .24); break;
+            case 'sparse': if (s === 0) { note(b, t, e * 16, v * .7); ch.slice(0, 3).forEach((n, i) => note(n + 12, t + i * .06, e * 8, v * .32)); } if (R() < .22) note(scaleNote(M, 14 + [0, 2, 4, 5, 7][Math.floor(R() * 5)]), t, e * 3, v * .24); break;
+            case 'ostinato': note(b + (s % 2 ? 12 : 0), t, e * 1.3, v * ([0, 3, 6].includes(s) ? .5 : .28)); if (s === 0) ch.slice(0, 3).forEach((n, i) => note(n + 12, t + i * .03, e * 6, v * .32)); if (s === 4) note(ch[2] + 12, t, e * 3, v * .24); break;
+          }
+          if (s % 2 === 0 && R() < M.mel * (s === 0 ? .6 : 1)) {
+            melIdx = Math.max(8, Math.min(17, melIdx + [-2, -1, -1, 0, 1, 1, 2][Math.floor(R() * 7)])); let n = scaleNote(M, melIdx);
+            if (s === 0) { let best = n, bd = 99; ch.forEach(c => [12, 24].forEach(o => { const d = Math.abs(c + o - n); if (d < bd) { bd = d; best = c + o; } })); n = best; }
+            note(n, t, e * (R() < .4 ? 4 : 2), v * .85);
+          }
+          nextT += e; step++;
+        }
+      }
+      return {
+        get playing() { return playing; },
+        start(m) {
+          if (m) mood = m; if (playing) return; if (!ctx && !build()) return; if (ctx.state === 'suspended') ctx.resume(); playing = true; nextT = ctx.currentTime + .12; step = 0;
+          master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime); master.gain.linearRampToValueAtTime(.55, ctx.currentTime + 2);
+          rainGain.gain.setTargetAtTime(MOODS[mood].rain, ctx.currentTime, .8); clearInterval(timer); timer = setInterval(schedule, 40); schedule();
+        },
+        stop() { if (!playing) return; playing = false; const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(0, t + .6); setTimeout(() => { if (!playing) clearInterval(timer); }, 700); },
+        setMood(m) { if (!MOODS[m] || m === mood) return; mood = m; melIdx = 10; step = Math.ceil(step / 8) * 8; if (ctx && rainGain) rainGain.gain.setTargetAtTime(MOODS[m].rain, ctx.currentTime, .8); }
+      };
+    })();
+    root.document && root.document.addEventListener('visibilitychange', () => { if (!AC) return; if (root.document.hidden) AC.suspend(); else if (opts.soundOn() || opts.musicOn()) AC.resume(); });
+    return { sfx, thunder, Music };
+  }
+  root.LAGAudio = { createAudio };
+})(typeof self !== 'undefined' ? self : this);
+
+/* Life's a Game · Hof-Szene (Draufsicht)
+ * Statische Ebene wird nur bei Änderung neu gezeichnet (Schlüssel aus Jahreszeit, Wetter, Tageszeit, Beeten, Gebäuden, Deko).
+ * Pro Bild kommen nur bewegte Teile dazu (15 fps, Pause im Hintergrund-Tab).
+ */
+(function (root) {
+  'use strict';
+  const L = root.LAG, SP = root.LAGSprites, O = SP.O;
+  const W = 256, H = 160;
+  const mix = (a, b, t) => { const h = x => { const n = parseInt(x.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }; const A = h(a), B = h(b); return '#' + ((1 << 24) | A.map((v, i) => Math.round(v + (B[i] - v) * t)).reduce((acc, v, i) => acc | (v << (16 - 8 * i)), 0)).toString(16).slice(1); };
+  const pick = (r, a) => a[Math.floor(r() * a.length)];
+  const rect = (c, x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+  function disc(c, cx, cy, r) { for (let dy = -r; dy <= r; dy++) { const w = Math.floor(Math.sqrt(r * r - dy * dy)); c.fillRect(cx - w, cy + dy, 2 * w + 1, 1); } }
+  function oval(c, cx, cy, rx, ry) { for (let dy = -ry; dy <= ry; dy++) { const w = Math.floor(rx * Math.sqrt(1 - (dy * dy) / (ry * ry))); c.fillRect(cx - w, cy + dy, 2 * w + 1, 1); } }
+  const riverX = y => 20 + Math.round(5 * Math.sin(y / 26) + 2 * Math.sin(y / 9));
+  const SEASONPAL = {
+    Frühling: { gA: '#5a9a66', gB: '#54935f', tuft: '#3f7a4c', tree: ['#2e5a3e', '#3f8a4c', '#6fb860'], blossom: '#f6b6d0' },
+    Sommer: { gA: '#4f8a62', gB: '#4a845c', tuft: '#3a6c4a', tree: ['#24503a', '#356e46', '#5a9c5a'] },
+    Herbst: { gA: '#7c8a56', gB: '#768450', tuft: '#5e6a3c', tree: ['#7a3a1e', '#c46a2a', '#eaa24a'] },
+    Winter: { gA: '#d8e4ea', gB: '#cfdce4', tuft: '#aebfca', tree: ['#3a5a50', '#5a7a70', '#e8f0f4'] }
+  };
+  const BEDS = (() => { const a = []; [72, 112, 134].forEach(y => [132, 154, 196, 218].forEach(x => a.push([x, y]))); return a; })();
+  const BSLOTS = [[134, 20], [172, 16], [212, 20], [34, 60], [38, 114], [106, 122]];
+  const DSLOTS = [[68, 62], [106, 62], [70, 84], [108, 84], [98, 138], [72, 108], [110, 107], [124, 60], [236, 58], [72, 130], [60, 148], [128, 150]];
+  const TREES = []; for (let x = 44; x < 250; x += 13) TREES.push([x, ((x / 13) | 0) % 2 ? 3 : 6, 7, 'oak']); for (let y = 24; y < 156; y += 15) TREES.push([250, y, 6, ((y / 15) | 0) % 2 ? 'pine' : 'oak']);
+  [[40, 156, 7, 'oak'], [150, 158, 6, 'pine'], [176, 158, 6, 'oak'], [204, 158, 6, 'pine'], [48, 34, 5, 'pine'], [126, 44, 5, 'pine'], [240, 140, 5, 'oak']].forEach(t => TREES.push(t));
+  const ROCKS = [[50, 100], [118, 98], [244, 104], [66, 152], [140, 92], [48, 128]];
+  const WAYPTS = [[90, 60], [90, 99], [136, 99], [186, 99], [186, 56], [186, 99], [238, 99], [90, 99], [90, 150], [90, 99]];
+  const BLD = Lv => { const i = Math.min(Lv, 5); return { w: [0, 0, 16, 20, 24, 28][i], rh: [0, 0, 6, 8, 9, 10][i], wh: [0, 0, 6, 7, 8, 9][i] }; };
+
+  function createScene(canvas, deps) {
+    // deps: state(), D(), weather(), phase(), sleeps(), thunder(), onMood(m), reduce
+    const g = canvas.getContext('2d'); g.imageSmoothingEnabled = false;
+    const base = document.createElement('canvas'); base.width = W; base.height = H;
+    let env = null, envKey = '', lights = [], parts = [], shadows = [], smoke = [], frame = 0, flash = 0, nextBolt = 0, animals = [], glints = [];
+    const walker = { i: 0, x: 90, y: 60, pause: 0, flip: false };
+    const activeHabits = () => deps.state().habits.filter(h => !h.archivedAt).slice(0, L.C.MAX_BEDS);
+    const styleOf = s => SP.STYLES[s.st % SP.STYLES.length];
+    const skillById = id => deps.state().skills.find(s => s.id === id) || deps.state().skills[0];
+
+    function computeEnv() {
+      const S = deps.state(), D = deps.D(), season = L.seasonOf(new Date().getMonth()), weather = deps.weather(), phase = deps.phase();
+      const beds = activeHabits().map(h => { const x = D.H[h.id], s = skillById(h.skillId); return [h.id, x.stage, s ? s.st : 0, x.graduated ? 1 : 0].join(':'); }).join(',');
+      const blds = S.skills.map(s => s.st + ':' + D.levels[s.id].l + ':' + s.icon).join(','), pl = S.chest.placed.map(p => p.itemId + (p.slot ?? '')).join(',');
+      return { season, weather, phase, key: [season, weather, phase, beds, blds, pl].join('|') };
+    }
+    function drawTree(c, x, y, r, kind, P, night) {
+      const [d, m, l] = P.tree.map(t => mix(t, '#0e1a2a', night ? .35 : 0));
+      c.fillStyle = 'rgba(10,20,30,.28)'; oval(c, x + 3, y + r + 1, r, Math.max(2, r >> 1));
+      if (kind === 'pine') { rect(c, x - 1, y + r - 2, 3, 4, '#4a2e1e'); const n = Math.ceil(r * .8); for (let i = 0; i < 3; i++) { const yy = y - r + i * Math.ceil(r * .7), w = 2 + i * Math.ceil(r * .55); for (let j = 0; j < n; j++) { const ww = Math.round(w * j / n) + 1; rect(c, x - ww - 1, yy + j, ww * 2 + 3, 1, O); rect(c, x - ww, yy + j, ww * 2 + 1, 1, j % 3 === 0 ? l : i % 2 ? m : d); } } return; }
+      rect(c, x - 1, y + r - 3, 3, 5, '#5a3a28'); c.fillStyle = O; disc(c, x, y, r + 1); c.fillStyle = d; disc(c, x, y, r); c.fillStyle = m; disc(c, x - 1, y - 1, r - 2); c.fillStyle = l; disc(c, x - 2, y - 2, Math.max(1, r - 5));
+      if (P.blossom) { c.fillStyle = P.blossom; [[1, -2], [-3, 1], [2, 2], [-1, -4]].forEach(([a, b]) => c.fillRect(x + a, y + b, 1, 1)); }
+    }
+    function drawHouse(c, x, y, w, roofH, wallH, roof, opt) {
+      const night = opt.night, rD = mix(roof, '#10102a', .35), rL = mix(roof, '#ffffff', .25), wall = mix(opt.wall || '#d9b88a', '#2a2a4a', night ? .4 : 0), wallS = mix(wall, '#4a3a2a', .3), beam = mix('#6b4428', '#1a1a2a', night ? .3 : 0);
+      c.fillStyle = 'rgba(10,20,30,.3)'; c.fillRect(x + 3, y + 3, w, roofH + wallH);
+      rect(c, x - 1, y + roofH - 1, w + 2, wallH + 2, O); rect(c, x, y + roofH, w, wallH, wall); rect(c, x, y + roofH + wallH - 2, w, 2, mix('#8a8a90', '#2a2a40', night ? .4 : 0)); rect(c, x, y + roofH, w, 1, wallS);
+      for (let bx = x + 6; bx < x + w - 2; bx += 8) rect(c, bx, y + roofH + 1, 1, wallH - 3, beam);
+      rect(c, x - 3, y - 1, w + 6, roofH + 1, O); for (let j = 0; j < roofH; j++) rect(c, x - 2, y + j, w + 4, 1, j === 0 ? rL : j % 3 === 2 ? rD : roof);
+      rect(c, x + Math.floor(w / 2), y, 1, roofH, rD); rect(c, x - 2, y + roofH - 1, w + 4, 1, rD);
+      if (opt.chimney) { rect(c, x + w - 9, y - 6, 6, 8, O); rect(c, x + w - 8, y - 5, 4, 6, '#8a5a4a'); if (opt.smokeAt) opt.smokeAt.push([x + w - 6, y - 7]); }
+      const dw = Math.max(4, Math.floor(w / 7)), dx = x + Math.floor((w - dw) / 2), dh = Math.min(wallH - 3, 8);
+      rect(c, dx - 1, y + roofH + wallH - dh - 1, dw + 2, dh + 1, O); rect(c, dx, y + roofH + wallH - dh, dw, dh, mix('#7a4a2a', '#1a1a2a', night ? .3 : 0)); rect(c, dx + dw - 2, y + roofH + wallH - Math.ceil(dh / 2), 1, 1, '#f6c64a');
+      for (let i = 0; i < opt.windows; i++) {
+        const wx = i % 2 === 0 ? x + 3 + Math.floor(i / 2) * 7 : x + w - 8 - Math.floor(i / 2) * 7, wy = y + roofH + 2;
+        if (wx < x + 2 || wx + 5 > x + w - 1 || (wx + 5 > dx - 1 && wx < dx + dw + 1)) continue;
+        rect(c, wx - 1, wy - 1, 6, 5, O); rect(c, wx, wy, 4, 3, opt.lit ? '#ffd27a' : mix('#9fd3e8', '#3a4a6a', night ? .5 : 0)); rect(c, wx + 2, wy, 1, 3, beam); if (opt.lit) lights.push([wx + 2, wy + 1, 9]);
+      }
+      if (opt.flag) { rect(c, x + w + 2, y - 8, 1, 14, O); rect(c, x + w + 3, y - 8, 5, 4, opt.flag); }
+      return { doorX: dx + Math.floor(dw / 2), bottom: y + roofH + wallH };
+    }
+    function buildBase(e) {
+      const S = deps.state(), D = deps.D(), c = base.getContext('2d'), P = SEASONPAL[e.season], night = e.phase === 'night', lit = night || e.phase === 'evening' || e.weather === 'gewitter', dk = t => mix(t, '#1a1a2a', night ? .3 : 0);
+      lights = []; const smokeAt = [];
+      const gA = mix(P.gA, '#10203a', night ? .3 : 0), gB = mix(P.gB, '#10203a', night ? .3 : 0);
+      for (let ty = 0; ty < H; ty += 8) for (let tx = 0; tx < W; tx += 8) rect(c, tx, ty, 8, 8, ((tx + ty) / 8) % 2 ? gA : gB);
+      const r = L.rng(9); for (let i = 0; i < 180; i++) { const x = Math.floor(r() * W), y = Math.floor(r() * H); rect(c, x, y, 1, 2, P.tuft); rect(c, x + 2, y + 1, 1, 1, P.tuft); }
+      if (e.season !== 'Winter') for (let i = 0; i < 40; i++) rect(c, Math.floor(r() * W), Math.floor(r() * H), 1, 1, pick(r, ['#f6e27a', '#f6a6c8', '#ffffff', '#b8a8ff']));
+      const water = mix(e.season === 'Winter' ? '#6a8aa8' : '#2f4f6e', '#0e1a3a', night ? .35 : 0), waterL = mix(water, '#8fb8d8', .25), waterD = mix(water, '#101a30', .3), bank = mix(P.tuft, '#1a2a20', .3);
+      for (let y = 0; y < H; y++) { const cx = riverX(y), l = cx - 11; rect(c, l - 2, y, 26, 1, bank); rect(c, l, y, 22, 1, water); rect(c, cx - 3, y, 6, 1, waterD); rect(c, l, y, 2, 1, waterL); rect(c, l + 20, y, 2, 1, waterL); }
+      if (e.season !== 'Winter') [[16, 30], [24, 70], [14, 124], [22, 146]].forEach(([x, y]) => { rect(c, x, y, 3, 2, '#4f9a5a'); rect(c, x + 1, y, 1, 1, '#7fcf8a'); });
+      const pc = e.season === 'Winter' ? '#e8eef2' : dk('#c9a877'), pe = mix(pc, '#5a3a20', .3), pd = mix(pc, '#7a5a3a', .15);
+      const segs = [[30, 95, 216, 10], [86, 56, 10, 40], [86, 104, 10, 56], [182, 46, 10, 50], [40, 78, 10, 18], [118, 104, 8, 20]];
+      segs.forEach(([x, y, w, h]) => rect(c, x - 1, y - 1, w + 2, h + 2, pe)); segs.forEach(([x, y, w, h]) => rect(c, x, y, w, h, pc));
+      const pr = L.rng(4); for (let i = 0; i < 70; i++) { const s = segs[Math.floor(pr() * segs.length)]; rect(c, s[0] + Math.floor(pr() * s[2]), s[1] + Math.floor(pr() * s[3]), 1, 1, pd); }
+      const dl = riverX(99) - 13, plank = dk('#a8784a'); rect(c, dl - 1, 94, 28, 12, O); for (let x = dl; x < dl + 26; x++) rect(c, x, 95, 1, 10, x % 3 === 0 ? mix(plank, '#3a2010', .35) : plank);
+      ROCKS.forEach(([x, y]) => { rect(c, x - 1, y - 1, 7, 5, O); rect(c, x, y, 5, 3, '#7a828c'); rect(c, x, y, 4, 1, '#a8b0b8'); });
+      TREES.filter(t => t[1] < 20).forEach(t => drawTree(c, t[0], t[1], t[2], t[3], P, night));
+      const fh = drawHouse(c, 62, 20, 52, 16, 14, '#5a548e', { night, windows: 4, chimney: true, smokeAt, lit });
+      const porch = dk('#a8784a'); rect(c, 61, fh.bottom, 54, 4, O); rect(c, 62, fh.bottom, 52, 3, porch); for (let x = 64; x < 114; x += 8) rect(c, x, fh.bottom, 1, 3, mix(porch, '#3a2010', .4));
+      if (e.season === 'Winter') rect(c, 60, 19, 56, 3, '#f6f8ff');
+      S.skills.forEach((s, i) => {
+        if (i >= BSLOTS.length) return; const [x, y] = BSLOTS[i], Lv = D.levels[s.id].l, st = styleOf(s);
+        if (Lv <= 1) { rect(c, x, y + 10, 14, 12, dk('#7a5236')); [[x, y + 9], [x + 13, y + 9], [x, y + 21], [x + 13, y + 21]].forEach(([a, b]) => rect(c, a, b, 1, 3, '#c99a5a')); rect(c, x + 4, y + 13, 6, 5, O); rect(c, x + 5, y + 14, 4, 3, '#d99a5a'); }
+        else { const b = BLD(Lv); drawHouse(c, x, y + (28 - b.rh - b.wh), b.w, b.rh, b.wh, st.c, { night, windows: Lv >= 3 ? (Lv >= 4 ? 2 : 1) : 0, chimney: Lv >= 4, smokeAt: Lv >= 4 ? smokeAt : null, lit, flag: Lv >= 5 ? st.hi : null }); }
+        c.drawImage(SP.sprite(s.icon), x - 2, y + 22);
+      });
+      activeHabits().forEach((h, i) => {
+        const [x, y] = BEDS[i], d = D.H[h.id], sk = skillById(h.skillId), st = sk ? styleOf(sk) : SP.STYLES[0], fw = dk('#b88a52'), soil = mix('#7a5236', '#1a1020', night ? .3 : 0);
+        rect(c, x - 1, y - 1, 22, 18, O); rect(c, x, y, 20, 16, fw); rect(c, x + 1, y + 1, 18, 14, soil); for (let k = 0; k < 2; k++) rect(c, x + 1, y + 6 + k * 5, 18, 1, mix(soil, '#2a1408', .35));
+        [[x, y], [x + 19, y], [x, y + 15], [x + 19, y + 15], [x + 9, y]].forEach(([a, b]) => rect(c, a, b, 1, 1, mix(fw, '#3a2010', .5)));
+        const spr = SP.sprite('p' + d.stage, { F: st.c, f: st.dk }); for (let r2 = 0; r2 < 2; r2++) for (let k = 0; k < 3; k++) c.drawImage(spr, x + 2 + k * 6, y + 2 + r2 * 7);
+        if (d.graduated) { rect(c, x + 17, y - 4, 1, 6, O); rect(c, x + 18, y - 4, 3, 2, '#f4d58e'); }
+      });
+      S.chest.placed.forEach(p => {
+        if (L.ITEMS[p.itemId].animal || p.slot === undefined) return; const [x, y] = DSLOTS[p.slot] || [0, 0], spr = SP.sprite(p.itemId);
+        c.fillStyle = 'rgba(10,20,30,.25)'; c.fillRect(x + 1, y + spr.height - 1, spr.width, 2); c.drawImage(spr, x, y); if (p.itemId === 'lantern' && lit) lights.push([x + 3, y + 2, 14]);
+      });
+      TREES.filter(t => t[1] >= 20).forEach(t => drawTree(c, t[0], t[1], t[2], t[3], P, night));
+      if (lit) lights.push([fh.doorX, fh.bottom + 2, 10]);
+      smoke.length = 0; e.smokeAt = smokeAt;
+    }
+    const makeAnimals = () => deps.state().chest.placed.filter(p => L.ITEMS[p.itemId].animal).map((p, i) => p.itemId === 'duck' ? { t: 'duck', y: (20 + i * 37) % 120, v: .25 } : { t: 'chicken', x: 66 + i * 5, y: 112 + i * 9, dx: .4, dy: .2 });
+    function initDynamics(e) {
+      parts = []; const rr = Math.random, n = { sonnig: 0, heiter: 2, bewoelkt: 5, regen: 6, gewitter: 7 }[e.weather], wet = e.weather === 'regen' || e.weather === 'gewitter';
+      shadows = [...Array(n)].map(() => ({ x: rr() * W, y: rr() * H, r: 14 + rr() * 16, v: .12 + rr() * .12 }));
+      if (wet) { const snow = e.season === 'Winter'; for (let i = 0; i < (snow ? 80 : 130); i++) parts.push({ t: snow ? 'snow' : 'rain', x: rr() * W, y: rr() * H, v: snow ? .35 + rr() * .35 : 3 + rr() * 2, life: 0 }); }
+      else if (e.season === 'Winter') for (let i = 0; i < 30; i++) parts.push({ t: 'snow', x: rr() * W, y: rr() * H, v: .2 + rr() * .2 });
+      if (e.phase === 'night' && !wet && e.season !== 'Winter') for (let i = 0; i < 14; i++) parts.push({ t: 'fly', x: rr() * W, y: rr() * H, p: rr() * 6.28 });
+      if (!wet && (e.season === 'Herbst' || e.season === 'Frühling')) for (let i = 0; i < 8; i++) parts.push({ t: 'leaf', x: rr() * W, y: rr() * H, p: rr() * 6.28, c: e.season === 'Herbst' ? pick(rr, SEASONPAL.Herbst.tree) : SEASONPAL.Frühling.blossom });
+      animals = makeAnimals();
+      deps.state().chest.placed.filter(p => p.itemId === 'beehive').forEach(p => { const [x, y] = DSLOTS[p.slot] || [0, 0]; for (let i = 0; i < 3; i++) parts.push({ t: 'bee', cx: x + 3, cy: y + 2, p: rr() * 6.28 }); });
+      nextBolt = frame + 60 + Math.floor(rr() * 90); flash = 0;
+    }
+    function tick() {
+      frame++;
+      shadows.forEach(s => { s.x += s.v; s.y += s.v * .3; if (s.x - s.r > W) { s.x = -s.r; s.y = Math.random() * H; } });
+      for (const p of parts) {
+        if (p.t === 'rain') { if (p.life > 0) { if (--p.life === 0) { p.y = -Math.random() * 20; p.x = Math.random() * (W + 20); } } else { p.y += p.v; p.x -= p.v * .2; if (p.y > H || Math.random() < .012) p.life = 3; } }
+        else if (p.t === 'snow') { p.y += p.v; p.x += Math.sin((frame + p.x) * .04) * .3; if (p.y > H) { p.y = -2; p.x = Math.random() * W; } }
+        else if (p.t === 'fly') { p.p += .07; p.x = (p.x + Math.cos(p.p * .7) * .4 + W) % W; p.y = (p.y + Math.sin(p.p) * .3 + H) % H; }
+        else if (p.t === 'leaf') { p.p += .07; p.x += .4 + Math.sin(p.p) * .5; p.y += .25; if (p.x > W || p.y > H) { p.x = -4; p.y = Math.random() * H; } }
+        else if (p.t === 'bee') p.p += .18;
+      }
+      if (env.smokeAt && frame % 6 === 0) env.smokeAt.forEach(([x, y]) => smoke.push({ x, y, l: 0 }));
+      for (let i = smoke.length - 1; i >= 0; i--) { const s = smoke[i]; s.l++; s.y -= .35; s.x += .15 + Math.sin(s.l * .2) * .15; if (s.l > 40) smoke.splice(i, 1); }
+      for (let i = glints.length - 1; i >= 0; i--) if (--glints[i].l <= 0) glints.splice(i, 1);
+      if (walker.pause > 0) walker.pause--; else {
+        const [tx, ty] = WAYPTS[(walker.i + 1) % WAYPTS.length], dx = tx - walker.x, dy = ty - walker.y, dist = Math.hypot(dx, dy);
+        if (dist < .7) { walker.i = (walker.i + 1) % WAYPTS.length; walker.pause = Math.random() < .4 ? 30 + Math.floor(Math.random() * 40) : 0; } else { walker.x += dx / dist * .55; walker.y += dy / dist * .55; if (Math.abs(dx) > .3) walker.flip = dx < 0; }
+      }
+      animals.forEach(a => { if (a.t === 'duck') { a.y += a.v; if (a.y > H + 4) a.y = -6; } else { a.x += a.dx; a.y += a.dy; if (a.x < 60 || a.x > 82) a.dx *= -1; if (a.y < 108 || a.y > 150) a.dy *= -1; if (Math.random() < .02) { a.dx = (Math.random() - .5) * .8; a.dy = (Math.random() - .5) * .6; } } });
+      if (env.weather === 'gewitter' && frame >= nextBolt) { flash = 1; nextBolt = frame + 90 + Math.floor(Math.random() * 150); deps.thunder(); }
+      if (flash > 0) flash = Math.max(0, flash - .16);
+    }
+    function draw() {
+      const S = deps.state(), D = deps.D(), e = env, night = e.phase === 'night';
+      g.globalCompositeOperation = 'source-over'; g.drawImage(base, 0, 0);
+      const wl = night ? 'rgba(170,190,255,.35)' : 'rgba(220,240,255,.5)'; for (let k = 0; k < 26; k++) { const y = (k * 13 + Math.floor(frame * .6)) % H, x = riverX(y) - 7 + ((k * 7) % 12); rect(g, x, y, 3, 1, wl); }
+      animals.forEach(a => { if (a.t === 'duck') { const x = riverX(a.y) - 2; rect(g, x - 1, Math.round(a.y) + 4, 8, 1, 'rgba(220,240,255,.4)'); g.drawImage(SP.sprite('duck'), x, Math.round(a.y)); } });
+      const s2 = S.skills[1];
+      if (s2 && D.levels[s2.id].l >= 4) {
+        const [bx, by] = BSLOTS[1], b = BLD(D.levels[s2.id].l), cx = bx + Math.floor(b.w / 2), cy = by + (28 - b.rh - b.wh) + 2, a = deps.reduce ? 0 : frame * .05;
+        for (let k = 0; k < 4; k++) { const an = a + k * Math.PI / 2; for (let r2 = 2; r2 < 11; r2++) { const px = Math.round(cx + Math.cos(an) * r2), py = Math.round(cy + Math.sin(an) * r2); rect(g, px, py, 1, 1, O); if (r2 > 4) rect(g, px + Math.round(-Math.sin(an)), py + Math.round(Math.cos(an)), 1, 1, '#f2e6c8'); } }
+        rect(g, cx - 1, cy - 1, 3, 3, '#7a4a2a');
+      }
+      smoke.forEach(s => { g.fillStyle = `rgba(220,224,232,${.45 * (1 - s.l / 40)})`; g.fillRect(Math.round(s.x), Math.round(s.y), s.l > 15 ? 3 : 2, s.l > 15 ? 3 : 2); });
+      const step = deps.reduce ? 0 : Math.floor(frame / 5) % 2;
+      g.fillStyle = 'rgba(10,20,30,.3)'; g.fillRect(Math.round(walker.x) - 3, Math.round(walker.y) + 5, 7, 2);
+      g.drawImage(SP.sprite(walker.pause === 0 && step ? 'farmerB' : 'farmerA', null, walker.flip), Math.round(walker.x) - 4, Math.round(walker.y) - 7);
+      animals.forEach(a => { if (a.t === 'chicken') { g.fillStyle = 'rgba(10,20,30,.25)'; g.fillRect(Math.round(a.x), Math.round(a.y) + 4, 5, 1); g.drawImage(SP.sprite('chicken', null, a.dx < 0), Math.round(a.x), Math.round(a.y)); } });
+      for (const p of parts) if (p.t === 'bee') rect(g, Math.round(p.cx + Math.cos(p.p) * 6), Math.round(p.cy + Math.sin(p.p * 1.3) * 4), 1, 1, '#ffd84a');
+      if (shadows.length) { g.fillStyle = e.weather === 'gewitter' ? 'rgba(8,12,24,.16)' : 'rgba(10,20,30,.12)'; shadows.forEach(s => oval(g, Math.round(s.x), Math.round(s.y), Math.round(s.r), Math.round(s.r * .6))); }
+      for (const p of parts) {
+        if (p.t === 'rain') { if (p.life > 0) rect(g, Math.round(p.x) - 1, Math.round(p.y), 3, 1, 'rgba(220,235,255,.55)'); else rect(g, Math.round(p.x), Math.round(p.y), 1, 3, 'rgba(190,215,255,.5)'); }
+        else if (p.t === 'snow') rect(g, Math.round(p.x), Math.round(p.y), p.v > .45 ? 2 : 1, p.v > .45 ? 2 : 1, '#ffffff');
+        else if (p.t === 'leaf') rect(g, Math.round(p.x), Math.round(p.y), 2, 1, p.c);
+      }
+      const grade = { night: 'rgba(14,18,56,.42)', evening: 'rgba(120,50,90,.14)', morning: 'rgba(255,170,120,.07)', day: null }[e.phase]; if (grade) { g.fillStyle = grade; g.fillRect(0, 0, W, H); }
+      const wx = { bewoelkt: 'rgba(50,60,80,.08)', regen: 'rgba(30,40,70,.18)', gewitter: 'rgba(16,18,40,.28)' }[e.weather]; if (wx) { g.fillStyle = wx; g.fillRect(0, 0, W, H); }
+      g.globalCompositeOperation = 'lighter';
+      if (e.phase === 'day' && (e.weather === 'sonnig' || e.weather === 'heiter')) { g.fillStyle = `rgba(255,240,200,${.04 + .015 * Math.sin(frame * .05)})`; g.fillRect(0, 0, W, H); }
+      const fl = deps.reduce ? 0 : Math.floor(frame / 5) % 2; lights.forEach(([x, y, r]) => { g.fillStyle = 'rgba(255,180,80,.07)'; disc(g, x, y, r + fl); g.fillStyle = 'rgba(255,200,110,.09)'; disc(g, x, y, Math.max(2, r >> 1)); });
+      for (const p of parts) if (p.t === 'fly' && Math.sin(p.p * 1.7) > -.2) { g.fillStyle = 'rgba(200,255,140,.2)'; disc(g, Math.round(p.x), Math.round(p.y), 2); rect(g, Math.round(p.x), Math.round(p.y), 1, 1, 'rgba(230,255,170,.9)'); }
+      glints.forEach(gl => { const a = gl.l / 30; g.fillStyle = `rgba(255,236,150,${.5 * a})`; disc(g, gl.x, gl.y, 12 - Math.round(gl.l / 4)); });
+      g.globalCompositeOperation = 'source-over';
+      if (deps.sleeps()) { const zx = 116, zy = 12 - ((frame >> 2) % 10); g.fillStyle = 'rgba(240,240,255,.8)'; [[0, 0], [1, 0], [2, 0], [1, 1], [0, 2], [1, 2], [2, 2]].forEach(([a, b]) => g.fillRect(zx + a, zy + b, 1, 1)); }
+      if (flash > 0) { g.fillStyle = `rgba(230,235,255,${flash * .5})`; g.fillRect(0, 0, W, H); }
+    }
+    function update(force) {
+      const e = computeEnv();
+      if (force || e.key !== envKey) { const big = force || !env || env.weather !== e.weather || env.phase !== e.phase || env.season !== e.season; env = e; envKey = e.key; buildBase(e); if (big) initDynamics(e); else animals = makeAnimals(); deps.onMood(e.weather); }
+    }
+    let last = 0, acc = 0, running = false; const STEP = 1000 / 15;
+    function loop(ts) { requestAnimationFrame(loop); if (document.hidden) { last = ts; return; } acc += ts - last; last = ts; if (acc < STEP) return; acc %= STEP; update(); tick(); draw(); }
+    return {
+      start() { update(true); if (deps.reduce) draw(); else if (!running) { running = true; requestAnimationFrame(loop); } },
+      refresh(force) { update(force); if (deps.reduce) draw(); },
+      /** Kurzes Leuchten über einem Beet, z. B. bei einer Ernte. */
+      glowBed(habitId) { const i = activeHabits().findIndex(h => h.id === habitId); if (i < 0) return; const [x, y] = BEDS[i]; glints.push({ x: x + 10, y: y + 8, l: 30 }); }
+    };
+  }
+  root.LAGScene = { createScene };
+})(typeof self !== 'undefined' ? self : this);
+
+/* Life's a Game · Demo-Hof
+ * Nur zum Ansehen: wird nie gespeichert und nie mit dem echten Profil vermischt (Checkliste D7).
+ */
+(function (root) {
+  'use strict';
+  const L = root.LAG;
+  function demoState(today) {
+    const r = L.rng(42), s = L.emptyState(L.addDays(today, -92));
+    s.onboarded = true; s.demo = true;
+    s.skills = [{ id: 's1', name: 'Ausdauer', icon: 'boot', st: 0 }, { id: 's2', name: 'Wissen', icon: 'book', st: 1 }, { id: 's3', name: 'Kreativität', icon: 'flower', st: 2 }, { id: 's4', name: 'Ordnung', icon: 'crate', st: 3 }, { id: 's5', name: 'Soziales', icon: 'heart', st: 4 }];
+    const mk = (i, days, pd, pt, extra) => {
+      const start = L.addDays(today, -days), h = L.newHabit(i, start, 'd' + days);
+      for (let k = start; k < today; k = L.addDays(k, 1)) {
+        if (!L.isScheduled(h, k)) continue;
+        if (i.frequency.kind === 'weekly') { if (r() < i.frequency.timesPerWeek / 7 * 1.05) h.logs[k] = r() < pt ? 'tiny' : 'done'; continue; }
+        const x = r(); if (x < pd) h.logs[k] = 'done'; else if (x < pd + pt) h.logs[k] = 'tiny';
+      }
+      Object.assign(h, extra || {}); const d = L.computeHabit(h, today); h.harvestStage = d.stage; h.gradRewarded = d.graduated; return h;
+    };
+    s.habits = [
+      mk({ title: 'Ein Glas Wasser trinken', anchor: 'dem Aufstehen', anchorTime: '07:00', tinyVersion: 'Drei Schlucke', frequency: { kind: 'daily' }, skillId: 's1', effort: 1, streakEnabled: true, remindersEnabled: false }, 92, .95, .03, { remOffAt: L.addDays(today, -44) }),
+      mk({ title: '20 Minuten lesen', anchor: 'dem Zähneputzen am Abend', anchorTime: '22:00', tinyVersion: 'Eine Seite lesen', frequency: { kind: 'daily' }, skillId: 's2', effort: 2, streakEnabled: true, remindersEnabled: true }, 45, .86, .08),
+      mk({ title: 'Spazieren gehen', anchor: 'dem Mittagessen', anchorTime: '13:00', tinyVersion: 'Einmal um den Block', frequency: { kind: 'daily' }, skillId: 's1', effort: 2, streakEnabled: true, remindersEnabled: true }, 24, .62, .16),
+      mk({ title: 'Skizzieren', anchor: 'dem ersten Kaffee am Wochenende', tinyVersion: 'Eine Linie zeichnen', frequency: { kind: 'weekly', timesPerWeek: 2 }, skillId: 's3', effort: 1, streakEnabled: false, remindersEnabled: false }, 30, 0, .2),
+      mk({ title: '10 Minuten aufräumen', anchor: 'dem Abendessen', anchorTime: '19:00', tinyVersion: 'Einen Gegenstand wegräumen', frequency: { kind: 'weekdays', days: [1, 2, 3, 4, 5] }, skillId: 's4', effort: 1, streakEnabled: true, remindersEnabled: true }, 18, .66, .12)
+    ];
+    s.todos = [
+      { id: 't1', title: 'Präsentation für Montag vorbereiten', effort: 3, skillId: 's2' },
+      { id: 't2', title: 'Oma anrufen', effort: 2, skillId: 's5' },
+      { id: 't3', title: 'Fahrradreifen aufpumpen', effort: 1, skillId: 's1', doneAt: L.addDays(today, -1), rolled: true }
+    ];
+    s.journal = [
+      { date: L.addDays(today, -2), weather: 'regen', text: 'Grauer Tag. Trotzdem die Mini-Version beim Spazieren gemacht, das zählt.' },
+      { date: L.addDays(today, -1), weather: 'heiter', text: 'Lesen klappt inzwischen fast automatisch. Spazieren nach dem Essen fühlt sich gut an.' }
+    ];
+    s.chest = { items: { bench: 1, pot: 2, hay: 1 }, placed: [{ itemId: 'lantern', slot: 0 }, { itemId: 'flowers', slot: 1 }, { itemId: 'chicken' }] };
+    s.checkins = { [today]: { weather: null, todos: [] } };
+    return s;
+  }
+  root.LAGDemo = { demoState };
+})(typeof self !== 'undefined' ? self : this);
+
+/* Life's a Game · Oberfläche
+ * Rendering und Ereignisse. Spielregeln kommen ausschließlich aus LAG (logic.js).
+ */
+(function (root) {
+  'use strict';
+  const L = root.LAG, SP = root.LAGSprites, Store = root.LAGStore, img = SP.img, esc = SP.esc;
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const reduce = !!(root.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const today = () => L.dkey(new Date()), hour = () => new Date().getHours();
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  const WNAME = { sonnig: 'Sonnig', heiter: 'Heiter', bewoelkt: 'Bewölkt', regen: 'Regen', gewitter: 'Gewitter' };
+  const DAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const PROMPTS = ['Was lief heute gut?', 'Worüber hast du dich gefreut?', 'Was hat dir Energie gegeben, was hat sie gekostet?', 'Was nimmst du dir für morgen vor?', 'Wofür bist du heute dankbar?', 'Was hast du heute über dich gelernt?', 'Welche kleine Sache hat den Tag besser gemacht?'];
+  const IDEAS = [
+    { title: 'Ein Glas Wasser trinken', anchor: 'dem Aufstehen', tiny: 'Drei Schlucke', time: '07:00', skill: 0 },
+    { title: '5 Minuten dehnen', anchor: 'dem ersten Kaffee', tiny: 'Eine Dehnübung', time: '08:00', skill: 0 },
+    { title: '10 Minuten lesen', anchor: 'dem Zähneputzen am Abend', tiny: 'Eine Seite lesen', time: '22:00', skill: 1 },
+    { title: 'Spazieren gehen', anchor: 'dem Mittagessen', tiny: 'Einmal um den Block', time: '13:00', skill: 0 },
+    { title: 'Fünf Minuten aufräumen', anchor: 'dem Abendessen', tiny: 'Einen Gegenstand wegräumen', time: '19:00', skill: 2 },
+    { title: 'Jemandem schreiben', anchor: 'der Mittagspause', tiny: 'Eine kurze Nachricht schicken', time: '12:30', skill: 2 }
+  ];
+
+  let S = null, D = null, realState = null, scene = null, au = null, preview = null;
+  const U = { npcIdx: 0, selWeather: null, editingJournal: false, draft: '', promptShift: 0, renaming: null, editHabit: null, wipeArmed: false, showExport: false,
+    importPending: null, calHabit: '', calYear: null, lastTodoSkill: null, obStep: null, ci: null, undo: null };
+
+  /* ---------- Hilfen ---------- */
+  const skillById = id => S.skills.find(s => s.id === id) || S.skills[0];
+  const styleOf = s => SP.STYLES[(s ? s.st : 0) % SP.STYLES.length];
+  const freqText = f => f.kind === 'daily' ? 'Täglich' : f.kind === 'weekly' ? f.timesPerWeek + '× pro Woche' : f.days.slice().sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(d => DAYS[d]).join(', ');
+  const planText = h => 'Nach ' + h.anchor + ': ' + h.title;
+  const fmt = (k, o = { weekday: 'short', day: 'numeric', month: 'short' }) => L.parseKey(k).toLocaleDateString('de-DE', o);
+  const active = () => S.habits.filter(h => !h.archivedAt);
+  const portrait = () => img('wilma', 5, '').replace('class="pi"', 'class="pi portrait"');
+  const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = () => navigator.standalone === true || (root.matchMedia && matchMedia('(display-mode: standalone)').matches);
+
+  /* ---------- Speichern ---------- */
+  let saveT = 0;
+  const canSave = () => S && !S.demo && S.onboarded;
+  function save() { if (!canSave()) return; clearTimeout(saveT); saveT = setTimeout(() => Store.save(S), 250); }
+  function flush() { if (canSave()) { clearTimeout(saveT); Store.save(S); } }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  root.addEventListener('pagehide', flush);
+
+  const derive = () => (D = L.derive(S, today()));
+  const weather = () => L.currentWeather(S, today(), preview);
+  function phase() { const hr = hour(); if (L.farmSleeps(hr)) return 'night'; if (L.journalOn(S, today())) return hr >= 20 ? 'night' : 'evening'; return hr < 9 ? 'morning' : hr < 18 ? 'day' : 'evening'; }
+
+  /* ---------- Effekte ---------- */
+  function floatText(txt, x, y, cls) { const d = document.createElement('div'); d.className = 'fx ' + cls; d.textContent = txt; d.style.left = x + 'px'; d.style.top = (y - 14) + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 1050); }
+  function sparks(x, y, colors, n = 10) {
+    if (reduce) return;
+    for (let i = 0; i < n; i++) { const s = document.createElement('div'); s.className = 'sparkle'; s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.background = colors[i % colors.length]; document.body.appendChild(s);
+      const a = Math.random() * Math.PI * 2, r = 24 + Math.random() * 36; s.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${Math.cos(a) * r}px,${Math.sin(a) * r - 20}px)`, opacity: 0 }], { duration: 650, easing: 'steps(8)', fill: 'forwards' }); setTimeout(() => s.remove(), 700); }
+  }
+  const pointOf = (ev, el) => { if (ev && ev.clientX) return [ev.clientX, ev.clientY]; const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top]; };
+  let toastT = 0, toastQ = [], toastBusy = false;
+  function toast(html, action, ms = 4200) { toastQ.push({ html, action, ms }); if (!toastBusy) nextToast(); }
+  function nextToast() {
+    const t0 = $('.toast'); if (t0) t0.remove(); const item = toastQ.shift(); if (!item) { toastBusy = false; return; } toastBusy = true;
+    const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.innerHTML = item.html + (item.action ? `<button class="btn sm" type="button">${esc(item.action.label)}</button>` : ''); document.body.appendChild(t);
+    if (item.action) t.querySelector('button').onclick = () => { item.action.fn(); clearTimeout(toastT); nextToast(); };
+    clearTimeout(toastT); toastT = setTimeout(nextToast, toastQ.length ? Math.min(item.ms, 2600) : item.ms);
+  }
+  function levelUp(what, text) {
+    au.sfx.level();
+    const o = document.createElement('div'); o.className = 'levelup'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-label', 'Aufgestiegen');
+    o.innerHTML = `<div class="frame">${img('gem', 5, '')}<h2>Aufgestiegen!</h2><div class="what">${esc(what)}</div><p>${esc(text)}</p><button class="btn" type="button">Weiter</button></div>`;
+    document.body.appendChild(o); const b = o.querySelector('button'); b.focus();
+    const r = o.querySelector('.frame').getBoundingClientRect(); [0, 250, 500].forEach(t => setTimeout(() => sparks(r.left + r.width / 2, r.top + 40, ['#f4d58e', '#7fcf8a', '#fff3b0', '#c99cf2'], 16), t));
+    const close = () => o.remove(); b.onclick = close; o.addEventListener('click', e => { if (e.target === o) close(); }); o.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  }
+
+  /* ---------- Belohnungen ---------- */
+  const snapshot = () => ({ c: D.char.l, s: Object.fromEntries(S.skills.map(s => [s.id, D.levels[s.id].l])) });
+  function grant(type) { S.chest.items[type] = (S.chest.items[type] || 0) + 1; }
+  function afterAction(before, skillId, pt, xp, info) {
+    derive(); save();
+    if (xp > 0) { floatText('+' + xp + ' XP', pt[0], pt[1], 'xp'); sparks(pt[0], pt[1], ['#7fcf8a', '#c8f2cc', '#fffaf0'], 8); }
+    if (info) toast(info);
+    checkRewards(pt);
+    const sk = skillId ? skillById(skillId) : null;
+    if (D.char.l > before.c) setTimeout(() => levelUp('Level ' + D.char.l, `Auf deinem Hof ist jetzt Platz für ${L.slotsFor(D.char.l)} Dekorationen.`), 450);
+    else if (sk && D.levels[sk.id].l > before.s[sk.id]) setTimeout(() => levelUp(sk.name + ' · Stufe ' + D.levels[sk.id].l, 'Das Gebäude dieser Fähigkeit wächst auf deinem Hof.'), 450);
+  }
+  function rollDrop(pt) {
+    const type = L.rollDrop(Math.random); if (!type) return; grant(type); save();
+    setTimeout(() => { au.sfx.drop(); floatText('Fund: ' + L.ITEMS[type].name, pt[0], pt[1] - 24, 'drop'); sparks(pt[0], pt[1] - 20, ['#c99cf2', '#f4d58e', '#ffffff'], 12); }, 650);
+    toast(`${img(type, 3, '')}<span><b>Fund!</b> ${L.ITEMS[type].name}${L.ITEMS[type].rare ? ' (selten)' : ''} liegt jetzt in deiner Truhe.</span>`);
+  }
+  /** B2 Ernte bei neuer Wachstumsstufe, B4 Fund bei „Gemeistert“. */
+  function checkRewards(pt) {
+    let any = false;
+    S.habits.forEach(h => {
+      const d = D.H[h.id], n = L.harvestsDue(h, d);
+      if (n > 0) {
+        h.harvestStage = d.stage; any = true; const got = [];
+        for (let i = 0; i < n; i++) { const t = L.pickItem(Math.random, Math.random() < L.C.RARE_P); grant(t); got.push(L.ITEMS[t].name); }
+        if (scene) scene.glowBed(h.id); setTimeout(() => au.sfx.harvest(), 300);
+        toast(`${img('p' + d.stage, 4, '', { F: styleOf(skillById(h.skillId)).c, f: styleOf(skillById(h.skillId)).dk })}<span><b>Ernte!</b> „${esc(h.title)}“ ist jetzt ${L.STAGES[d.stage][1]}. In der Truhe: ${esc(got.join(', '))}.</span>`, null, 5200);
+      }
+      if (L.gradRewardDue(h, d)) {
+        h.gradRewarded = true; any = true; const t = L.pickItem(Math.random, true); grant(t);
+        toast(`${img('gem', 3, '')}<span><b>Gemeistert!</b> „${esc(h.title)}“ hält ohne Erinnerung. Als Dank liegt ${L.ITEMS[t].name} in deiner Truhe.</span>`, null, 6000);
+      }
+    });
+    if (any) { save(); R.chestBadge(); if (pt && !reduce) sparks(pt[0], pt[1] - 10, ['#f4d58e', '#7fcf8a'], 10); }
+  }
+  function logHabit(h, status, pt) {
+    const t = today(), prev = h.logs[t], H0 = D.H[h.id], before = snapshot();
+    if (prev === status) { delete h.logs[t]; au.sfx.soft(); derive(); save(); refresh(); return; }   // A9: still zurückbuchen
+    if (H0.weekly && !prev && H0.weekCnt >= H0.N) { au.sfx.err(); toast('<span><b>Wochenziel schon erreicht.</b> Mehr bringt diese Woche keine zusätzlichen XP. Genieß die Pause.</span>'); return; }
+    h.logs[t] = status; status === 'tiny' ? au.sfx.tiny() : au.sfx.check(); if (S.chest.placed.some(p => p.itemId === 'chicken')) au.sfx.cluck();
+    derive(); const Hn = D.H[h.id], sk = skillById(h.skillId), units = L.unitsToNext(D.levels[sk.id], h.effort);
+    const gained = Math.max(0, L.xpFor(h.effort, status) - (prev ? L.xpFor(h.effort, prev) : 0));
+    const info = `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${L.xpFor(h.effort, status)} XP</b> · ${esc(h.title)}: ${Hn.weekly ? Hn.weekCnt + ' von ' + Hn.N + ' diese Woche' : Hn.month + '× diesen Monat'}${status === 'tiny' ? ' · Mini zählt voll für die Stärke' : ''} · noch ${units} ${units === 1 ? 'Einheit' : 'Einheiten'} bis Stufe ${D.levels[sk.id].l + 1}</span>`;
+    if (!prev && h.rolled !== t) { h.rolled = t; rollDrop(pt); }
+    afterAction(before, h.skillId, pt, gained, info); refresh();
+    const row = document.querySelector(`[data-hid="${h.id}"]`); if (row) row.classList.add('pop');
+  }
+
+  /* ---------- Gewohnheits-Formular (Onboarding, Neu, Bearbeiten) ---------- */
+  function skillOptions(sel) { return S.skills.map(s => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${esc(s.name)}</option>`).join('') + (S.skills.length < L.C.MAX_SKILLS ? '<option value="__new">+ Neue Fähigkeit …</option>' : ''); }
+  function habitForm(p, h) {
+    const f = h ? h.frequency : { kind: 'daily' }, days = f.kind === 'weekdays' ? f.days : [1, 2, 3, 4, 5], n = f.kind === 'weekly' ? f.timesPerWeek : 3, eff = h ? h.effort : 2;
+    return `<form class="hform" data-form="${p}" novalidate>
+      <div class="step"><b>1</b><label for="${p}-title">Was möchtest du tun?</label><div class="ctl"><input class="in" id="${p}-title" data-f="title" maxlength="60" placeholder="z. B. 10 Minuten dehnen" value="${h ? esc(h.title) : ''}"></div></div>
+      <div class="step"><b>2</b><label for="${p}-anchor">Wann genau? Nach welcher Routine?</label><div class="ctl"><span class="pre">Nach</span><input class="in" id="${p}-anchor" data-f="anchor" maxlength="60" placeholder="dem ersten Kaffee" value="${h ? esc(h.anchor) : ''}"><input class="in" type="time" data-f="time" aria-label="Ungefähre Uhrzeit der Routine (optional)" value="${h ? esc(h.anchorTime) : ''}"></div></div>
+      <div class="step"><b>3</b><span class="lab">Wie oft ist realistisch?</span>
+        <div class="ctl">${[['daily', 'Täglich'], ['weekdays', 'An bestimmten Tagen'], ['weekly', 'X-mal pro Woche']].map(([k, l]) => `<button type="button" class="chip" data-freq="${k}" aria-pressed="${f.kind === k}">${l}</button>`).join('')}</div>
+        <div class="ctl" data-g="days" ${f.kind === 'weekdays' ? '' : 'hidden'}>${[1, 2, 3, 4, 5, 6, 0].map(d => `<button type="button" class="chip" data-day="${d}" aria-pressed="${days.includes(d)}">${DAYS[d]}</button>`).join('')}</div>
+        <div class="ctl" data-g="times" ${f.kind === 'weekly' ? '' : 'hidden'}><input class="in" type="number" min="1" max="6" value="${n}" data-f="n" style="flex:0 0 80px" aria-label="Mal pro Woche"><span>mal pro Woche, an beliebigen Tagen</span></div></div>
+      <div class="step"><b>4</b><label for="${p}-tiny">Was ist die Mini-Version für schlechte Tage?</label><div class="ctl"><input class="in" id="${p}-tiny" data-f="tiny" maxlength="60" placeholder="z. B. eine einzige Dehnübung" value="${h ? esc(h.tinyVersion) : ''}"></div><p class="hint" style="grid-column:2">Eine echte kleine Handlung, nicht nur „App öffnen“.</p></div>
+      <div class="step"><b>5</b><label for="${p}-skill">Zu welcher Fähigkeit gehört das?</label><div class="ctl"><select class="in" id="${p}-skill" data-f="skill">${skillOptions(h ? h.skillId : null)}</select><input class="in" data-f="newskill" maxlength="20" placeholder="Name der neuen Fähigkeit" aria-label="Name der neuen Fähigkeit" hidden></div></div>
+      <div class="step"><b>6</b><span class="lab">Aufwand und Optionen</span>
+        <div class="ctl">${[1, 2, 3].map(e => `<button type="button" class="chip" data-eff="${e}" aria-pressed="${eff === e}">${['Leicht', 'Mittel', 'Schwer'][e - 1]} · ${10 * e} XP</button>`).join('')}</div>
+        <div class="ctl"><label class="sw"><input type="checkbox" data-f="streak" ${h ? (h.streakEnabled ? 'checked' : '') : 'checked'}> Serie zählen</label><label class="sw"><input type="checkbox" data-f="rem" ${h ? (h.remindersEnabled ? 'checked' : '') : 'checked'}> Erinnerung</label></div></div>
+      ${h ? '<p class="hint">Neuer Aufwand oder Rhythmus gilt ab heute. Bisherige Tage behalten ihre Werte.</p>' : ''}
+      <div class="preview" data-f="preview">Nach ${h ? esc(h.anchor) : '___'} werde ich ${h ? esc(h.title) : '___'}.</div><div class="err" data-f="err" hidden></div>
+      <div class="row-btns"><button class="btn" type="submit">${h ? 'Änderungen speichern' : 'Gewohnheit pflanzen'}</button>${h ? `<button class="btn ghost" type="button" data-act="edit-cancel">Abbrechen</button>` : ''}</div></form>`;
+  }
+  function readForm(form) {
+    const q = s => form.querySelector(s), pressed = sel => [...form.querySelectorAll(sel)].filter(b => b.getAttribute('aria-pressed') === 'true');
+    const kind = (pressed('[data-freq]')[0] || {}).dataset.freq || 'daily';
+    const frequency = kind === 'weekly' ? { kind, timesPerWeek: Math.round(+q('[data-f=n]').value || 0) } : kind === 'weekdays' ? { kind, days: pressed('[data-day]').map(b => +b.dataset.day) } : { kind };
+    return { title: q('[data-f=title]').value, anchor: q('[data-f=anchor]').value, anchorTime: q('[data-f=time]').value, tinyVersion: q('[data-f=tiny]').value, frequency,
+      skillId: q('[data-f=skill]').value, newSkill: q('[data-f=newskill]').value.trim(), effort: +((pressed('[data-eff]')[0] || {}).dataset || {}).eff || 0,
+      streakEnabled: q('[data-f=streak]').checked, remindersEnabled: q('[data-f=rem]').checked };
+  }
+  function fillIdea(form, idea) {
+    const q = s => form.querySelector(s);
+    q('[data-f=title]').value = idea.title; q('[data-f=anchor]').value = idea.anchor; q('[data-f=tiny]').value = idea.tiny; q('[data-f=time]').value = idea.time;
+    const sk = S.skills[idea.skill]; if (sk) q('[data-f=skill]').value = sk.id; updatePreview(form); q('[data-f=title]').focus();
+  }
+  function updatePreview(form) { const i = readForm(form); form.querySelector('[data-f=preview]').textContent = `Nach ${L.cleanAnchor(i.anchor) || '___'} werde ich ${i.title.trim() || '___'}.`; }
+  function submitForm(form) {
+    const kind = form.dataset.form, i = readForm(form), err = form.querySelector('[data-f=err]'), t = today();
+    const miss = L.validateHabitInput(i); if (i.skillId === '__new' && !i.newSkill) miss.push('einen Namen für die neue Fähigkeit');
+    if (kind !== 'edit') { const c = L.canAddHabit(S, t); if (!c.ok) miss.push(`etwas Geduld: weitere Gewohnheiten ab ${fmt(c.unlockOn, { weekday: 'long', day: 'numeric', month: 'long' })}`); }
+    if (miss.length) { err.hidden = false; err.textContent = 'Bitte ergänze noch: ' + miss.join(', ') + '.'; au.sfx.err(); return; }
+    err.hidden = true;
+    if (i.skillId === '__new') { const id = 's' + uid(); S.skills.push({ id, name: i.newSkill, icon: SP.ICONS[S.skills.length % SP.ICONS.length], st: S.skills.length }); i.skillId = id; }
+    if (kind === 'edit') {
+      const h = S.habits.find(x => x.id === U.editHabit); L.applyEdit(h, i, t); U.editHabit = null; au.sfx.place();
+      toast(`<span><b>Gespeichert.</b> „${esc(h.title)}“ ist aktualisiert.</span>`);
+    } else {
+      const h = L.newHabit(i, t, uid()); S.habits.push(h); au.sfx.place();
+      if (kind === 'new') toast(`${img('p1', 3, '')}<span><b>Gepflanzt!</b> Auf deinem Hof wächst jetzt ein neues Beet.</span>`);
+    }
+    derive(); save(); if (kind === 'ob') showOnboarding('habits'); refresh(); scene.refresh();
+  }
+
+  /* ---------- Overlays ---------- */
+  const overlay = html => { $('#overlay').innerHTML = html ? `<div class="overlay">${html}</div>` : ''; const f = $('#overlay .frame'); if (f) { const t = f.querySelector('h2'); if (t) { t.tabIndex = -1; t.focus(); } } };
+  function showOnboarding(step) {
+    U.obStep = step; const n = S.habits.length;
+    const dots = ['welcome', 'habits', 'done'].map(s => `<i class="${s === step || (step === 'done') || (step === 'habits' && s === 'welcome') ? 'on' : ''}"></i>`).join('');
+    let h = `<div class="frame" role="dialog" aria-modal="true" aria-labelledby="obT"><div class="steps" aria-hidden="true">${dots}</div>`;
+    if (step === 'welcome') {
+      const v3 = Store.legacyV3();
+      h += `<div class="say">${portrait()}<div><div class="who">Wilma · Nachbarin</div><h2 id="obT">Willkommen auf deinem Hof!</h2></div></div>
+        <div class="say"><span></span><div style="display:grid;gap:8px">
+          <p>Jede Gewohnheit wird hier zu einem Beet. Je beständiger du sie pflegst, desto kräftiger wächst sie.</p>
+          <p>Verpasst du einen Tag, wächst die Pflanze nur etwas langsamer. Auf diesem Hof stirbt nichts.</p>
+          <p>Wir fangen klein an: mit höchstens drei Gewohnheiten, jede an einer Routine, die du schon hast.</p></div></div>
+        <div class="row-btns"><button class="btn" type="button" data-act="ob-start">Hof anlegen</button><button class="btn alt" type="button" data-act="demo-start">Erst eine Demo ansehen</button></div>
+        ${v3 ? `<div class="banner info"><span class="sp">Auf diesem Gerät gibt es eigene Daten aus Version 3 (${(v3.habits || []).length} Gewohnheiten).</span><button class="btn sm" type="button" data-act="ob-v3">Übernehmen</button></div>` : ''}
+        <div class="row-btns"><button class="btn ghost" type="button" data-act="import-open">Sicherung importieren</button></div>
+        <input type="file" id="importFile" accept="application/json,.json" hidden><div class="err" id="importErr" hidden></div>`;
+    } else if (step === 'habits') {
+      h += `<div class="say">${portrait()}<div><div class="who">Wilma</div><h2 id="obT">Was soll auf deinem Hof wachsen?</h2><p>Such dir bis zu drei Gewohnheiten aus. Nach der ersten Woche kannst du weitere pflanzen.</p></div></div>`;
+      if (n) h += `<h3>Gepflanzt · ${n} von ${L.C.START_HABITS}</h3><div class="planted">${S.habits.map(x => `<div>${img('p0', 3, '')}<span>${esc(planText(x))}</span><button class="del" type="button" data-act="ob-remove" data-id="${x.id}" aria-label="${esc(x.title)} entfernen">×</button></div>`).join('')}</div>`;
+      if (n < L.C.START_HABITS) h += `<h3>Ideen zum Anpassen</h3><div class="ideas">${IDEAS.map((x, i) => `<button type="button" class="chip idea" data-act="idea" data-i="${i}">${esc(x.title)} · nach ${esc(x.anchor)}</button>`).join('')}</div>${habitForm('ob', null)}`;
+      else h += `<p class="hint">Drei Beete sind ein guter Anfang. Mehr Platz gibt es nach der ersten Woche.</p>`;
+      h += `<div class="row-btns"><button class="btn" type="button" data-act="ob-next" ${n ? '' : 'disabled'}>Weiter</button><button class="btn ghost" type="button" data-act="ob-back">Zurück</button></div>`;
+    } else {
+      h += `<div class="say">${portrait()}<div><div class="who">Wilma</div><h2 id="obT">Dein Hof ist bereit.</h2></div></div>
+        <div class="ci-list"><div>${img('sonnig', 3, '')}<span><b>Morgens</b> zeigt dir ein kurzer Check-in deine Pläne für den Tag. Er dauert keine halbe Minute und lässt sich überspringen.</span></div>
+        <div>${img('gem', 3, '')}<span><b>Tagsüber</b> hakst du im Tab „Heute“ ab. An schlechten Tagen zählt die Mini-Version voll.</span></div>
+        <div>${img('bewoelkt', 3, '')}<span><b>Abends</b> schließt du den Tag im Logbuch ab und wählst sein Wetter.</span></div></div>
+        <div class="row-btns"><button class="btn" type="button" data-act="ob-finish">Zum Hof</button></div>`;
+    }
+    overlay(h + '</div>');
+  }
+  function finishOnboarding() {
+    const t = today(); S.onboarded = true; S.startedAt = t; S.checkins[t] = { skipped: true };
+    overlay(''); derive(); flush(); refresh(); scene.refresh(true);
+    toast(`${portrait().replace('portrait', '')}<span><b>Wilma:</b> Schön, dass du da bist. Ich schau ab und zu vorbei.</span>`);
+  }
+  function startDemo() { realState = S; S = root.LAGDemo.demoState(today()); preview = null; overlay(''); $('#demoBar').hidden = false; derive(); refresh(); scene.refresh(true); }
+  function endDemo() { S = realState; realState = null; $('#demoBar').hidden = true; derive(); refresh(); scene.refresh(true); if (!S.onboarded) showOnboarding('welcome'); }
+
+  function showCheckin() {
+    U.ci = U.ci || { todos: new Set(S.todos.filter(t => !t.doneAt && t.dueDate === today()).map(t => t.id)), weather: null };
+    const due = active().filter(h => D.H[h.id].due && !D.H[h.id].doneToday), open = S.todos.filter(t => !t.doneAt);
+    const minutes = s => { if (!s) return 9999; const [a, b] = s.split(':').map(Number); return a * 60 + b; };
+    due.sort((a, b) => minutes(a.anchorTime) - minutes(b.anchorTime));
+    overlay(`<div class="frame" role="dialog" aria-modal="true" aria-labelledby="ciT">
+      <div class="say">${portrait()}<div><div class="who">Wilma</div><h2 id="ciT">Guten ${hour() < 11 ? 'Morgen' : 'Tag'}!</h2><p>Das steht heute an. Dauert keine halbe Minute.</p></div></div>
+      <h3>Deine Pläne für heute</h3>
+      <div class="ci-list">${due.length ? due.map(h => { const st = styleOf(skillById(h.skillId)); return `<div>${img('p' + D.H[h.id].stage, 3, '', { F: st.c, f: st.dk })}<span class="plan">${esc(planText(h))}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) : ''}</span></div>`; }).join('') : '<div>Heute steht keine Gewohnheit an.</div>'}</div>
+      <h3>Welche To-dos nimmst du dir vor? Optional, bis zu drei</h3>
+      <div class="ideas">${open.length ? open.map(t => `<button type="button" class="chip" data-act="ci-todo" data-id="${t.id}" aria-pressed="${U.ci.todos.has(t.id)}">${esc(t.title)}</button>`).join('') : '<span class="hint">Keine offenen To-dos.</span>'}</div>
+      <form class="add" id="ciTodoForm"><input class="in" id="ciTodo" maxlength="90" placeholder="Neues To-do für heute" aria-label="Neues To-do für heute"><button class="btn alt" type="submit">Hinzufügen</button></form>
+      <h3>Wie fühlst du dich? Optional</h3>
+      <div class="weather" role="group" aria-label="Stimmung als Wetter">${L.WEATHER.map(w => `<button type="button" class="wbtn" data-act="ci-weather" data-w="${w}" aria-pressed="${U.ci.weather === w}">${img(w, 4, '')}${WNAME[w]}</button>`).join('')}</div>
+      <div class="row-btns"><button class="btn" type="button" data-act="ci-done">Los geht's</button><button class="btn ghost" type="button" data-act="ci-skip">Überspringen</button></div></div>`);
+  }
+  function closeCheckin(done) {
+    const t = today();
+    if (done) { S.checkins[t] = { todos: [...U.ci.todos], weather: U.ci.weather }; S.todos.forEach(x => { if (U.ci.todos.has(x.id)) x.dueDate = t; }); }
+    else S.checkins[t] = { skipped: true };
+    U.ci = null; overlay(''); derive(); save(); refresh(); scene.refresh();
+  }
+
+  /* ---------- Erntekalender ---------- */
+  function calendarHTML() {
+    const t = today(), year = U.calYear || t.slice(0, 4), hid = U.calHabit && S.habits.some(h => h.id === U.calHabit) ? U.calHabit : '';
+    const g = L.yearGrid(S, D, hid || null, year, t), firstYear = Math.min(+S.startedAt.slice(0, 4), ...S.habits.map(h => +h.createdAt.slice(0, 4)));
+    const label = { done: 'erledigt', tiny: 'Mini-Version', repaired: 'nachgeholt', watered: 'Regentag', empty: 'offen', off: 'nicht geplant', before: 'noch nicht angelegt', future: '', none: '' };
+    let months = ''; for (let m = 1; m <= 12; m++) { const k = `${year}-${String(m).padStart(2, '0')}-01`, c = g.cells.find(x => x.k === k); if (c) months += `<span class="m" style="grid-column:${c.col + 2}">${fmt(k, { month: 'short' }).replace('.', '')}</span>`; }
+    const wd = [['Mo', 0], ['Mi', 2], ['Fr', 4]].map(([l, r]) => `<span class="wd" style="grid-row:${r + 2}">${l}</span>`).join('');
+    const cells = g.cells.map(c => { if (c.v === 'none') return ''; const tip = typeof c.v === 'number' ? `${c.v === 0 ? 'nichts' : c.v === 4 ? '5 oder mehr' : c.v === 3 ? '3–4' : c.v} erledigt` : label[c.v];
+      return `<i class="v-${c.v}${c.k === t ? ' v-today' : ''}" style="grid-column:${c.col + 2};grid-row:${c.row + 2}"${tip ? ` title="${fmt(c.k)}: ${tip}"` : ''}></i>`; }).join('');
+    let stat;
+    if (hid) { const days = Object.entries(D.H[hid].days).filter(([k]) => k.startsWith(year)); const done = days.filter(([, v]) => v === 'done').length, tiny = days.filter(([, v]) => v === 'tiny').length, rep = days.filter(([, v]) => v === 'repaired' || v === 'watered').length;
+      stat = `${done + tiny} erledigt in ${year}${tiny ? `, davon ${tiny} als Mini-Version` : ''}${rep ? ` · ${rep} gerettet` : ''}`; }
+    else { const n = g.cells.filter(c => typeof c.v === 'number' && c.v > 0).length; stat = `${n} ${n === 1 ? 'Tag' : 'Tage'} in ${year} mit mindestens einer Erledigung`; }
+    const legend = hid ? [['done', 'erledigt'], ['tiny', 'Mini'], ['repaired', 'nachgeholt'], ['watered', 'Regentag'], ['empty', 'offen'], ['off', 'nicht geplant']].map(([v, l]) => `<span><i class="v-${v}"></i>${l}</span>`).join('')
+      : `<span>wenig</span>${[0, 1, 2, 3, 4].map(v => `<i class="v-${v}"></i>`).join('')}<span>viel</span>`;
+    return `<div class="harvest"><div class="ctl"><select class="in" id="calHabit" aria-label="Kalender für">${[['', 'Alle Gewohnheiten'], ...S.habits.map(h => [h.id, h.title + (h.archivedAt ? ' (pausiert)' : '')])].map(([v, l]) => `<option value="${v}" ${v === hid ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+      <button class="btn ghost" type="button" data-act="cal-prev" ${+year <= firstYear ? 'disabled' : ''} aria-label="Vorheriges Jahr">‹</button><span>${year}</span><button class="btn ghost" type="button" data-act="cal-next" ${year >= t.slice(0, 4) ? 'disabled' : ''} aria-label="Nächstes Jahr">›</button></div>
+      <div class="cal-scroll"><div class="cal-grid" style="--cols:${g.cols}" role="img" aria-label="Erntekalender ${year}: ${esc(stat)}">${months}${wd}${cells}</div></div>
+      <div class="hint">${esc(stat)}</div><div class="cal-legend">${legend}</div></div>`;
+  }
+
+  /* ---------- Bereiche ---------- */
+  const R = {
+    cal() { const d = new Date(), w = weather(); $('#cal').innerHTML = `${img(w, 3, WNAME[w])}<span><b>${L.seasonOf(d.getMonth())}</b> · Tag ${d.getDate()} · ${d.toLocaleDateString('de-DE', { weekday: 'long' })} · ${WNAME[w]}</span>`; },
+    hud() {
+      const c = D.char; $('#lvlNum').textContent = c.l; $('#xpText').textContent = c.into + ' / ' + c.need + ' XP'; $('#xpBar').style.width = Math.round(c.into / c.need * 100) + '%';
+      const w = $('#xpBarWrap'); w.setAttribute('aria-valuenow', c.into); w.setAttribute('aria-valuemin', 0); w.setAttribute('aria-valuemax', c.need);
+      let best = null; S.skills.forEach(s => { const hs = active().filter(h => h.skillId === s.id); if (!hs.length) return; const eff = Math.round(hs.reduce((a, h) => a + h.effort, 0) / hs.length), u = L.unitsToNext(D.levels[s.id], eff); if (!best || u < best.u) best = { s, u }; });
+      $('#nearText').textContent = best ? `Noch ${best.u} ${best.u === 1 ? 'Einheit' : 'Einheiten'} bis ${best.s.name} Stufe ${D.levels[best.s.id].l + 1}` : '';
+      const open = active().filter(h => D.H[h.id].due && !D.H[h.id].doneToday).length + S.todos.filter(t => !t.doneAt && (!t.dueDate || t.dueDate <= today())).length;
+      $('#nToday').textContent = open || ''; $('#nToday').hidden = !open;
+      $('#footNote').textContent = S.demo ? 'Demo-Hof · nichts wird gespeichert' : 'Speichert nur auf diesem Gerät · Sicherung unter Fortschritt';
+      $('#soundBtn').textContent = 'Effekte: ' + (S.sound ? 'an' : 'aus'); $('#soundBtn').setAttribute('aria-pressed', S.sound);
+      $('#musicBtn').textContent = 'Musik: ' + (S.music ? 'an' : 'aus'); $('#musicBtn').setAttribute('aria-pressed', S.music);
+      R.chestBadge();
+    },
+    chestBadge() { const n = Object.values(S.chest.items).reduce((a, b) => a + b, 0); $('#nChest').textContent = n || ''; $('#nChest').hidden = !n; },
+    legend() { const a = active(); $('#legend').innerHTML = S.skills.map(s => `<span>${img(s.icon, 2, '')}${esc(s.name)} · Stufe ${D.levels[s.id].l}</span>`).join('') + (a.length ? `<span>Beete: ${Math.min(a.length, L.C.MAX_BEDS)} von ${a.length}</span>` : ''); },
+    skills() {
+      $('#skills').innerHTML = S.skills.map(s => {
+        const l = D.levels[s.id], st = styleOf(s), sty = `--c:${st.c};--hi:${st.hi};--dk:${st.dk}`;
+        if (U.renaming === s.id) return `<div class="skill" style="${sty}"><button class="iconbtn" type="button" data-act="icon" data-sid="${s.id}" title="Symbol wechseln">${img(s.icon, 3, 'Symbol wechseln')}</button><input class="in" id="renameIn" value="${esc(s.name)}" maxlength="20" aria-label="Name der Fähigkeit"><button class="btn sm ren" type="button" data-act="renok">OK</button></div>`;
+        return `<div class="skill" style="${sty}">${img(s.icon, 3, '')}<div class="stat-line"><span>${esc(s.name)} <span class="lv">Stufe ${l.l}</span></span><span>${l.into}/${l.need}</span></div><button class="iconbtn ren" type="button" data-act="ren" data-sid="${s.id}" aria-label="${esc(s.name)} umbenennen">Ändern</button><div class="bar sm sk"><i style="width:${Math.round(l.into / l.need * 100)}%"></i></div></div>`;
+      }).join('') + (S.skills.length < L.C.MAX_SKILLS ? `<div><button class="btn ghost" type="button" data-act="addskill">+ Neue Fähigkeit</button></div>` : '');
+      const ri = $('#renameIn'); if (ri) { ri.focus(); ri.select(); }
+    },
+    today() {
+      const t = today(), ym = t.slice(0, 7), minutes = s => { if (!s) return 9999; const [a, b] = s.split(':').map(Number); return a * 60 + b; };
+      const due = active().filter(h => D.H[h.id].due).sort((a, b) => (!!D.H[a.id].doneToday - !!D.H[b.id].doneToday) || (minutes(a.anchorTime) - minutes(b.anchorTime)));
+      const free = active().filter(h => !D.H[h.id].due);
+      let h = `<h2>Heute</h2><p class="sub">Hake ab, was du geschafft hast. Die Mini-Version zählt an schlechten Tagen voll für die Stärke deiner Gewohnheit.</p>`;
+      if (!S.demo && isIOS() && !standalone() && !S.installHintSeen) h += `<div class="banner info"><span class="sp"><b>Als App installieren:</b> Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach läuft dein Hof offline und kann später Erinnerungen schicken.</span><button class="btn sm" type="button" data-act="install-ok">Verstanden</button></div>`;
+      const c = L.canAddHabit(S, t);
+      if (c.ok && active().length >= L.C.START_HABITS && !S.unlockSeen && !S.demo) h += `<div class="banner"><span class="sp">Eine Woche geschafft! Wenn du magst, kannst du jetzt weitere Gewohnheiten pflanzen.</span><button class="btn sm" type="button" data-act="unlock-go">Gewohnheit pflanzen</button><button class="btn ghost" type="button" data-act="unlock-no">Später</button></div>`;
+      if (new Date().getDate() <= 3 && S.freshSeen !== ym && S.startedAt < ym + '-01') h += `<div class="banner"><span class="sp">Ein neuer Monat beginnt, ein guter Moment für einen frischen Start. Möchtest du eine Gewohnheit anpassen oder neu anfangen?</span><button class="btn sm" type="button" data-act="fresh-go">Gewohnheiten ansehen</button><button class="btn ghost" type="button" data-act="fresh-no">Später</button></div>`;
+      if (!S.checkins[t] && hour() >= 5) h += `<div class="row-btns"><button class="btn ghost" type="button" data-act="ci-open">Check-in für heute öffnen</button></div>`;
+      h += '<h3>Gewohnheiten</h3><div class="list">' + (due.length ? due.map(habitRow).join('') : `<div class="empty">${active().length ? 'Heute steht keine Gewohnheit an.' : 'Noch keine Gewohnheit. Unter „Gewohnheiten“ kannst du eine pflanzen.'}</div>`) + '</div>';
+      if (free.length) h += `<h3>Heute frei</h3><div class="list">${free.map(x => { const d = D.H[x.id]; return `<div class="row off"><span></span><div><div class="row-title">${esc(x.title)}</div><div class="meta"><span>${d.weekly ? `Wochenziel erreicht: ${d.weekCnt} von ${d.N}` : 'Heute nicht geplant · ' + freqText(x.frequency)}</span></div></div><span></span></div>`; }).join('')}</div>`;
+      h += `<h3>To-dos</h3><form class="add" id="todoForm"><input class="in" id="tTitle" placeholder="Neue Aufgabe, z. B. Steuerunterlagen sortieren" maxlength="90" aria-label="Aufgabe">
+        <select class="in" id="tEff" aria-label="Aufwand"><option value="1">Leicht · 10 XP</option><option value="2" selected>Mittel · 20 XP</option><option value="3">Schwer · 30 XP</option></select>
+        <select class="in" id="tSkill" aria-label="Fähigkeit">${S.skills.map(s => `<option value="${s.id}" ${s.id === U.lastTodoSkill ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+        <input class="in" type="date" id="tDue" aria-label="Geplant für (optional)" title="Geplant für (optional)"><button class="btn" type="submit">Hinzufügen</button></form>`;
+      const open = S.todos.filter(x => !x.doneAt).sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999')), doneT = S.todos.filter(x => x.doneAt === t);
+      const trow = x => { const s = skillById(x.skillId); const plan = x.dueDate ? (x.dueDate === t ? 'Für heute geplant' : 'Geplant für ' + fmt(x.dueDate)) : '';
+        return `<div class="row${x.doneAt ? ' done' : ''}" data-tid="${x.id}"><button class="chk" type="button" data-act="todo" aria-pressed="${!!x.doneAt}" aria-label="${x.doneAt ? 'Als offen markieren' : 'Erledigen'}: ${esc(x.title)}"></button>
+          <div>${plan && !x.doneAt ? `<div class="planned">${plan}</div>` : ''}<div class="row-title">${esc(x.title)}</div><div class="meta"><span>${img(s.icon, 2, '')}${esc(s.name)}</span><span>+${10 * x.effort} XP</span></div></div><div class="side"><button class="del" type="button" data-act="deltodo" aria-label="Aufgabe löschen">×</button></div></div>`; };
+      h += `<div class="list">${open.length ? open.map(trow).join('') : '<div class="empty">Keine offenen To-dos.</div>'}${doneT.map(trow).join('')}</div>`;
+      $('#p-today').innerHTML = h;
+    },
+    habits() {
+      const t = today(), c = L.canAddHabit(S, t), act = active(), paused = S.habits.filter(h => h.archivedAt);
+      let h = `<h2>Gewohnheiten</h2><p class="sub">Jede Gewohnheit hängt an einer Routine, die du schon hast. Auf dem Hof wird daraus ein Beet, das mit der Gewohnheitsstärke wächst. Erinnerungen bringt im Prototyp Wilma zur Ankerzeit.</p>`;
+      if (U.editHabit === null) {
+        if (c.ok) h += `<h3>Neue Gewohnheit</h3><div class="ideas">${IDEAS.map((x, i) => `<button type="button" class="chip idea" data-act="idea" data-i="${i}">${esc(x.title)}</button>`).join('')}</div>${habitForm('new', null)}`;
+        else h += `<div class="say">${portrait()}<div><div class="who">Wilma</div><p>Drei Beete sind für den Anfang genug. Ab ${fmt(c.unlockOn, { weekday: 'long', day: 'numeric', month: 'long' })} kannst du weitere pflanzen. Bis dahin: Lass die ersten richtig Wurzeln schlagen.</p></div></div>`;
+      }
+      h += act.length ? `<h3>Aktiv · ${act.length}</h3><div class="list">${act.map(habitCard).join('')}</div>` : '';
+      if (paused.length) h += `<h3>Pausiert · ${paused.length}</h3><p class="hint">Pausierte Gewohnheiten zählen nicht als verpasst und behalten ihre Stärke.</p><div class="list">${paused.map(habitCard).join('')}</div>`;
+      $('#p-habits').innerHTML = h;
+      if (U.editHabit) { const f = $('[data-form="edit"]'); if (f) f.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }
+    },
+    journal() {
+      const t = today(), cur = L.journalOn(S, t);
+      let h = `<h2>Logbuch</h2><p class="sub">Ein Eintrag pro Tag schließt den Tag ab. Es gibt nur ein paar XP dafür, das Schreiben selbst ist der Gewinn. Wähl das Wetter deines Tages, Hof und Musik passen sich an.</p>`;
+      if (cur && !U.editingJournal) h += `<div class="closed">${img('gem', 2, '')} Tag abgeschlossen. Auf deinem Hof bricht der Abend an.</div><div class="entry"><header>${img(cur.weather, 3, '')} Heute · ${WNAME[cur.weather]}</header><p>${esc(cur.text)}</p><div><button class="btn alt" type="button" data-act="editj">Bearbeiten</button></div></div>`;
+      else {
+        const pr = PROMPTS[(new Date().getDate() + U.promptShift) % PROMPTS.length], w = U.selWeather || weather();
+        h += `<div style="display:grid;gap:12px"><div class="weather" role="group" aria-label="Wie war dein Tag?">${L.WEATHER.map(id => `<button type="button" class="wbtn" data-act="weather" data-w="${id}" aria-pressed="${w === id}">${img(id, 4, '')}${WNAME[id]}</button>`).join('')}</div>
+          <div class="prompt">Frage des Tages: ${pr} <button class="iconbtn" type="button" data-act="prompt">Andere Frage</button></div>
+          <textarea class="in" id="jText" placeholder="Schreib ein paar Zeilen über deinen Tag …" aria-label="Logbuch-Eintrag">${cur ? esc(cur.text) : esc(U.draft)}</textarea>
+          <div class="row-btns"><button class="btn" type="button" data-act="savej">${cur ? 'Speichern' : 'Tag abschließen · +' + L.C.JOURNAL_XP + ' XP'}</button>${cur ? '<button class="btn ghost" type="button" data-act="editj-cancel">Abbrechen</button>' : ''}</div></div>`;
+      }
+      const wk = L.weekStart(t), inWeek = k => L.weekStart(k) === wk, ents = S.journal.filter(j => inWeek(j.date));
+      let doneW = 0, tinyW = 0; S.habits.forEach(x => { for (const k in x.logs) if (inWeek(k)) { if (x.logs[k] === 'done') doneW++; else if (x.logs[k] === 'tiny') tinyW++; } });
+      const wc = {}; ents.forEach(j => wc[j.weather] = (wc[j.weather] || 0) + 1); const topW = Object.entries(wc).sort((a, b) => b[1] - a[1])[0];
+      const bestH = S.habits.map(x => [x, Object.keys(x.logs).filter(k => inWeek(k) && (x.logs[k] === 'done' || x.logs[k] === 'tiny')).length]).sort((a, b) => b[1] - a[1])[0];
+      h += `<div class="week-review"><b>Wochenrückblick</b><span>${ents.length} ${ents.length === 1 ? 'Eintrag' : 'Einträge'} · ${doneW + tinyW} erledigte Termine${tinyW ? `, davon ${tinyW} als Mini-Version` : ''}</span>${topW ? `<span>Häufigstes Wetter: ${WNAME[topW[0]]}</span>` : ''}${bestH && bestH[1] ? `<span>Am häufigsten: ${esc(bestH[0].title)} (${bestH[1]}×)</span>` : ''}</div>`;
+      const past = S.journal.filter(j => j.date !== t).sort((a, b) => b.date.localeCompare(a.date));
+      if (past.length) h += '<h3>Tagebuch im Farmhaus</h3><div class="list">' + past.map(j => `<div class="entry"><header>${img(j.weather, 3, '')} ${fmt(j.date, { weekday: 'long', day: 'numeric', month: 'long' })}</header><p>${esc(j.text)}</p></div>`).join('') + '</div>';
+      $('#p-journal').innerHTML = h;
+    },
+    progress() {
+      const t = today(), ym = t.slice(0, 7), mName = new Date().toLocaleDateString('de-DE', { month: 'long' });
+      let done = 0, tiny = 0, grown = 0; S.habits.forEach(x => { const d = D.H[x.id]; done += d.month; tiny += d.monthTiny; if (d.stage > d.stageMonthStart) grown++; });
+      const grads = S.habits.filter(x => D.H[x.id].graduated), jm = S.journal.filter(j => j.date.startsWith(ym)).length;
+      let h = `<h2>Fortschritt</h2><p class="sub">Du vergleichst dich hier nur mit dir selbst. Gezählt wird, was du wirklich getan hast.</p>
+        <h3>Erntekalender</h3>${calendarHTML()}
+        <h3>Monatsrückblick ${mName}</h3><div class="tiles"><div class="tile"><strong>${done}</strong><span>erledigte Termine</span></div><div class="tile"><strong>${tiny}</strong><span>davon Mini-Versionen</span></div><div class="tile"><strong>${grown}</strong><span>Pflanzen gewachsen</span></div><div class="tile"><strong>${grads.length}</strong><span>gemeistert</span></div><div class="tile"><strong>${jm}</strong><span>Logbuch-Einträge</span></div></div>
+        <h3>Verlauf der Fähigkeiten · letzte 30 Tage</h3><div class="list">`;
+      const keys = [...Array(30)].map((_, i) => L.addDays(t, i - 29));
+      S.skills.forEach(s => { const st = styleOf(s), b = D.byDay[s.id]; let acc = 0; const vals = keys.map(k => acc += b[k] || 0), max = Math.max(1, acc);
+        const line = vals.map((v, i) => (i / 29 * 200).toFixed(1) + ',' + (36 - v / max * 32).toFixed(1)).join(' ');
+        h += `<div class="spark">${img(s.icon, 3, '')}<svg viewBox="0 0 200 40" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)}: ${acc} XP in 30 Tagen"><line x1="0" y1="38" x2="200" y2="38" stroke="#3a5450" stroke-width="1" vector-effect="non-scaling-stroke"/><polygon points="0,38 ${line} 200,38" fill="${st.c}" opacity=".18"/><polyline points="${line}" fill="none" stroke="${st.c}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="r">${esc(s.name)}<br>+${acc} XP</div></div>`; });
+      h += `</div><h3>Ruhmeshalle</h3>` + (grads.length ? `<div class="hall">${grads.map(g => `<div>${img('gem', 3, '')}<span>${esc(g.title)} · gemeistert am ${fmt(D.H[g.id].gradDate, { day: 'numeric', month: 'long' })}</span></div>`).join('')}</div>` : '<div class="empty">Noch keine gemeisterte Gewohnheit. Hält eine Gewohnheit 30 Tage ohne Erinnerung, landet sie hier.</div>');
+      h += `<h3>Deine Daten</h3><div class="data">${S.demo ? '<p class="hint">Im Demo-Hof sind Sicherung und Löschen ausgeschaltet.</p>' : `
+        <p class="hint">Alles bleibt auf diesem Gerät. Eine Sicherung ist eine Textdatei mit allen Daten, mit der du deinen Hof später wiederherstellen kannst.</p>
+        <div class="row-btns"><button class="btn alt" type="button" data-act="export">${U.showExport ? 'Sicherung ausblenden' : 'Sicherung erstellen'}</button><button class="btn alt" type="button" data-act="import-open">Sicherung importieren</button><button class="btn ghost" type="button" data-act="wipe">${U.wipeArmed ? 'Wirklich alles löschen? Nochmal tippen' : 'Alles löschen'}</button></div>
+        ${U.showExport ? `<textarea class="in" id="exportTxt" readonly aria-label="Sicherung">${esc(JSON.stringify(S))}</textarea><div class="row-btns"><button class="btn sm" type="button" data-act="copy">In die Zwischenablage kopieren</button></div>` : ''}
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+        <details><summary class="hint" style="cursor:pointer">Oder Sicherungstext einfügen</summary><div style="display:grid;gap:8px;margin-top:8px"><textarea class="in" id="importTxt" aria-label="Sicherungstext"></textarea><div><button class="btn sm" type="button" data-act="import-paste">Prüfen</button></div></div></details>
+        <div class="err" id="importErr" hidden></div>
+        ${U.importPending ? `<div class="banner info"><span class="sp">Die Sicherung enthält ${U.importPending.habits.length} Gewohnheiten, ${U.importPending.todos.length} To-dos und ${U.importPending.journal.length} Logbuch-Einträge. Sie ersetzt die Daten auf diesem Gerät.</span><button class="btn sm" type="button" data-act="import-apply">Wiederherstellen</button><button class="btn ghost" type="button" data-act="import-cancel">Abbrechen</button></div>` : ''}
+        ${isIOS() && !standalone() ? '<p class="hint">Tipp: In Safari über „Teilen“ → „Zum Home-Bildschirm“ wird der Hof zur App, die offline läuft.</p>' : ''}`}</div>`;
+      $('#p-progress').innerHTML = h;
+      const sc = $('#p-progress .cal-scroll'); if (sc) sc.scrollLeft = (U.calYear || t.slice(0, 4)) === t.slice(0, 4) ? sc.scrollWidth : 0;
+    },
+    chest() {
+      const cap = L.slotsFor(D.char.l), used = S.chest.placed.filter(p => !L.ITEMS[p.itemId].animal).length, sleep = L.farmSleeps(hour());
+      let h = `<h2>Truhe</h2><p class="sub">Bei jeder Erledigung kann etwas für deinen Hof auftauchen, und jede neue Wachstumsstufe bringt eine Ernte. Funde lassen sich weder kaufen noch erzwingen.</p>`;
+      if (sleep) h += `<div class="sleep">Die Farm schläft. Ab 6 Uhr kannst du wieder dekorieren. Abhaken geht natürlich jederzeit.</div>`;
+      h += `<h3>Funde · ${used} von ${cap} Plätzen belegt</h3>`;
+      const inv = Object.entries(S.chest.items).filter(([, n]) => n > 0);
+      h += inv.length ? `<div class="inv">${inv.map(([k, n]) => { const it = L.ITEMS[k], full = !it.animal && used >= cap; return `<div class="item${it.rare ? ' r' : ''}"><div class="pv">${img(k, 4, '')}</div><h4>${it.name}<span class="badge ${it.rare ? 'rare' : 'com'}">${it.rare ? 'selten' : 'häufig'}</span></h4><div class="cnt">${n}× in der Truhe</div><button class="btn sm" type="button" data-act="place" data-type="${k}" ${sleep || full ? 'disabled' : ''}>${full ? 'Kein Platz frei' : 'Aufstellen'}</button></div>`; }).join('')}</div>`
+        : '<div class="empty">Die Truhe ist leer. Erledige Gewohnheiten und To-dos, manchmal taucht dabei etwas auf.</div>';
+      h += '<h3>Auf dem Hof</h3>' + (S.chest.placed.length ? `<div class="inv">${S.chest.placed.map((p, i) => `<div class="item${L.ITEMS[p.itemId].rare ? ' r' : ''}"><div class="pv">${img(p.itemId, 4, '')}</div><h4>${L.ITEMS[p.itemId].name}</h4><div class="cnt">${L.ITEMS[p.itemId].animal ? 'Läuft frei herum' : 'Platz ' + (p.slot + 1)}</div><button class="btn sm alt" type="button" data-act="stash" data-i="${i}" ${sleep ? 'disabled' : ''}>Einlagern</button></div>`).join('')}</div>` : '<div class="empty">Noch nichts aufgestellt.</div>');
+      h += `<p class="hint">Mit jedem Level wird ein weiterer Deko-Platz frei (Level ${D.char.l}: ${cap} Plätze).</p>`;
+      $('#p-chest').innerHTML = h;
+    },
+    npc() { $('#npcFace').innerHTML = portrait(); const l = nudges(); $('#npcText').textContent = l[U.npcIdx % l.length]; }
+  };
+  function habitRow(h) {
+    const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), done = d.doneToday === 'done', tiny = d.doneToday === 'tiny';
+    return `<div class="row${done || tiny ? ' done' : ''}" data-hid="${h.id}">
+      <button class="chk${tiny ? ' tiny' : ''}" type="button" data-act="hdone" data-id="${h.id}" aria-pressed="${done || tiny}" aria-label="${done || tiny ? 'Rückgängig' : 'Erledigt'}: ${esc(h.title)}"></button>
+      <div><div class="plan">Nach ${esc(h.anchor)}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) : ''}</div><div class="row-title">${esc(h.title)}</div>
+      <div class="meta"><span>${img('p' + d.stage, 2, '', { F: st.c, f: st.dk })}${L.STAGES[d.stage][1]} · ${Math.round(d.s * 100)} %</span><span>${img(sk.icon, 2, '')}${esc(sk.name)} +${10 * h.effort}</span>
+      <span>${d.weekly ? `${d.weekCnt} von ${d.N} diese Woche` : `${d.month}× diesen Monat`}</span>
+      ${h.streakEnabled && d.streak ? `<span>${img('flame', 2, '')}${d.streak}${d.weekly ? ' Wo.' : ''}</span>` : ''}${h.streakEnabled && !d.weekly ? `<span class="tok" title="Regentage retten automatisch einen verpassten Tag" aria-label="Regentage: ${d.tokens} von 2">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</span>` : ''}</div>
+      ${d.canRepair ? `<div class="repair">Gestern ist ausgefallen. Mach heute eine Runde extra, dann bleibt deine Serie bestehen. <button class="btn sm" type="button" data-act="repair" data-id="${h.id}">Extra-Runde erledigt</button></div>` : ''}</div>
+      <div class="side"><button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" title="${esc(h.tinyVersion)}">Mini: ${esc(h.tinyVersion)}</button></div></div>`;
+  }
+  function habitCard(h) {
+    if (U.editHabit === h.id) return `<div class="hcard"><div class="hd"><div class="row-title">„${esc(h.title)}“ bearbeiten</div></div>${habitForm('edit', h)}</div>`;
+    const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), stageName = L.STAGES[d.stage][1], pct = Math.round(d.s * 100);
+    return `<div class="hcard${d.graduated ? ' grad' : ''}${h.archivedAt ? ' paused' : ''}">
+      <div class="hd">${img('p' + d.stage, 5, stageName, { F: st.c, f: st.dk })}<div class="row-title">${esc(h.title)}</div>${d.graduated ? '<span class="badge gold">Gemeistert</span>' : ''}${h.archivedAt ? '<span class="badge com">Pausiert</span>' : ''}</div>
+      <div class="plan">${esc(planText(h))}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) + ' Uhr' : ''}</div>
+      <dl class="kv"><dt>Rhythmus</dt><dd>${freqText(h.frequency)} · Aufwand ${h.effort} (${10 * h.effort} XP)</dd><dt>Mini-Version</dt><dd>${esc(h.tinyVersion)}</dd><dt>Fähigkeit</dt><dd>${esc(sk.name)}</dd>
+      <dt>Stärke</dt><dd>${pct} % · ${stageName} · Tag ${d.age} von etwa 66</dd>${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : (d.streak === 1 ? 'Termin' : 'Termine')}${d.weekly ? '' : ` · Regentage <span class="tok" aria-label="${d.tokens} von 2">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</span>`}</dd>` : ''}<dt>Gesamt</dt><dd>${d.year}× dieses Jahr</dd>
+      <dt>Erinnerung</dt><dd>${h.remindersEnabled ? 'an' : h.remOffAt ? `aus seit ${L.daysBetween(h.remOffAt, today())} Tagen${!d.graduated ? ' (30 für „Gemeistert“)' : ''}` : 'aus'}</dd></dl>
+      <div class="bar sm sk" style="--c:${st.c};--hi:${st.hi};--dk:${st.dk}" role="progressbar" aria-label="Gewohnheitsstärke" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+      ${d.suggestOff ? `<div class="suggest">Läuft fast von allein: ${d.run}× in Folge. Erinnerung abschalten? Hältst du die Gewohnheit danach 30 Tage, gilt sie als gemeistert. <button class="btn sm" type="button" data-act="remoff" data-id="${h.id}">Abschalten</button></div>` : ''}
+      <div class="row-btns">${h.archivedAt ? `<button class="btn sm" type="button" data-act="resume" data-id="${h.id}">Fortsetzen</button>` : `<button class="btn sm alt" type="button" data-act="edit" data-id="${h.id}">Bearbeiten</button><button class="btn sm alt" type="button" data-act="pause" data-id="${h.id}">Pausieren</button>`}<button class="btn ghost" type="button" data-act="delhabit" data-id="${h.id}">Löschen</button></div></div>`;
+  }
+  function refresh(...parts) { if (!S) return; if (!parts.length) parts = ['cal', 'hud', 'legend', 'skills', 'today', 'habits', 'journal', 'progress', 'chest', 'npc']; parts.forEach(p => R[p]()); }
+
+  function nudges() {
+    const t = today(), now = new Date(), hr = now.getHours(), mins = hr * 60 + now.getMinutes(), list = [], w = weather();
+    if (L.farmSleeps(hr)) return ['Die Farm schläft. Gute Nacht, morgen geht es weiter.'];
+    if (!active().length) return ['Noch ist es ruhig hier. Unter „Gewohnheiten“ kannst du dein erstes Beet pflanzen.'];
+    const open = active().filter(h => D.H[h.id].due && !D.H[h.id].doneToday);
+    open.forEach(h => { if (h.anchorTime && h.remindersEnabled) { const [a, b] = h.anchorTime.split(':').map(Number); if (Math.abs(a * 60 + b - mins) <= 75) list.push(planText(h) + '.'); } });
+    S.habits.forEach(h => { const d = D.H[h.id]; if (d.graduated && L.daysBetween(d.gradDate, t) < 7) list.push(`Glückwunsch! „${h.title}“ ist gemeistert. Das klappt jetzt ganz ohne Erinnerung.`); });
+    const wk = L.weekStart(t);
+    active().forEach(h => { const d = D.H[h.id]; if (d.weekly) { if (d.weekCnt >= d.N) list.push(`Wochenziel geschafft: ${h.title}, ${d.weekCnt} von ${d.N}.`); } else { const c = Object.keys(h.logs).filter(k => L.weekStart(k) === wk && (h.logs[k] === 'done' || h.logs[k] === 'tiny')).length; if (c >= 4) list.push(`Du hast diese Woche schon ${c}× „${h.title}“ geschafft!`); } });
+    if (hr >= 18 && open.length) list.push(`Langer Tag? Die Mini-Version zählt auch: ${open[0].tinyVersion}.`);
+    active().forEach(h => { if (D.H[h.id].suggestOff) list.push(`„${h.title}“ läuft fast von allein. Magst du die Erinnerung abschalten?`); });
+    const sk = S.skills.map(s => [s, L.unitsToNext(D.levels[s.id], 2)]).sort((a, b) => a[1] - b[1])[0]; if (sk && sk[1] <= 2) list.push(`Noch ${sk[1]} ${sk[1] === 1 ? 'Einheit' : 'Einheiten'}, dann wächst dein ${sk[0].name}-Gebäude.`);
+    if (w === 'regen' || w === 'gewitter') list.push('Bei dem Wetter bleibt man gern drinnen. Eine kleine Aufgabe am Schreibtisch geht immer.');
+    if (w === 'sonnig' && hr < 18) list.push('Was für ein Tag! Der Hof glänzt in der Sonne.');
+    if (!L.journalOn(S, t) && hr >= 19) list.push('Magst du den Tag mit ein paar Zeilen im Logbuch abschließen?');
+    if (!list.length) list.push(open.length ? `Guten ${hr < 11 ? 'Morgen' : 'Tag'}! Was davon passt als Erstes zu deinem Tag?` : 'Alles erledigt für heute. Dein Hof sieht prächtig aus.');
+    return list;
+  }
+
+  /* ---------- Import ---------- */
+  function handleImportText(txt, onboarding) {
+    const err = $('#importErr'); let obj = null; try { obj = JSON.parse(txt); } catch (e) { obj = undefined; }
+    const r = obj === undefined ? { ok: false, error: 'Das ist keine gültige Sicherung (kein lesbarer Text).' } : L.importState(obj, today());
+    if (!r.ok) { if (err) { err.hidden = false; err.textContent = r.error; } au.sfx.err(); return; }
+    if (onboarding) { applyImport(r.state); return; }
+    U.importPending = r.state; R.progress();
+  }
+  function applyImport(state) { state.onboarded = true; S = state; U.importPending = null; derive(); flush(); overlay(''); refresh(); scene.refresh(true); toast('<span><b>Wiederhergestellt.</b> Dein Hof ist wieder da.</span>'); }
+
+  /* ---------- Ereignisse ---------- */
+  const tabs = () => $$('.tab');
+  function selectTab(b, focus) {
+    tabs().forEach(x => { const on = x === b; x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1; }); $$('.panel').forEach(p => p.hidden = p.id !== 'p-' + b.dataset.tab); if (focus) b.focus();
+    if (b.dataset.tab !== 'journal' && preview) { preview = null; scene.refresh(); R.cal(); }
+    if (b.dataset.tab === 'progress') R.progress();
+    au.sfx.page();
+  }
+  function commitRename() { const s = S.skills.find(x => x.id === U.renaming), v = ($('#renameIn') || {}).value; if (s && v && v.trim()) s.name = v.trim().slice(0, 20); U.renaming = null; save(); refresh(); scene.refresh(); au.sfx.tick(); }
+  function deleteHabit(h) {
+    const idx = S.habits.indexOf(h); S.habits.splice(idx, 1); if (U.editHabit === h.id) U.editHabit = null; au.sfx.soft(); derive(); save(); refresh(); scene.refresh();
+    toast(`<span><b>Gelöscht.</b> „${esc(h.title)}“ ist entfernt.</span>`, { label: 'Rückgängig', fn: () => { S.habits.splice(Math.min(idx, S.habits.length), 0, h); derive(); save(); refresh(); scene.refresh(); } }, 6000);
+  }
+
+  function bind() {
+    tabs().forEach((b, i) => { b.addEventListener('click', () => selectTab(b)); b.addEventListener('keydown', e => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); const all = tabs(); selectTab(all[(i + d + all.length) % all.length], true); } }); });
+    $('#npc').addEventListener('click', () => { U.npcIdx++; au.sfx.page(); R.npc(); });
+    $('#soundBtn').addEventListener('click', () => { S.sound = !S.sound; save(); R.hud(); if (S.sound) au.sfx.tick(); });
+    $('#musicBtn').addEventListener('click', () => { S.music = !S.music; save(); R.hud(); if (S.music) au.Music.start(weather()); else au.Music.stop(); });
+    document.addEventListener('pointerdown', function once() { if (S && S.music && !au.Music.playing) au.Music.start(weather()); document.removeEventListener('pointerdown', once); });
+
+    document.addEventListener('input', e => { const el = e.target; if (el.id === 'jText') U.draft = el.value; const f = el.closest && el.closest('[data-form]'); if (f && (el.dataset.f === 'title' || el.dataset.f === 'anchor')) updatePreview(f); });
+    document.addEventListener('keydown', e => { if (e.target.id === 'renameIn') { if (e.key === 'Enter') { e.preventDefault(); commitRename(); } if (e.key === 'Escape') { U.renaming = null; R.skills(); } } });
+    document.addEventListener('change', e => {
+      const el = e.target;
+      if (el.dataset.f === 'skill') { const f = el.closest('[data-form]'), ns = f.querySelector('[data-f=newskill]'); ns.hidden = el.value !== '__new'; if (!ns.hidden) ns.focus(); }
+      if (el.id === 'calHabit') { U.calHabit = el.value; R.progress(); }
+      if (el.id === 'importFile' && el.files[0]) { const r = new FileReader(); r.onload = () => handleImportText(String(r.result), U.obStep === 'welcome' && !S.onboarded); r.readAsText(el.files[0]); el.value = ''; }
+    });
+    document.addEventListener('submit', e => {
+      const f = e.target; e.preventDefault();
+      if (f.dataset.form) { submitForm(f); return; }
+      if (f.id === 'todoForm') {
+        const t = $('#tTitle').value.trim(); if (!t) { au.sfx.err(); $('#tTitle').focus(); return; }
+        U.lastTodoSkill = $('#tSkill').value; const due = $('#tDue').value || undefined;
+        S.todos.unshift({ id: uid(), title: t, effort: +$('#tEff').value, skillId: U.lastTodoSkill, dueDate: due }); au.sfx.tick(); save(); refresh('today', 'hud'); $('#tTitle').focus(); return;
+      }
+      if (f.id === 'ciTodoForm') {
+        const t = $('#ciTodo').value.trim(); if (!t) return; const id = uid(); S.todos.unshift({ id, title: t, effort: 1, skillId: S.skills[0].id });
+        if (U.ci.todos.size < 3) U.ci.todos.add(id); au.sfx.tick(); showCheckin();
+      }
+    });
+    document.addEventListener('click', e => {
+      const chip = e.target.closest('[data-form] [data-freq], [data-form] [data-day], [data-form] [data-eff]');
+      if (chip) {
+        const form = chip.closest('[data-form]');
+        if (chip.dataset.freq) { form.querySelectorAll('[data-freq]').forEach(b => b.setAttribute('aria-pressed', b === chip)); form.querySelector('[data-g=days]').hidden = chip.dataset.freq !== 'weekdays'; form.querySelector('[data-g=times]').hidden = chip.dataset.freq !== 'weekly'; if (form.dataset.form !== 'edit') form.querySelector('[data-f=streak]').checked = chip.dataset.freq !== 'weekly'; }
+        else if (chip.dataset.day) chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') !== 'true');
+        else form.querySelectorAll('[data-eff]').forEach(b => b.setAttribute('aria-pressed', b === chip));
+        au.sfx.tick(); return;
+      }
+      const el = e.target.closest('[data-act]'); if (!el || el.tagName === 'INPUT' || el.disabled) return;
+      const act = el.dataset.act, t = today(), pt = pointOf(e, el), habit = () => S.habits.find(x => x.id === el.dataset.id);
+      switch (act) {
+        case 'hdone': { const h = habit(); logHabit(h, h.logs[t] === 'tiny' ? 'tiny' : 'done', pt); scene.refresh(); break; }
+        case 'htiny': logHabit(habit(), 'tiny', pt); scene.refresh(); break;
+        case 'repair': { const h = habit(), d = D.H[h.id]; if (d.repairKey) { h.logs[d.repairKey] = 'repaired'; au.sfx.tiny(); toast(`${img('flame', 3, '')}<span><b>Serie gerettet.</b> Der verpasste Tag ist nachgeholt.</span>`); derive(); save(); refresh(); } break; }
+        case 'todo': { const row = el.closest('[data-tid]'), x = S.todos.find(y => y.id === row.dataset.tid), before = snapshot();
+          if (x.doneAt) { delete x.doneAt; au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); break; }
+          x.doneAt = t; au.sfx.check(); if (!x.rolled) { x.rolled = true; rollDrop(pt); } derive(); const sk = skillById(x.skillId);
+          afterAction(before, x.skillId, pt, 10 * x.effort, `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${10 * x.effort} XP</b> · ${esc(x.title)} erledigt</span>`); refresh(); scene.refresh(); break; }
+        case 'deltodo': { const row = el.closest('[data-tid]'), i = S.todos.findIndex(y => y.id === row.dataset.tid), x = S.todos.splice(i, 1)[0]; au.sfx.soft(); derive(); save(); refresh();
+          toast(`<span><b>Gelöscht.</b> „${esc(x.title)}“</span>`, { label: 'Rückgängig', fn: () => { S.todos.splice(i, 0, x); derive(); save(); refresh(); } }); break; }
+        case 'idea': { const f = el.closest('.frame, .panel').querySelector('[data-form="ob"], [data-form="new"]'); if (f) { fillIdea(f, IDEAS[+el.dataset.i]); au.sfx.tick(); } break; }
+        case 'edit': U.editHabit = el.dataset.id; R.habits(); break;
+        case 'edit-cancel': U.editHabit = null; R.habits(); break;
+        case 'pause': { const h = habit(); L.pause(h, t); au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); toast(`<span><b>Pausiert.</b> „${esc(h.title)}“ ruht, bis du sie fortsetzt.</span>`); break; }
+        case 'resume': { const h = habit(); L.resume(h, t); au.sfx.place(); derive(); save(); refresh(); scene.refresh(); toast(`<span><b>Weiter geht's.</b> „${esc(h.title)}“ ist wieder aktiv.</span>`); break; }
+        case 'delhabit': deleteHabit(habit()); break;
+        case 'remoff': { const h = habit(); h.remindersEnabled = false; h.remOffAt = t; au.sfx.place(); toast(`${img('gem', 3, '')}<span><b>Erinnerung aus.</b> Hältst du „${esc(h.title)}“ jetzt 30 Tage, ist sie gemeistert.</span>`); derive(); save(); refresh(); break; }
+        case 'ren': U.renaming = el.dataset.sid; R.skills(); break;
+        case 'renok': commitRename(); break;
+        case 'icon': { const s = S.skills.find(x => x.id === el.dataset.sid), v = ($('#renameIn') || {}).value; s.icon = SP.ICONS[(SP.ICONS.indexOf(s.icon) + 1) % SP.ICONS.length]; R.skills(); if (v != null) $('#renameIn').value = v; au.sfx.tick(); save(); R.legend(); scene.refresh(); break; }
+        case 'addskill': { if (S.skills.length >= L.C.MAX_SKILLS) break; const id = 's' + uid(); S.skills.push({ id, name: 'Neue Fähigkeit', icon: SP.ICONS[S.skills.length % SP.ICONS.length], st: S.skills.length }); U.renaming = id; derive(); save(); refresh(); scene.refresh(); break; }
+        case 'weather': U.selWeather = el.dataset.w; preview = U.selWeather; au.sfx.tick(); $$('.wbtn[data-act=weather]').forEach(b => b.setAttribute('aria-pressed', b.dataset.w === U.selWeather)); scene.refresh(); R.cal(); R.npc(); break;
+        case 'prompt': U.promptShift++; au.sfx.page(); R.journal(); break;
+        case 'editj': U.editingJournal = true; U.selWeather = L.journalOn(S, t).weather; au.sfx.page(); R.journal(); break;
+        case 'editj-cancel': U.editingJournal = false; preview = null; R.journal(); scene.refresh(); break;
+        case 'savej': { const txt = ($('#jText').value || '').trim(); if (!txt) { au.sfx.err(); $('#jText').focus(); break; }
+          const cur = L.journalOn(S, t), w = U.selWeather || weather(); preview = null;
+          if (cur) { cur.text = txt; cur.weather = w; U.editingJournal = false; au.sfx.tick(); derive(); save(); }
+          else { const before = snapshot(); S.journal.push({ date: t, weather: w, text: txt, promptId: String((new Date().getDate() + U.promptShift) % PROMPTS.length) }); U.draft = ''; au.sfx.check(); afterAction(before, null, pt, L.C.JOURNAL_XP, `${img('gem', 3, '')}<span><b>Tag abgeschlossen.</b> Dein Eintrag liegt jetzt im Tagebuch im Farmhaus.</span>`); }
+          refresh(); scene.refresh(); break; }
+        case 'cal-prev': U.calYear = String(+(U.calYear || t.slice(0, 4)) - 1); R.progress(); break;
+        case 'cal-next': U.calYear = String(+(U.calYear || t.slice(0, 4)) + 1); R.progress(); break;
+        case 'export': U.showExport = !U.showExport; R.progress(); break;
+        case 'copy': { const ta = $('#exportTxt'); try { navigator.clipboard.writeText(ta.value).then(() => toast('<span><b>Kopiert.</b> Speichere den Text zum Beispiel in einer Notiz oder Datei.</span>'), () => { ta.select(); toast('<span>Der Text ist markiert. Kopiere ihn mit Cmd+C.</span>'); }); } catch (err) { ta.select(); } break; }
+        case 'import-open': { const f = $('#importFile'); if (f) f.click(); break; }
+        case 'import-paste': handleImportText(($('#importTxt') || {}).value || '', false); break;
+        case 'import-apply': applyImport(U.importPending); break;
+        case 'import-cancel': U.importPending = null; R.progress(); break;
+        case 'wipe': if (U.wipeArmed) { U.wipeArmed = false; U.showExport = false; Store.clear(); S = L.emptyState(t); derive(); refresh(); scene.refresh(true); showOnboarding('welcome'); }
+          else { U.wipeArmed = true; R.progress(); setTimeout(() => { if (U.wipeArmed) { U.wipeArmed = false; R.progress(); } }, 4000); } break;
+        case 'place': { if (L.farmSleeps(hour()) || !S.chest.items[el.dataset.type]) break; const type = el.dataset.type;
+          if (L.ITEMS[type].animal) S.chest.placed.push({ itemId: type }); else { const used = new Set(S.chest.placed.map(p => p.slot)), cap = L.slotsFor(D.char.l); let slot = -1; for (let i = 0; i < cap; i++) if (!used.has(i)) { slot = i; break; } if (slot < 0) { au.sfx.err(); break; } S.chest.placed.push({ itemId: type, slot }); }
+          if (!--S.chest.items[type]) delete S.chest.items[type]; au.sfx.place(); save(); refresh('chest', 'hud'); scene.refresh(); break; }
+        case 'stash': { if (L.farmSleeps(hour())) break; const p = S.chest.placed.splice(+el.dataset.i, 1)[0]; S.chest.items[p.itemId] = (S.chest.items[p.itemId] || 0) + 1; au.sfx.tick(); save(); refresh('chest', 'hud'); scene.refresh(); break; }
+        case 'fresh-go': S.freshSeen = t.slice(0, 7); save(); selectTab($('#t-habits')); R.today(); break;
+        case 'fresh-no': S.freshSeen = t.slice(0, 7); save(); R.today(); break;
+        case 'unlock-go': S.unlockSeen = true; save(); selectTab($('#t-habits')); R.today(); break;
+        case 'unlock-no': S.unlockSeen = true; save(); R.today(); break;
+        case 'install-ok': S.installHintSeen = true; save(); R.today(); break;
+        // Onboarding
+        case 'ob-start': showOnboarding('habits'); break;
+        case 'ob-back': showOnboarding('welcome'); break;
+        case 'ob-next': showOnboarding('done'); break;
+        case 'ob-finish': finishOnboarding(); break;
+        case 'ob-remove': S.habits = S.habits.filter(x => x.id !== el.dataset.id); derive(); showOnboarding('habits'); scene.refresh(); break;
+        case 'ob-v3': { const v3 = Store.legacyV3(); if (v3) applyImport(L.migrateV3(v3, t)); break; }
+        case 'demo-start': startDemo(); break;
+        case 'demo-end': endDemo(); break;
+        // Check-in
+        case 'ci-open': showCheckin(); break;
+        case 'ci-todo': { const id = el.dataset.id; if (U.ci.todos.has(id)) U.ci.todos.delete(id); else if (U.ci.todos.size < 3) U.ci.todos.add(id); else { au.sfx.err(); break; } el.setAttribute('aria-pressed', U.ci.todos.has(id)); au.sfx.tick(); break; }
+        case 'ci-weather': U.ci.weather = U.ci.weather === el.dataset.w ? null : el.dataset.w; $$('[data-act=ci-weather]').forEach(b => b.setAttribute('aria-pressed', b.dataset.w === U.ci.weather)); au.sfx.tick(); break;
+        case 'ci-done': closeCheckin(true); break;
+        case 'ci-skip': closeCheckin(false); break;
+      }
+    });
+  }
+
+  /* ---------- Start ---------- */
+  function boot(state) {
+    S = state || L.emptyState(today());
+    au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
+    derive();
+    scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
+    bind(); refresh(); scene.start();
+    if (!S.onboarded) showOnboarding('welcome');
+    else { checkRewards(null); if (L.needsCheckin(S, today(), hour())) showCheckin(); }
+    let lastDay = today();
+    setInterval(() => { if (today() !== lastDay) { lastDay = today(); U.editingJournal = false; U.selWeather = null; preview = null; derive(); refresh(); if (S.onboarded && !$('#overlay').innerHTML && L.needsCheckin(S, today(), hour())) showCheckin(); } R.cal(); R.npc(); scene.refresh(); }, 30000);
+  }
+  root.LAGUI = { boot };
+})(typeof self !== 'undefined' ? self : this);
+
+/* Life's a Game · Start
+ * Lädt den gespeicherten Hof (IndexedDB), startet die Oberfläche und registriert den Service Worker.
+ */
+(async function (root) {
+  'use strict';
+  const L = root.LAG, today = L.dkey(new Date());
+  let state = null;
+  try {
+    const saved = await root.LAGStore.load();
+    if (saved) { const r = L.importState(saved, today); if (r.ok) state = r.state; }
+  } catch (e) { state = null; }
+  root.LAGUI.boot(state);
+
+  // H5: offline-fähig und installierbar. Nur mit Manifest (nicht in der Artifact-Vorschau) und sicherem Kontext.
+  const hasManifest = !!document.querySelector('link[rel="manifest"]');
+  if (hasManifest && 'serviceWorker' in navigator && root.isSecureContext) {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* z. B. file:// – App läuft trotzdem */ });
+  }
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+
+</body></html>

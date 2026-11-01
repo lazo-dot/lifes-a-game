@@ -1,0 +1,17 @@
+{
+  "name": "Life's a Game",
+  "short_name": "Life's a Game",
+  "description": "Gewohnheiten, To-dos und Logbuch als kleiner Pixel-Hof, der mit dir wächst.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1719",
+  "theme_color": "#0d1719",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

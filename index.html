@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Life's a Game</title>
+<meta name="description" content="Gewohnheiten, To-dos und Logbuch als kleiner Pixel-Hof, der mit dir wächst.">
+<meta name="theme-color" content="#0d1719">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Life's a Game">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=VT323&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 class="logo">Life's a Game</h1>
+    <div class="top-r">
+      <div class="cal" id="cal"></div>
+      <button class="btn ghost" id="musicBtn" type="button" aria-pressed="false">Musik: aus</button>
+      <button class="btn ghost" id="soundBtn" type="button" aria-pressed="true">Effekte: an</button>
+    </div>
+  </header>
+  <div class="demo-bar" id="demoBar" hidden><span>Du siehst einen Demo-Hof mit erfundenen Daten. Hier wird nichts gespeichert.</span><button class="btn sm" type="button" data-act="demo-end">Demo beenden</button></div>
+
+  <div class="main">
+    <div class="col">
+      <div class="frame scene">
+        <canvas id="scene" width="256" height="160" aria-label="Dein Hof von oben: ein Beet pro Gewohnheit, ein Gebäude pro Fähigkeit"></canvas>
+        <div class="legend" id="legend"></div>
+      </div>
+      <section class="frame" aria-label="Charakter">
+        <div class="stat-row">
+          <div class="lvl-badge"><small>Level</small><strong id="lvlNum">1</strong></div>
+          <div class="stat-main">
+            <div class="stat-line"><span class="t">Erfahrung</span><span id="xpText">0 / 100 XP</span></div>
+            <div class="bar" role="progressbar" aria-label="Erfahrung bis zum nächsten Level" id="xpBarWrap"><i id="xpBar"></i></div>
+            <div class="near" id="nearText"></div>
+          </div>
+        </div>
+      </section>
+      <section class="frame" aria-label="Fähigkeiten">
+        <div class="plank">Fähigkeiten</div>
+        <div class="skills" id="skills"></div>
+      </section>
+      <button class="npc" id="npc" type="button" aria-live="polite">
+        <span class="npc-face" id="npcFace"></span>
+        <div><div class="npc-name">Wilma · Nachbarin</div><div class="npc-text" id="npcText"></div><div class="npc-more">Antippen für mehr</div></div>
+      </button>
+    </div>
+
+    <div class="panel-wrap">
+      <div class="tabs" role="tablist" aria-label="Bereiche">
+        <button class="tab" role="tab" id="t-today" data-tab="today" aria-controls="p-today" aria-selected="true">Heute<span class="n" id="nToday"></span></button>
+        <button class="tab" role="tab" id="t-habits" data-tab="habits" aria-controls="p-habits" aria-selected="false" tabindex="-1">Gewohnheiten</button>
+        <button class="tab" role="tab" id="t-journal" data-tab="journal" aria-controls="p-journal" aria-selected="false" tabindex="-1">Logbuch</button>
+        <button class="tab" role="tab" id="t-progress" data-tab="progress" aria-controls="p-progress" aria-selected="false" tabindex="-1">Fortschritt</button>
+        <button class="tab" role="tab" id="t-chest" data-tab="chest" aria-controls="p-chest" aria-selected="false" tabindex="-1">Truhe<span class="n" id="nChest"></span></button>
+      </div>
+      <div class="frame panel" id="p-today" role="tabpanel" aria-labelledby="t-today"></div>
+      <div class="frame panel" id="p-habits" role="tabpanel" aria-labelledby="t-habits" hidden></div>
+      <div class="frame panel" id="p-journal" role="tabpanel" aria-labelledby="t-journal" hidden></div>
+      <div class="frame panel" id="p-progress" role="tabpanel" aria-labelledby="t-progress" hidden></div>
+      <div class="frame panel" id="p-chest" role="tabpanel" aria-labelledby="t-chest" hidden></div>
+    </div>
+  </div>
+  <footer class="foot"><span id="footNote">Speichert nur auf diesem Gerät.</span><span>Prototyp V4</span></footer>
+</div>
+<div id="overlay"></div>
+
+<script src="js/logic.js"></script>
+<script src="js/store.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/music.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
