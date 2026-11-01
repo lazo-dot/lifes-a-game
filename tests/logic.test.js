@@ -1,7 +1,7 @@
 // Tests für die Spiellogik · Ausführen: node --test tests/
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const L = require('../js/logic.js');
+const L = require('../src/logic.js');
 
 const T = '2026-11-01'; // Sonntag
 const daily = { kind: 'daily' };

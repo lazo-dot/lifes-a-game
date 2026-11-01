@@ -1,6 +1,13 @@
 {
   "name": "lifes-a-game",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
-  "scripts": { "test": "node --test tests/logic.test.js", "serve": "python3 -m http.server 8000" }
+  "description": "Gewohnheiten, To-dos und Logbuch als kleiner Pixel-Hof (Prototyp, PWA).",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test tests/",
+    "build": "node tools/build.js",
+    "bundle": "node tools/build.js --bundle",
+    "start": "node tools/serve.js"
+  }
 }

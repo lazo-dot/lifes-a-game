@@ -562,5 +562,5 @@
     let lastDay = today();
     setInterval(() => { if (today() !== lastDay) { lastDay = today(); U.editingJournal = false; U.selWeather = null; preview = null; derive(); refresh(); if (S.onboarded && !$('#overlay').innerHTML && L.needsCheckin(S, today(), hour())) showCheckin(); } R.cal(); R.npc(); scene.refresh(); }, 30000);
   }
-  root.LAGUI = { boot };
+  root.LAGUI = { boot, notify: toast };
 })(typeof self !== 'undefined' ? self : this);

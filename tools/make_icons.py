@@ -1,5 +1,8 @@
 """Erzeugt die App-Icons als Pixel-Art (ein Beet mit ausgewachsener Pflanze). Aufruf: python3 tools/make_icons.py"""
+import pathlib
 from PIL import Image
+
+OUT = str(pathlib.Path(__file__).resolve().parent.parent / "public" / "icons")
 
 PLANT = [
     "................",
@@ -44,8 +47,8 @@ def icon(size, pad_ratio):
     return out
 
 
-icon(192, 0.04).save("icons/icon-192.png")
-icon(512, 0.04).save("icons/icon-512.png")
-icon(512, 0.14).save("icons/icon-maskable-512.png")
-icon(180, 0.06).save("icons/apple-touch-icon.png")
+icon(192, 0.04).save(OUT + "/icon-192.png")
+icon(512, 0.04).save(OUT + "/icon-512.png")
+icon(512, 0.14).save(OUT + "/icon-maskable-512.png")
+icon(180, 0.06).save(OUT + "/apple-touch-icon.png")
 print("Icons erstellt")
