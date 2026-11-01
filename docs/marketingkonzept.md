@@ -118,3 +118,27 @@ Jeder Punkt ist im Leitfaden verankert (Prinzipien 1–8, Abschnitte 4.4, 6, 7).
 | Ab Neujahr 2027 | Build in Public regelmäßig (2–3 h/Woche), Discord öffnen |
 | Mit Flutter-Beta | TestFlight-Beta, Metriken + METUX, Zitate sammeln, Presskit |
 | 4–6 Wochen vor Launch | Apple-Featuring vorschlagen, Creator anschreiben, Store-Seite finalisieren |
+
+---
+
+## 7. Namensprüfung „Life's a Game“ (Stand 01.11.2026)
+
+Erste Recherche, keine Rechtsberatung. Vor einer Anmeldung offizielle Recherche bei DPMA/EUIPO oder durch eine Patentanwaltskanzlei.
+
+**Marken (TMview, umfasst EUIPO, DPMA und weitere Ämter):**
+- Keine lebende, identische Marke „Life's a Game“ in der EU oder in Deutschland für Software, Apps oder Spiele (Klassen 9, 41, 42) gefunden.
+- Ähnliche, eingetragene Marken mit Bezug zur EU: „Life is the Game“ (Portugal, Klassen 9 und 42, 2024), „Life is a game – I'm all in!“ (DPMA, Klassen 25, 35, 38), „Life is a game Play it!“ (Rumänien, u. a. Klasse 41). Die EU-Marke „Life is a game“ (Klassen 28, 41) ist abgelaufen.
+- In den USA ist „Life is a Game“ für Coaching/Persönlichkeitsentwicklung (Klasse 45) angemeldet; ältere Slogan-Marken mit „Life's a game …“ sind erloschen.
+
+**App-Stores (größeres Problem):**
+- „Life is a Game“ von StudioWheel: Lebenssimulation mit Pixel-Grafik, über 20 Mio. Installationen bei Google Play, 4,1 Sterne. Dominiert die Suche nach dem Namen.
+- Weitere: „Life is a Game : 인생게임“ (iOS), „Life The Game“ (iOS), mehrere „Gamify/Gameify: Turn Life into a Game“-Apps im Habit-Bereich.
+
+**Einschätzung:**
+1. **Rechtlich** derzeit kein klares Hindernis gefunden, aber der Name ist eine gängige Redewendung. Ämter lehnen solche Slogans häufig mangels Unterscheidungskraft ab, und selbst eingetragen wäre der Schutz schwach.
+2. **Auffindbarkeit** ist das Hauptproblem: Wer „Life's a Game“ sucht, findet zuerst die Lebenssimulation mit 20 Mio. Installationen – ebenfalls Pixel-Art, was Verwechslung wahrscheinlich macht.
+3. **Botschaft:** Der Name sagt nichts über Gewohnheiten, Farm oder Gemütlichkeit.
+
+**Empfehlung:** „Life's a Game“ als Arbeitstitel oder Claim behalten, für die veröffentlichte App einen eigenständigen, schützbaren Namen mit beschreibendem Untertitel wählen (Muster: „Name – Cozy Habit Farm“). Namenskandidaten vor der Domain- und Handle-Sicherung erneut prüfen.
+
+Quellen: TMview (tmdn.org), [USPTO 97739144 via Justia](https://trademark.justia.com/977/39/life-is-a-97739144.html), [Life is a Game (AppGoblin)](https://appgoblin.info/apps/com.fivebyte.lifeisagame), [Life is a Game : 인생게임 (App Store)](https://apps.apple.com/app/id1599992204), [Life The Game (App Store)](https://apps.apple.com/us/app/id6448889614), [Gameify (App Store)](https://appshunter.io/ios/app/gameify-turn-life-into-a-game/id6736490183)
