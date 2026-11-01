@@ -1,57 +1,65 @@
 # Life's a Game – Hinweise für Claude Code
 
-Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v5 (installierbare PWA, GitHub Pages). **Nächstes Ziel: Prototyp v6.**
+Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v6 (installierbare PWA, GitHub Pages). **Nächstes Ziel: Prototyp v7 – Bedienbarkeit.**
 
 ## Quellen der Wahrheit
 
-- `docs/habit-tracker-entwicklungsleitfaden.md` – **verbindlich** für Mechaniken, Formeln, Datenmodell und Prinzipien (aktuell **v1.5**; die Tabelle „Änderungen in v1.5“ ist der Kern von v6).
-- `docs/simulation-30-tage.md`, `docs/simulation-72-tage.md` – Begründung der v6-Änderungen (Befunde 1 und 8).
-- `docs/abgleich-checkliste.md` – Prüfpunkte aller bisherigen Versionen.
-- `docs/marketingkonzept.md` – Fair-Play-Versprechen (Abschnitt 4) und Kritikpunkte (Abschnitt 5), die die App erfüllen muss.
+- `docs/habit-tracker-entwicklungsleitfaden.md` – **verbindlich** für Mechaniken, Formeln, Datenmodell und Prinzipien (aktuell v1.6).
+- `docs/ux-heuristische-evaluation-v6.md` – **Grundlage für v7** (Funde U1–U18 mit Empfehlungen).
+- `docs/ux-testleitfaden-v6.md` – der Usability-Test, der nach v7 läuft; Aufgaben dort müssen weiter funktionieren.
+- `docs/abgleich-checkliste.md`, `docs/simulation-*.md`, `docs/marketingkonzept.md` – Hintergrund.
 
-Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game“ gepflegt (Koordinations-Chat). **Hier nicht inhaltlich ändern.** Bewusste Abweichungen mit Grund in `docs/ABWEICHUNGEN.md` eintragen (für v6 neu beginnen, Abschnitt „v6“).
+Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game“ gepflegt (Koordinations-Chat). **Hier nicht inhaltlich ändern.** Bewusste Abweichungen mit Grund in `docs/ABWEICHUNGEN.md` eintragen (Abschnitt „v7“).
 
 ## Unverhandelbare Prinzipien (Kurzfassung, Details im Leitfaden)
 
 1. Nutzer besitzen ihre Ziele – nur anpassbare Vorschläge, keine Normziele.
-2. XP ist Feedback, keine Bezahlung – keine Währung, kein Laden, nur Überraschungsfunde (12 %, davon 20 % selten, nur für Eintragungen am selben Tag) und garantierte Funde bei Ernte/„Gemeistert“.
-3. Serien verzeihen – optional, Regentage (1 pro 7 Termine, max. 2), Reparatur innerhalb 48 h, nach Bruch „X-mal dieses Jahr“ statt „0“. Verzeihende Mechaniken setzen keine Zähler zurück.
-4. Auslöser statt Erinnerungen – Anker „Nach ___ werde ich ___“ ist Pflicht; Erinnerungen werden ausgeschlichen, Ziel ist „Gemeistert“.
+2. XP ist Feedback, keine Bezahlung – keine Währung, kein Laden, nur Überraschungsfunde (12 %, davon 20 % selten, nur am selben Tag) und garantierte Funde bei Ernte/„Gemeistert“.
+3. Serien verzeihen – Regentage, Nachtragen 48 h, Extra-Runde; verzeihende Mechaniken setzen keine Zähler zurück.
+4. Auslöser statt Erinnerungen – Anker ist Pflicht; Erinnerungen werden ausgeschlichen, Ziel ist „Gemeistert“.
 5. Spielaktionen nur nach echten Erledigungen; die Farm schläft 22–6 Uhr.
-6. Keine Dark Patterns: keine Countdowns, Schuld-Nachrichten, Verlustmechaniken, bezahlter Serienschutz, kein Confirmshaming.
+6. Keine Dark Patterns: keine Countdowns, Schuld-Nachrichten, Verlustmechaniken, kein Confirmshaming.
 7. Pflanzen sterben nie, „Gemeistert“ wird nie entzogen.
-8. Daten bleiben lokal, keine externen Anfragen, Export/Import mit einem Tipp.
+8. Daten bleiben lokal, keine externen Anfragen.
 
-## Architekturregeln (unverändert seit v5)
+## Architekturregeln
 
-- Spiellogik in `src/logic.js` bleibt UI-frei; sie wird später 1:1 nach Dart portiert.
-- Gespeichert werden nur Eingaben; Stärke, Serien, Regentage, XP, Level und Graduierung werden abgeleitet.
-- Klassische Skripte mit Namensraum, Kopier-Build nach `dist/`, kein Bundler. `npm test` muss grün sein, bevor committet wird. Der GitHub-Pages-Workflow veröffentlicht bei Push auf `main`.
+- `src/logic.js` bleibt UI-frei. **v7 ändert keine Spielregeln** – Logik und bestehende Tests bleiben inhaltlich unverändert (nur Hilfsfunktionen ergänzen, falls nötig, mit Tests).
+- Gespeichert werden nur Eingaben; das Speicherschema bleibt gleich. Lars' Selbsttest-Daten müssen das Update unverändert überstehen.
+- Klassische Skripte, Kopier-Build nach `dist/`, kein Bundler. `npm test` grün vor jedem Commit.
 
-## Arbeitsliste v6
+## Arbeitsliste v7 – Bedienbarkeit (Funde aus `docs/ux-heuristische-evaluation-v6.md`)
 
-Lars nutzt v5 gerade im Selbsttest auf dem iPhone. **Seine Daten müssen das Update unverändert überstehen** (gleiches Speicherschema oder saubere Migration, Test dafür).
+Referenzgerät: iPhone, 390 × 844 pt, Safari und als installierte App. Prüfen mit `npm start` und den Browser-Werkzeugen auf dieser Größe, zusätzlich auf Desktop-Breite (dort darf das bisherige Layout bleiben).
 
 **Muss (H)**
-1. **Nachtragen (Leitfaden 4.3, 4.4, 5.5, Datenmodell `lateLogs`):**
-   - Gestern und vorgestern lassen sich als erledigt oder Mini nachtragen (und wieder zurücknehmen); ältere Tage nicht.
-   - Nachgetragene Einträge zählen voll für Stärke, Serie, XP und Ernte, würfeln aber keinen Zufallsfund.
-   - Im Erntekalender dezent markiert (Muster/Symbol, nicht nur Farbe – Barrierefreiheit).
-   - Die „Extra-Runde“ erscheint erst, wenn der Tag nicht nachgetragen wurde; zuerst wird „Gestern doch erledigt? Nachtragen“ angeboten.
-   - UI-Ort nach eigenem Ermessen (z. B. Tab „Heute“ → kleiner Bereich „Gestern“), ohne Schuldton.
-2. **Erreichbare Graduierung (Leitfaden 4.5):**
-   - Ausschleichen-Vorschlag ab Stärke ≥ 0,6 und 12 von 14 geplanten Terminen gehalten (Mini, Regentag, nachgeholt zählen; Wochen-Gewohnheiten: Wochenziel der letzten zwei Wochen erreicht).
-   - „Gemeistert“ = erster Tag mit 30 Tagen ohne Erinnerung und ≥ 70 % gehaltenen Terminen in diesen 30 Tagen; bleibt dauerhaft.
-   - Regentag und nachgeholt setzen den Zähler `run` nicht mehr auf 0 (bisher `computeHabit`). Prüfen, wo `run` sonst noch genutzt wird.
-   - Bereits gemeisterte Gewohnheiten bleiben gemeistert.
-3. **Tests:** neue Regeln vollständig abdecken (Nachtragen-Grenzen, kein Fund beim Nachtragen, Graduierung mit 70 %, kein Reset durch Regentag/nachgeholt, Migration bestehender v5-Daten). Bestehende Tests anpassen, wo sie die alten Schwellen prüfen – im Commit begründen.
-4. **Simulation gegen v6:** Die Simulation nutzt für Ausschleichen und „Gemeistert“ die Regeln der App (`suggestOff`, `graduated`). Unter v5 ergibt `OPT=backfill node tools/sim/sim72.js 300` null gemeisterte Gewohnheiten. Mit der v6-Logik sollte derselbe Aufruf in die Nähe der Simulationsvariante `backfill,grad` kommen (Referenzlauf im Koordinations-Chat: Personen mit „Gemeistert“ 49 %, „gehalten“ Tag 66 90 %, abgeschaltete Erinnerungen 1,55 je Person). Ergebnis (Kennzahlen „anyGraduated“, „held66“, „remOffPerUser“ gemittelt über Personas) in der Zusammenfassung berichten; deutliche Abweichungen begründen.
+1. **U1 – Abhaken ohne Scrollen.** Auf schmalen Bildschirmen ist der erste Haken im Tab „Heute“ ohne Scrollen sichtbar. Vorschlag: Tab-Leiste fest unten (Symbol + kurzer Text, Safe Area beachten), Hof-Szene kompakt oben, Erfahrung und Fähigkeiten in den Tab „Fortschritt“ oder einklappbar. Wilma bleibt erreichbar, aber nicht vor der Liste. Damit erledigt sich U15 (Tabs in zwei Zeilen).
+2. **U17 – Keine Information nur im Tooltip.** Alles, was heute nur über `title` erklärt wird (Regentage, Kalenderkacheln inkl. „nachgetragen“), lässt sich antippen: kleines Info-Feld bzw. bei Kalenderkacheln Datum + Status. `title` darf zusätzlich bleiben.
+3. **U8/U9 – Regentag und Nachtragen verständlich.** Wenn ein Tag mit verbrauchtem Regentag nachgetragen wird, sagt die App das: „Dein Regentag ist wieder frei.“ (Die Logik leitet das bereits ab – prüfen und per Test absichern.) Im Bereich „Gestern und vorgestern“ einen Satz ergänzen, dass Nachtragen einen Regentag zurückgibt. „Nachgeholt“ in der Oberfläche einheitlich „Extra-Runde“ nennen; Kalenderlegende mit einem kurzen Satz je Zustand.
+4. **U12/U13 – Tap-Flächen und Haken.** Alle Bedienelemente mindestens 44 × 44 pt (Haken, Mini, To-do-Löschen, Kalender-Pfeile, Chips). Der Haken ist im Ruhezustand als Haken-Feld erkennbar (z. B. Haken-Symbol gedimmt); Mini als gleichwertige zweite Option daneben. Löschen-× mit Abstand zum Haken.
 
-**Nicht in v6** (wird nach dem Selbsttest entschieden): Etappen-Weg zu „Gemeistert“, Zwischenstufe „Knospe“/Wochenernte, Tagesrhythmus, Freischaltungen, Saatgut-Liste, mehrere Anker.
+**Sollte (M)**
+5. **U3** Zahlen auf der Heute-Karte mit Kurztext statt nur Symbol („90 in Folge“, „2 Regentage“).
+6. **U4/U5/U6 Wortwahl:** Kopfzeile „1. November · Herbst“ statt „Tag 1“; ab Tag 66 „Tag 93 · die üblichen 66 Tage sind geschafft“; „Noch 3× Dehnen bis Körper Stufe 2“ statt „Einheiten“.
+7. **U11** Schalter „Erinnerung“ heißt bis zur Flutter-Version „Wilma erinnert in der App“ (mit einem Satz Erklärung).
+8. **U10** Versionsanzeige aus `package.json`; `package.json` auf 7.0.0.
+9. **U2** Hinweise (Toasts) unten über der Tab-Leiste, verdecken keine Bedienelemente.
+
+**Kann (N)**
+10. **U14** Anlegen-Formular: Schritte 5–6 (Fähigkeit, Aufwand, Optionen) einklappbar mit sinnvollen Vorgaben, damit das Formular kürzer wirkt. Keine Pflichtfelder entfernen.
+11. **U16** Option „Lesbare Schrift“ unter Darstellung: Fließtext in einer gut lesbaren Systemschrift, Überschriften und Zahlen bleiben Pixel-Schrift.
+
+**Nicht in v7:** Spielregeln, neue Mechaniken (Etappen-Weg, Knospe, Tagesrhythmus, Freischaltungen, Vorlagen-Ausbau), Sprite-Sheets/Grafikstil – das wird nach Selbsttest und Usability-Test entschieden.
+
+## Prüfen vor dem Push
+
+- `npm test` grün; Simulation muss nicht neu laufen (Regeln unverändert).
+- `tools/ux/testhof.js` erzeugt weiterhin einen gültigen Test-Hof; alle 8 Aufgaben aus `docs/ux-testleitfaden-v6.md` sind in v7 lösbar.
+- Auf 390 × 844: erster Haken ohne Scrollen sichtbar; keine Tap-Fläche unter 44 pt (kurz messen, z. B. per Skript in den DevTools).
+- Bestehende v6-Daten laden unverändert.
 
 ## Arbeitsweise
 
-- Kleine, thematische Commits; vor jedem Commit Tests laufen lassen.
-- Beta-Zahlen: In `betaMetrics` ergänzen, ab welchem Datum v6 aktiv ist (z. B. Feld `rulesSince`), damit Lars den Selbsttest vor und nach dem Update auseinanderhalten kann.
-- Nach Abschluss: `docs/V6-ZUSAMMENFASSUNG.md` (umgesetzt, offen, Abweichungen, Simulationsergebnis). Checkliste nicht selbst ausfüllen – der Abgleich passiert im Koordinations-Chat.
-- Keine Gesundheitsversprechen in App-Texten, keine fremden Markennamen in Texten, Metadaten oder Dateinamen.
+- Kleine, thematische Commits. Vor dem Push auf `main` Lars fragen (danach aktualisiert sich die App auf seinem iPhone).
+- Zum Schluss `docs/V7-ZUSAMMENFASSUNG.md`: je Fund U… umgesetzt / teilweise / nicht, mit kurzer Begründung; Vorher/Nachher der Position des ersten Hakens und der kleinsten Tap-Fläche; Abweichungen in `docs/ABWEICHUNGEN.md` (v7). Checkliste nicht selbst ausfüllen.
+- Keine Gesundheitsversprechen in App-Texten, keine fremden Markennamen.
