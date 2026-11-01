@@ -1,57 +1,59 @@
-# Life's a Game · Prototyp V4
+# Life's a Game · Prototyp V5
 
-Installierbare Web-App (PWA): Gewohnheiten, To-dos und Logbuch als Pixel-Hof. Alle Daten bleiben auf dem Gerät (IndexedDB).
+Installierbare Web-App (PWA): Gewohnheiten, To-dos und Logbuch als Pixel-Hof. Alle Daten bleiben auf dem Gerät (IndexedDB), es gibt keine Anfragen an Dritte.
+
+Verbindliche Regeln: [CLAUDE.md](CLAUDE.md) und [Entwicklungsleitfaden](docs/habit-tracker-entwicklungsleitfaden.md). Stand v5: [docs/V5-ZUSAMMENFASSUNG.md](docs/V5-ZUSAMMENFASSUNG.md).
 
 ## Aufbau
 
-| Datei | Inhalt | Port nach Flutter |
+| Ordner / Datei | Inhalt | Port nach Flutter |
 |---|---|---|
-| `js/logic.js` | Spielregeln ohne Oberfläche: Stärke, Serie, Regentage, XP, Level, Ernte, Onboarding-Regel, Kalender, Import/Migration | 1:1 nach Dart (`lib/logic/`) |
-| `tests/logic.test.js` | 19 Tests für alle Formeln | als Dart-Tests übernehmen |
-| `js/store.js` | Speicher: IndexedDB, Rückfall auf localStorage | Isar/SQLite |
-| `js/scene.js` | Hof-Szene (Draufsicht), Ebenen-Cache, Wetter, Licht | Flame |
-| `js/music.js` | Effekte und Klaviermusik je Wetter | Audio-Plugin |
-| `js/sprites.js` | Pixel-Sprites | Spritesheets (Aseprite) |
-| `js/ui.js` | Oberfläche, Onboarding, Check-in, Erntekalender | Flutter-Widgets |
-| `js/demo.js` | Demo-Hof (wird nie gespeichert) | – |
-| `sw.js`, `manifest.webmanifest`, `icons/` | Offline-Betrieb und Installation | entfällt |
+| `src/logic.js` | Spielregeln ohne Oberfläche: Stärke, Serie, Regentage, XP, Level, Ernte, Graduierung, Fundchancen, Beta-Metriken, Kalender, Import | 1:1 nach Dart (`lib/logic/`) |
+| `src/store.js` | Speicher: IndexedDB, Rückfall auf localStorage | Isar/SQLite |
+| `src/scene.js`, `src/sprites.js` | Hof-Szene, Pixel-Sprites | Flame, Spritesheets |
+| `src/music.js` | Effekte und Klaviermusik je Wetter | Audio-Plugin |
+| `src/ui.js`, `src/app.js` | Oberfläche, Start, Service-Worker-Registrierung | Flutter-Widgets |
+| `src/demo.js` | Demo-Hof (wird nie gespeichert) | – |
+| `public/` | `index.html`, `styles.css`, Manifest, `sw.js`, Icons, Schriften | entfällt |
+| `tests/` | Node-Tests für alle Formeln | als Dart-Tests übernehmen |
+| `tools/` | `build.js` (dist/ bauen), `serve.js` (lokaler Server), `make_icons.py` | – |
+| `docs/` | Leitfaden, Checkliste, Marketing, Abweichungen, Zusammenfassung v5 | – |
 
-## Lokal starten
+`dist/` wird gebaut und nicht eingecheckt: `public/` plus `src/` als `js/`, der Service Worker bekommt Version und Dateiliste automatisch.
 
-```bash
-cd lifes-a-game-v4
-python3 -m http.server 8000
-# Browser: http://localhost:8000
-```
+## Befehle
 
-Direktes Öffnen der `index.html` per Doppelklick funktioniert auch, dann aber ohne Offline-Modus.
-
-## Tests
+Voraussetzung: Node ab Version 20.
 
 ```bash
-node --test tests/logic.test.js
+npm test          # alle Tests
+npm start         # baut dist/ und startet http://localhost:8000, baut bei Änderungen neu
+npm run build     # nur dist/ bauen
+npm run bundle    # zusätzlich dist-bundle/lifes-a-game.html (eine Datei, z. B. für die Artifact-Vorschau)
 ```
+
+Ohne Server: `dist/index.html` per Doppelklick öffnen (dann ohne Offline-Modus).
 
 ## Aufs iPhone bringen
 
-iOS installiert eine Web-App nur über **HTTPS**. Zwei einfache Wege:
+iOS installiert eine Web-App nur über **HTTPS**.
 
-**A · Netlify Drop (ohne Konto, ca. 2 Minuten)**
-1. https://app.netlify.com/drop öffnen.
-2. Den Ordner `lifes-a-game-v4` in das Fenster ziehen.
-3. Die angezeigte `https://…netlify.app`-Adresse auf dem iPhone in **Safari** öffnen.
-4. Teilen → „Zum Home-Bildschirm“.
+**A · GitHub Pages (empfohlen, dauerhaft, Updates per Push)**
+1. Auf github.com ein neues Repository anlegen (z. B. `lifes-a-game`, öffentlich, denn Pages ist in kostenlosen Konten nur für öffentliche Repos verfügbar).
+2. Im Repository: Settings → Pages → Source: **GitHub Actions**.
+3. Dieses Repo hochladen: `git remote add origin https://github.com/<name>/lifes-a-game.git` und `git push -u origin main`.
+4. Der Workflow `.github/workflows/pages.yml` testet, baut und veröffentlicht. Adresse: `https://<name>.github.io/lifes-a-game/`.
+5. Die Adresse auf dem iPhone in **Safari** öffnen → Teilen → „Zum Home-Bildschirm“.
 
-**B · GitHub Pages (dauerhaft, mit Updates per Push)**
-1. Neues Repository anlegen, Inhalt dieses Ordners hochladen.
-2. Settings → Pages → Branch `main`, Ordner `/root`.
-3. Die Adresse `https://<name>.github.io/<repo>/` in Safari öffnen und zum Home-Bildschirm hinzufügen.
+**B · Netlify Drop (ohne Git, ca. 2 Minuten)**
+1. `npm run build`
+2. https://app.netlify.com/drop öffnen und den Ordner `dist` hineinziehen.
+3. Die `https://…netlify.app`-Adresse in Safari öffnen → „Zum Home-Bildschirm“.
 
-**Updates:** Bei jeder neuen Version in `sw.js` die Konstante `VERSION` erhöhen, sonst zeigt das iPhone weiter die alte Version aus dem Cache. Die App einmal schließen und neu öffnen.
+**Updates:** Nach einem neuen Build ändert sich die Cache-Version von selbst. Die installierte App lädt sie beim nächsten Öffnen im Hintergrund und zeigt dann „Neue Version bereit · Neu laden“.
 
-**Datensicherung:** Fortschritt → „Sicherung erstellen“ (Text kopieren und z. B. in Notizen ablegen). Wiederherstellen über „Sicherung importieren“ oder beim ersten Start.
+**Datensicherung:** Fortschritt → „Sicherung erstellen“. Wiederherstellen über „Sicherung importieren“ oder beim ersten Start.
 
-## Werkzeuge
+## Offline prüfen
 
-- `python3 tools/make_icons.py` · erzeugt die App-Icons neu
-- `python3 tools/build_bundle.py` · baut `dist/lifes-a-game-v4.html` (eine Datei, für die Vorschau als Artifact)
+Nach dem ersten Laden in Safari (oder Chrome) die Verbindung trennen bzw. den Flugmodus einschalten und die App neu öffnen. Sie muss vollständig laden, mit Schriften. In Chrome zeigt DevTools → Application → Service Workers den Status.
