@@ -73,6 +73,21 @@
     const close = () => o.remove(); b.onclick = close; o.addEventListener('click', e => { if (e.target === o) close(); }); o.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
   }
 
+  /* ---------- Info-Feld (U17) ----------
+   * Antippen eines Elements mit data-info zeigt den Text in einem kleinen Feld darunter; Antippen daneben oder Esc schließt es.
+   */
+  function closeInfo() { const o = $('#infopop'); if (o) o.remove(); }
+  function showInfo(el) {
+    const open = $('#infopop'), same = open && open.dataset.for === el.dataset.info; closeInfo(); if (same) return;
+    const o = document.createElement('div'); o.id = 'infopop'; o.className = 'infopop'; o.setAttribute('role', 'status'); o.dataset.for = el.dataset.info; o.textContent = el.dataset.info;
+    document.body.appendChild(o);
+    const r = el.getBoundingClientRect(), w = o.offsetWidth, h = o.offsetHeight;
+    let x = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8), y = r.bottom + 6;
+    if (y + h > innerHeight - 80) y = Math.max(8, r.top - h - 6);
+    o.style.left = x + 'px'; o.style.top = y + 'px';
+  }
+  root.addEventListener('scroll', closeInfo, { passive: true });
+
   /* ---------- Belohnungen ---------- */
   const snapshot = () => ({ c: D.char.l, s: Object.fromEntries(S.skills.map(s => [s.id, D.levels[s.id].l])) });
   function grant(type) { S.chest.items[type] = (S.chest.items[type] || 0) + 1; }
@@ -267,7 +282,8 @@
     let months = ''; for (let m = 1; m <= 12; m++) { const k = `${year}-${String(m).padStart(2, '0')}-01`, c = g.cells.find(x => x.k === k); if (c) months += `<span class="m" style="grid-column:${c.col + 2}">${fmt(k, { month: 'short' }).replace('.', '')}</span>`; }
     const wd = [['Mo', 0], ['Mi', 2], ['Fr', 4]].map(([l, r]) => `<span class="wd" style="grid-row:${r + 2}">${l}</span>`).join('');
     const cells = g.cells.map(c => { if (c.v === 'none') return ''; const tip = typeof c.v === 'number' ? `${c.v === 0 ? 'nichts' : c.v === 4 ? '5 oder mehr' : c.v === 3 ? '3–4' : c.v} erledigt` : label[c.v];
-      return `<i class="v-${c.v}${c.late ? ' late' : ''}${c.k === t ? ' v-today' : ''}" style="grid-column:${c.col + 2};grid-row:${c.row + 2}"${tip ? ` title="${fmt(c.k)}: ${tip}${c.late ? ', nachgetragen' : ''}"` : ''}></i>`; }).join('');
+      const info = tip ? `${fmt(c.k, { weekday: 'long', day: 'numeric', month: 'long' })}: ${tip}${c.late ? ', nachgetragen' : ''}` : '';
+      return `<i class="v-${c.v}${c.late ? ' late' : ''}${c.k === t ? ' v-today' : ''}" style="grid-column:${c.col + 2};grid-row:${c.row + 2}"${info ? ` title="${info}" data-info="${info}"` : ''}></i>`; }).join('');
     let stat;
     if (hid) { const days = Object.entries(D.H[hid].days).filter(([k]) => k.startsWith(year)); const done = days.filter(([, v]) => v === 'done').length, tiny = days.filter(([, v]) => v === 'tiny').length, rep = days.filter(([, v]) => v === 'repaired' || v === 'watered').length;
       stat = `${done + tiny} erledigt in ${year}${tiny ? `, davon ${tiny} als Mini-Version` : ''}${rep ? ` · ${rep} gerettet` : ''}`; }
@@ -277,6 +293,7 @@
     return `<div class="harvest"><div class="ctl"><select class="in" id="calHabit" aria-label="Kalender für">${[['', 'Alle Gewohnheiten'], ...S.habits.map(h => [h.id, h.title + (h.archivedAt ? ' (pausiert)' : '')])].map(([v, l]) => `<option value="${v}" ${v === hid ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
       <button class="btn ghost" type="button" data-act="cal-prev" ${+year <= firstYear ? 'disabled' : ''} aria-label="Vorheriges Jahr">‹</button><span>${year}</span><button class="btn ghost" type="button" data-act="cal-next" ${year >= t.slice(0, 4) ? 'disabled' : ''} aria-label="Nächstes Jahr">›</button></div>
       <div class="cal-scroll"><div class="cal-grid" style="--cols:${g.cols}" role="img" aria-label="Erntekalender ${year}: ${esc(stat)}">${months}${wd}${cells}</div></div>
+      <div class="cal-info" id="calInfo" aria-live="polite">Tippe auf einen Tag, um Datum und Status zu sehen.</div>
       <div class="hint">${esc(stat)}</div><div class="cal-legend">${legend}</div></div>`;
   }
 
@@ -347,7 +364,7 @@
       h += `<h3>To-dos</h3><form class="add" id="todoForm"><input class="in" id="tTitle" placeholder="Neue Aufgabe, z. B. Steuerunterlagen sortieren" maxlength="90" aria-label="Aufgabe">
         <select class="in" id="tEff" aria-label="Aufwand"><option value="1">Leicht · 10 XP</option><option value="2" selected>Mittel · 20 XP</option><option value="3">Schwer · 30 XP</option></select>
         <select class="in" id="tSkill" aria-label="Fähigkeit">${S.skills.map(s => `<option value="${s.id}" ${s.id === U.lastTodoSkill ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
-        <input class="in" type="date" id="tDue" aria-label="Geplant für (optional)" title="Geplant für (optional)"><button class="btn" type="submit">Hinzufügen</button></form>`;
+        <label class="due"><span>Geplant für (optional)</span><input class="in" type="date" id="tDue"></label><button class="btn" type="submit">Hinzufügen</button></form>`;
       const open = S.todos.filter(x => !x.doneAt).sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999')), doneT = S.todos.filter(x => x.doneAt === t);
       const trow = x => { const s = skillById(x.skillId); const plan = x.dueDate ? (x.dueDate === t ? 'Für heute geplant' : 'Geplant für ' + fmt(x.dueDate)) : '';
         return `<div class="row${x.doneAt ? ' done' : ''}" data-tid="${x.id}"><button class="chk" type="button" data-act="todo" aria-pressed="${!!x.doneAt}" aria-label="${x.doneAt ? 'Als offen markieren' : 'Erledigen'}: ${esc(x.title)}"></button>
@@ -436,6 +453,9 @@
     },
     npc() { $('#npcFace').innerHTML = portrait(); const l = nudges(); $('#npcText').textContent = l[U.npcIdx % l.length]; }
   };
+  /** U17: Regentage als Knopf, Antippen erklärt sie (kein Tooltip nötig). */
+  const tokInfo = d => `Regentage: ${d.tokens} von 2. Ein Regentag rettet automatisch einen verpassten Tag deiner Serie. Für je 7 erledigte Termine bekommst du einen, höchstens zwei.`;
+  const tokBtn = d => `<button type="button" class="tok" data-act="info" data-info="${esc(tokInfo(d))}" aria-label="Regentage: ${d.tokens} von 2. Erklärung anzeigen">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</button>`;
   function habitRow(h) {
     const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), done = d.doneToday === 'done', tiny = d.doneToday === 'tiny';
     return `<div class="row${done || tiny ? ' done' : ''}" data-hid="${h.id}">
@@ -443,7 +463,7 @@
       <div><div class="plan">Nach ${esc(h.anchor)}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) : ''}</div><div class="row-title">${esc(h.title)}</div>
       <div class="meta"><span>${img('p' + d.stage, 2, '', { F: st.c, f: st.dk })}${L.STAGES[d.stage][1]} · ${Math.round(d.s * 100)} %</span><span>${img(sk.icon, 2, '')}${esc(sk.name)} +${10 * h.effort}</span>
       <span>${d.weekly ? `${d.weekCnt} von ${d.N} diese Woche` : `${d.month}× diesen Monat`}</span>
-      ${h.streakEnabled && d.streak ? `<span>${img('flame', 2, '')}${d.streak}${d.weekly ? ' Wo.' : ''}</span>` : ''}${h.streakEnabled && !d.weekly ? `<span class="tok" title="Regentage retten automatisch einen verpassten Tag" aria-label="Regentage: ${d.tokens} von 2">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</span>` : ''}</div>
+      ${h.streakEnabled && d.streak ? `<span>${img('flame', 2, '')}${d.streak}${d.weekly ? ' Wo.' : ''}</span>` : ''}${h.streakEnabled && !d.weekly ? tokBtn(d) : ''}</div>
       <div class="tinytxt">Mini: ${esc(h.tinyVersion)}</div>
       ${d.canRepair ? repairHTML(h, d) : ''}</div>
       <div class="side habit-side"><button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" aria-label="${tiny ? 'Rückgängig' : 'Mini-Version erledigt'}: ${esc(h.tinyVersion)}"><b>Mini</b><span>${esc(h.tinyVersion)}</span></button></div></div>`;
@@ -462,7 +482,7 @@
       <div class="hd">${img('p' + d.stage, 5, stageName, { F: st.c, f: st.dk })}<div class="row-title">${esc(h.title)}</div>${d.graduated ? '<span class="badge gold">Gemeistert</span>' : ''}${h.archivedAt ? '<span class="badge com">Pausiert</span>' : ''}</div>
       <div class="plan">${esc(planText(h))}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) + ' Uhr' : ''}</div>
       <dl class="kv"><dt>Rhythmus</dt><dd>${freqText(h.frequency)} · Aufwand ${h.effort} (${10 * h.effort} XP)</dd><dt>Mini-Version</dt><dd>${esc(h.tinyVersion)}</dd><dt>Fähigkeit</dt><dd>${esc(sk.name)}</dd>
-      <dt>Stärke</dt><dd>${pct} % · ${stageName} · Tag ${d.age} von etwa 66</dd>${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : (d.streak === 1 ? 'Termin' : 'Termine')}${d.weekly ? '' : ` · Regentage <span class="tok" aria-label="${d.tokens} von 2">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</span>`}</dd>` : ''}<dt>Gesamt</dt><dd>${d.year}× dieses Jahr</dd>
+      <dt>Stärke</dt><dd>${pct} % · ${stageName} · Tag ${d.age} von etwa 66</dd>${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : (d.streak === 1 ? 'Termin' : 'Termine')}${d.weekly ? '' : ` · Regentage ${tokBtn(d)}`}</dd>` : ''}<dt>Gesamt</dt><dd>${d.year}× dieses Jahr</dd>
       <dt>Erinnerung</dt><dd>${h.remindersEnabled ? 'an' : h.remOffAt ? `aus seit ${L.daysBetween(h.remOffAt, today())} Tagen${!d.graduated ? ' (30 für „Gemeistert“)' : ''}` : 'aus'}</dd></dl>
       <div class="bar sm sk" style="--c:${st.c};--hi:${st.hi};--dk:${st.dk}" role="progressbar" aria-label="Gewohnheitsstärke" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
       ${d.suggestOff ? `<div class="suggest">Läuft fast von allein: ${d.weekly ? 'Wochenziel zwei Wochen nacheinander erreicht' : `${d.held14} der letzten ${d.of14} Termine geschafft`}. Erinnerung abschalten? Hältst du die Gewohnheit danach 30 Tage lang an mindestens 70 % der Termine, gilt sie als gemeistert. <button class="btn sm" type="button" data-act="remoff" data-id="${h.id}">Abschalten</button></div>` : ''}
@@ -521,7 +541,7 @@
     document.addEventListener('pointerdown', function once() { if (S && S.music && !au.Music.playing) au.Music.start(weather()); document.removeEventListener('pointerdown', once); });
 
     document.addEventListener('input', e => { const el = e.target; if (el.id === 'jText') U.draft = el.value; const f = el.closest && el.closest('[data-form]'); if (f && (el.dataset.f === 'title' || el.dataset.f === 'anchor')) updatePreview(f); });
-    document.addEventListener('keydown', e => { if (e.target.id === 'renameIn') { if (e.key === 'Enter') { e.preventDefault(); commitRename(); } if (e.key === 'Escape') { U.renaming = null; R.skills(); } } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInfo(); if (e.target.id === 'renameIn') { if (e.key === 'Enter') { e.preventDefault(); commitRename(); } if (e.key === 'Escape') { U.renaming = null; R.skills(); } } });
     document.addEventListener('change', e => {
       const el = e.target;
       if (el.dataset.f === 'skill') { const f = el.closest('[data-form]'), ns = f.querySelector('[data-f=newskill]'); ns.hidden = el.value !== '__new'; if (!ns.hidden) ns.focus(); }
@@ -551,11 +571,15 @@
         else form.querySelectorAll('[data-eff]').forEach(b => b.setAttribute('aria-pressed', b === chip));
         au.sfx.tick(); return;
       }
+      const cell = e.target.closest('.cal-grid i[data-info]');
+      if (cell) { $$('.cal-grid i.sel').forEach(x => x.classList.remove('sel')); cell.classList.add('sel'); $('#calInfo').textContent = cell.dataset.info; return; }
+      if (!e.target.closest('[data-act="info"]')) closeInfo();
       const el = e.target.closest('[data-act]'); if (!el || el.tagName === 'INPUT' || el.disabled) return;
       const act = el.dataset.act, t = today(), pt = pointOf(e, el), habit = () => S.habits.find(x => x.id === el.dataset.id);
       switch (act) {
         case 'hdone': { const h = habit(); logHabit(h, h.logs[t] === 'tiny' ? 'tiny' : 'done', pt); scene.refresh(); break; }
         case 'htiny': logHabit(habit(), 'tiny', pt); scene.refresh(); break;
+        case 'info': showInfo(el); break;
         case 'late': logLateUI(habit(), el.dataset.k, el.dataset.st, pt); break;
         case 'repair-ask': U.repairAsk = el.dataset.id + el.dataset.k; au.sfx.tick(); R.today(); break;
         case 'repair': { const h = habit(), d = D.H[h.id]; if (d.repairKey) { h.logs[d.repairKey] = 'repaired'; au.sfx.tiny(); toast(`${img('flame', 3, '')}<span><b>Serie gerettet.</b> Der verpasste Tag ist nachgeholt.</span>`); derive(); save(); refresh(); } break; }
