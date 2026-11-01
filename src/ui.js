@@ -32,6 +32,7 @@
   const fmt = (k, o = { weekday: 'short', day: 'numeric', month: 'short' }) => L.parseKey(k).toLocaleDateString('de-DE', o);
   const active = () => S.habits.filter(h => !h.archivedAt);
   const portrait = () => img('wilma', 5, '').replace('class="pi"', 'class="pi portrait"');
+  const pct = (x, d = 0) => (x * 100).toLocaleString('de-DE', { maximumFractionDigits: d }) + ' %';
   const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = () => navigator.standalone === true || (root.matchMedia && matchMedia('(display-mode: standalone)').matches);
 
@@ -209,7 +210,7 @@
     toast(`${portrait().replace('portrait', '')}<span><b>Wilma:</b> Schön, dass du da bist. Ich schau ab und zu vorbei.</span>`);
   }
   function startDemo() { realState = S; S = root.LAGDemo.demoState(today()); preview = null; overlay(''); $('#demoBar').hidden = false; derive(); refresh(); scene.refresh(true); }
-  function endDemo() { S = realState; realState = null; $('#demoBar').hidden = true; derive(); refresh(); scene.refresh(true); if (!S.onboarded) showOnboarding('welcome'); }
+  function endDemo() { S = realState; applyLook(); realState = null; $('#demoBar').hidden = true; derive(); refresh(); scene.refresh(true); if (!S.onboarded) showOnboarding('welcome'); }
 
   function showCheckin() {
     U.ci = U.ci || { todos: new Set(S.todos.filter(t => !t.doneAt && t.dueDate === today()).map(t => t.id)), weather: null };
@@ -254,6 +255,31 @@
       <div class="cal-scroll"><div class="cal-grid" style="--cols:${g.cols}" role="img" aria-label="Erntekalender ${year}: ${esc(stat)}">${months}${wd}${cells}</div></div>
       <div class="hint">${esc(stat)}</div><div class="cal-legend">${legend}</div></div>`;
   }
+
+  /* ---------- Darstellung (H4) ---------- */
+  const SCALES = [[1, 'Normal'], [1.15, 'Groß'], [1.3, 'Sehr groß']];
+  function applyLook() {
+    const de = document.documentElement; de.style.setProperty('--ts', S.textScale || 1);
+    if (S.palette === 'cb') de.dataset.palette = 'cb'; else delete de.dataset.palette;
+  }
+  function settingsHTML() {
+    return `<h3>Darstellung</h3><div class="look"><div class="ctl" role="group" aria-label="Schriftgröße"><span class="lab">Schrift</span>${SCALES.map(([v, l]) => `<button type="button" class="chip" data-act="scale" data-v="${v}" aria-pressed="${(S.textScale || 1) === v}">${l}</button>`).join('')}</div>
+      <div class="ctl" role="group" aria-label="Farben"><span class="lab">Farben</span><button type="button" class="chip" data-act="palette" data-v="" aria-pressed="${S.palette !== 'cb'}">Standard</button><button type="button" class="chip" data-act="palette" data-v="cb" aria-pressed="${S.palette === 'cb'}">Gut unterscheidbar</button></div>
+      <p class="hint">„Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p></div>`;
+  }
+
+  /* ---------- Beta-Metriken (H5) ---------- */
+  function metricsHTML() {
+    if (S.demo) return '';
+    const m = L.betaMetrics(S, today()), c = m.cohorts, frac = (a, b) => b ? `${a} von ${b}` : '–';
+    return `<h3>Selbsttest · Beta-Zahlen</h3><div class="data"><p class="hint">Diese Zahlen bleiben auf dem Gerät. Sie helfen dir und uns, wenn du sie freiwillig weitergibst, zu prüfen, ob der Hof beim Dranbleiben hilft.</p>
+      <div class="tiles"><div class="tile"><strong>${frac(c.d30.held, c.d30.eligible)}</strong><span>nach 30 Tagen gehalten</span></div><div class="tile"><strong>${frac(c.d66.held, c.d66.eligible)}</strong><span>nach 66 Tagen gehalten</span></div>
+      <div class="tile"><strong>${frac(c.d66.mastered, c.d66.eligible)}</strong><span>nach 66 Tagen gemeistert</span></div><div class="tile"><strong>${m.tiny.completions ? pct(m.tiny.share) : '–'}</strong><span>Mini-Versionen</span></div>
+      <div class="tile"><strong>${m.breaks.breaks ? frac(m.breaks.returnedWithin7, m.breaks.breaks) : '–'}</strong><span>nach einer Pause binnen 7 Tagen weitergemacht</span></div><div class="tile"><strong>${pct(m.checkins.share)}</strong><span>Tage mit Check-in</span></div></div>
+      <p class="hint">„Gehalten“ heißt: in den 14 Tagen bis dahin mindestens die Hälfte der geplanten Termine geschafft.</p>
+      <div class="row-btns"><button class="btn alt" type="button" data-act="metrics-save">Als Datei sichern</button><button class="btn ghost" type="button" data-act="metrics-copy">Kopieren</button></div></div>`;
+  }
+  function metricsJSON() { return JSON.stringify({ app: "Life's a Game", version: 5, metrics: L.betaMetrics(S, today()) }, null, 2); }
 
   /* ---------- Bereiche ---------- */
   const R = {
@@ -348,6 +374,7 @@
         const line = vals.map((v, i) => (i / 29 * 200).toFixed(1) + ',' + (36 - v / max * 32).toFixed(1)).join(' ');
         h += `<div class="spark">${img(s.icon, 3, '')}<svg viewBox="0 0 200 40" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)}: ${acc} XP in 30 Tagen"><line x1="0" y1="38" x2="200" y2="38" stroke="#3a5450" stroke-width="1" vector-effect="non-scaling-stroke"/><polygon points="0,38 ${line} 200,38" fill="${st.c}" opacity=".18"/><polyline points="${line}" fill="none" stroke="${st.c}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="r">${esc(s.name)}<br>+${acc} XP</div></div>`; });
       h += `</div><h3>Ruhmeshalle</h3>` + (grads.length ? `<div class="hall">${grads.map(g => `<div>${img('gem', 3, '')}<span>${esc(g.title)} · gemeistert am ${fmt(D.H[g.id].gradDate, { day: 'numeric', month: 'long' })}</span></div>`).join('')}</div>` : '<div class="empty">Noch keine gemeisterte Gewohnheit. Hält eine Gewohnheit 30 Tage ohne Erinnerung, landet sie hier.</div>');
+      h += settingsHTML() + metricsHTML();
       h += `<h3>Deine Daten</h3><div class="data">${S.demo ? '<p class="hint">Im Demo-Hof sind Sicherung und Löschen ausgeschaltet.</p>' : `
         <p class="hint">Alles bleibt auf diesem Gerät. Eine Sicherung ist eine Textdatei mit allen Daten, mit der du deinen Hof später wiederherstellen kannst.</p>
         <div class="row-btns"><button class="btn alt" type="button" data-act="export">${U.showExport ? 'Sicherung ausblenden' : 'Sicherung erstellen'}</button><button class="btn alt" type="button" data-act="import-open">Sicherung importieren</button><button class="btn ghost" type="button" data-act="wipe">${U.wipeArmed ? 'Wirklich alles löschen? Nochmal tippen' : 'Alles löschen'}</button></div>
@@ -370,6 +397,15 @@
         : '<div class="empty">Die Truhe ist leer. Erledige Gewohnheiten und To-dos, manchmal taucht dabei etwas auf.</div>';
       h += '<h3>Auf dem Hof</h3>' + (S.chest.placed.length ? `<div class="inv">${S.chest.placed.map((p, i) => `<div class="item${L.ITEMS[p.itemId].rare ? ' r' : ''}"><div class="pv">${img(p.itemId, 4, '')}</div><h4>${L.ITEMS[p.itemId].name}</h4><div class="cnt">${L.ITEMS[p.itemId].animal ? 'Läuft frei herum' : 'Platz ' + (p.slot + 1)}</div><button class="btn sm alt" type="button" data-act="stash" data-i="${i}" ${sleep ? 'disabled' : ''}>Einlagern</button></div>`).join('')}</div>` : '<div class="empty">Noch nichts aufgestellt.</div>');
       h += `<p class="hint">Mit jedem Level wird ein weiterer Deko-Platz frei (Level ${D.char.l}: ${cap} Plätze).</p>`;
+      const o = L.dropOdds(), names = ks => ks.map(k => L.ITEMS[k].name).join(', ');
+      h += `<details class="odds"${U.oddsOpen ? ' open' : ''}><summary>Wie Funde entstehen</summary><div class="odds-body">
+        <p>Funde sind Zufall, aber offen: Es gibt nichts zu kaufen, keine versteckten Quoten und keine Pechsträhnen-Ausgleiche.</p>
+        <dl class="kv"><dt>Bei jeder Erledigung</dt><dd>${pct(o.any)} Chance auf einen Fund, einmal pro Gewohnheit und Tag bzw. einmal pro To-do</dd>
+        <dt>Davon selten</dt><dd>${pct(o.rareShare)} der Funde, also ${pct(o.rare, 1)} pro Erledigung. Häufig: ${pct(o.common, 1)}</dd>
+        <dt>Ernte</dt><dd>Jede neu erreichte Wachstumsstufe bringt sicher einen Fund (${pct(o.harvestRare)} davon selten), einmal pro Stufe</dd>
+        <dt>Gemeistert</dt><dd>Sicher ein seltener Fund</dd>
+        <dt>Häufige Funde</dt><dd>${esc(names(o.commonItems))}</dd><dt>Seltene Funde</dt><dd>${esc(names(o.rareItems))}</dd></dl>
+        <p class="hint">Im Mittel bringen etwa 8 Erledigungen einen Fund und etwa 42 einen seltenen. Logbuch-Einträge geben XP, aber keine Funde.</p></div></details>`;
       $('#p-chest').innerHTML = h;
     },
     npc() { $('#npcFace').innerHTML = portrait(); const l = nudges(); $('#npcText').textContent = l[U.npcIdx % l.length]; }
@@ -427,7 +463,7 @@
     if (onboarding) { applyImport(r.state); return; }
     U.importPending = r.state; R.progress();
   }
-  function applyImport(state) { state.onboarded = true; S = state; U.importPending = null; derive(); flush(); overlay(''); refresh(); scene.refresh(true); toast('<span><b>Wiederhergestellt.</b> Dein Hof ist wieder da.</span>'); }
+  function applyImport(state) { state.onboarded = true; S = state; applyLook(); U.importPending = null; derive(); flush(); overlay(''); refresh(); scene.refresh(true); toast('<span><b>Wiederhergestellt.</b> Dein Hof ist wieder da.</span>'); }
 
   /* ---------- Ereignisse ---------- */
   const tabs = () => $$('.tab');
@@ -458,6 +494,7 @@
       if (el.id === 'calHabit') { U.calHabit = el.value; R.progress(); }
       if (el.id === 'importFile' && el.files[0]) { const r = new FileReader(); r.onload = () => handleImportText(String(r.result), U.obStep === 'welcome' && !S.onboarded); r.readAsText(el.files[0]); el.value = ''; }
     });
+    document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('odds')) U.oddsOpen = e.target.open; }, true);
     document.addEventListener('submit', e => {
       const f = e.target; e.preventDefault();
       if (f.dataset.form) { submitForm(f); return; }
@@ -520,7 +557,7 @@
         case 'import-paste': handleImportText(($('#importTxt') || {}).value || '', false); break;
         case 'import-apply': applyImport(U.importPending); break;
         case 'import-cancel': U.importPending = null; R.progress(); break;
-        case 'wipe': if (U.wipeArmed) { U.wipeArmed = false; U.showExport = false; Store.clear(); S = L.emptyState(t); derive(); refresh(); scene.refresh(true); showOnboarding('welcome'); }
+        case 'wipe': if (U.wipeArmed) { U.wipeArmed = false; U.showExport = false; Store.clear(); S = L.emptyState(t); applyLook(); derive(); refresh(); scene.refresh(true); showOnboarding('welcome'); }
           else { U.wipeArmed = true; R.progress(); setTimeout(() => { if (U.wipeArmed) { U.wipeArmed = false; R.progress(); } }, 4000); } break;
         case 'place': { if (L.farmSleeps(hour()) || !S.chest.items[el.dataset.type]) break; const type = el.dataset.type;
           if (L.ITEMS[type].animal) S.chest.placed.push({ itemId: type }); else { const used = new Set(S.chest.placed.map(p => p.slot)), cap = L.slotsFor(D.char.l); let slot = -1; for (let i = 0; i < cap; i++) if (!used.has(i)) { slot = i; break; } if (slot < 0) { au.sfx.err(); break; } S.chest.placed.push({ itemId: type, slot }); }
@@ -530,6 +567,11 @@
         case 'fresh-no': S.freshSeen = t.slice(0, 7); save(); R.today(); break;
         case 'unlock-go': S.unlockSeen = true; save(); selectTab($('#t-habits')); R.today(); break;
         case 'unlock-no': S.unlockSeen = true; save(); R.today(); break;
+        case 'scale': S.textScale = +el.dataset.v; applyLook(); save(); R.progress(); au.sfx.tick(); break;
+        case 'palette': S.palette = el.dataset.v || undefined; applyLook(); save(); R.progress(); scene.refresh(true); au.sfx.tick(); break;
+        case 'metrics-save': { const a = document.createElement('a'), url = URL.createObjectURL(new Blob([metricsJSON()], { type: 'application/json' }));
+          a.href = url; a.download = `lifes-a-game-beta-${t}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); break; }
+        case 'metrics-copy': { const txt = metricsJSON(); try { navigator.clipboard.writeText(txt).then(() => toast('<span><b>Kopiert.</b> Die Beta-Zahlen liegen in der Zwischenablage.</span>'), () => toast('<span>Kopieren hat nicht geklappt. Nutze „Als Datei sichern“.</span>')); } catch (err) { toast('<span>Kopieren hat nicht geklappt. Nutze „Als Datei sichern“.</span>'); } break; }
         case 'install-ok': S.installHintSeen = true; save(); R.today(); break;
         // Onboarding
         case 'ob-start': showOnboarding('habits'); break;
@@ -552,7 +594,7 @@
 
   /* ---------- Start ---------- */
   function boot(state) {
-    S = state || L.emptyState(today());
+    S = state || L.emptyState(today()); applyLook();
     au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
     derive();
     scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
