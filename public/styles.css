@@ -283,3 +283,10 @@ h2[tabindex="-1"]:focus{outline:none}
 .look{display:grid;gap:8px}
 .look .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .look .lab{min-width:4.5em;color:var(--text-soft)}
+
+/* v6: Nachtragen */
+.late-row{grid-template-columns:auto minmax(0,1fr) auto}
+.late-day{font-family:var(--f-display);font-size:0.8125rem;color:var(--text-soft);min-width:5.5em}
+.late-row .side{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+/* Nachgetragene Tage im Erntekalender: abgeschrägte Ecke als Form-Merkmal zusätzlich zur Farbe */
+.cal-grid i.late,.cal-legend i.late{clip-path:polygon(0 0,55% 0,100% 45%,100% 100%,0 100%)}

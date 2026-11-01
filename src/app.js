@@ -7,7 +7,10 @@
   let state = null;
   try {
     const saved = await root.LAGStore.load();
-    if (saved) { const r = L.importState(saved, today); if (r.ok) state = r.state; }
+    if (saved) {
+      const r = L.importState(saved, today);
+      if (r.ok) { state = r.state; if (r.migrated) await root.LAGStore.save(state); }   // v6-Stichtag sofort festhalten
+    }
   } catch (e) { state = null; }
   root.LAGUI.boot(state);
 

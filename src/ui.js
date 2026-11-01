@@ -116,9 +116,33 @@
     derive(); const Hn = D.H[h.id], sk = skillById(h.skillId), units = L.unitsToNext(D.levels[sk.id], h.effort);
     const gained = Math.max(0, L.xpFor(h.effort, status) - (prev ? L.xpFor(h.effort, prev) : 0));
     const info = `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${L.xpFor(h.effort, status)} XP</b> · ${esc(h.title)}: ${Hn.weekly ? Hn.weekCnt + ' von ' + Hn.N + ' diese Woche' : Hn.month + '× diesen Monat'}${status === 'tiny' ? ' · Mini zählt voll für die Stärke' : ''} · noch ${units} ${units === 1 ? 'Einheit' : 'Einheiten'} bis Stufe ${D.levels[sk.id].l + 1}</span>`;
-    if (!prev && h.rolled !== t) { h.rolled = t; rollDrop(pt); }
+    if (!prev && L.dropAllowed(h, t, t)) { h.rolled = t; rollDrop(pt); }
     afterAction(before, h.skillId, pt, gained, info); refresh();
     const row = document.querySelector(`[data-hid="${h.id}"]`); if (row) row.classList.add('pop');
+  }
+
+  /** v6 Nachtragen: zählt voll, würfelt aber keinen Fund. Derselbe Knopf nimmt den Nachtrag zurück. */
+  function logLateUI(h, k, status, pt) {
+    const t = today(), before = snapshot(), was = h.logs[k], undo = L.isLate(h, k) && was === status;
+    if (!L.logLate(h, k, status, t)) { au.sfx.err(); return; }
+    U.repairAsk = null;
+    if (undo) { au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); return; }
+    status === 'tiny' ? au.sfx.tiny() : au.sfx.check();
+    derive(); const sk = skillById(h.skillId), x = Math.max(0, L.xpFor(h.effort, status) - L.xpFor(h.effort, was));
+    afterAction(before, h.skillId, pt, x, `${img(sk.icon, 3, '')}<span><b>Nachgetragen.</b> ${esc(h.title)}, ${dayName(k)}${status === 'tiny' ? ' (Mini)' : ''} · zählt voll für Stärke und Serie</span>`);
+    refresh(); scene.refresh();
+  }
+  const dayName = k => { const n = L.daysBetween(k, today()); return n === 1 ? 'gestern' : n === 2 ? 'vorgestern' : fmt(k); };
+  function lateHTML() {
+    const t = today(), rows = [];
+    active().forEach(h => L.lateDays(h, t).forEach(x => { if (x.status !== 'done' && x.status !== 'tiny' || x.late) rows.push([h, x]); }));
+    if (!rows.length) return '';
+    rows.sort((a, b) => a[1].k.localeCompare(b[1].k) || a[0].title.localeCompare(b[0].title));
+    return `<h3>Gestern und vorgestern</h3><p class="hint">Vergessen einzutragen? Hier lässt sich das nachholen. Nachgetragenes zählt voll, nur Funde gibt es dafür keine.</p>
+      <div class="list">${rows.map(([h, x]) => { const lbl = dayName(x.k);
+        return `<div class="row late-row"><span class="late-day">${lbl[0].toUpperCase() + lbl.slice(1)}</span><div><div class="row-title">${esc(h.title)}</div>${x.late ? '<div class="meta"><span>nachgetragen</span></div>' : ''}</div>
+          <div class="side">${['done', 'tiny'].map(st => { const on = x.late && x.status === st;
+            return `<button class="btn sm${st === 'tiny' ? ' alt' : ''}" type="button" data-act="late" data-id="${h.id}" data-k="${x.k}" data-st="${st}" aria-pressed="${on}" aria-label="${on ? 'Nachtrag zurücknehmen' : 'Nachtragen'}: ${esc(h.title)}, ${lbl}, ${st === 'tiny' ? 'Mini-Version' : 'erledigt'}">${on ? '✓ ' : ''}${st === 'tiny' ? 'Mini' : 'Erledigt'}</button>`; }).join('')}</div></div>`; }).join('')}</div>`;
   }
 
   /* ---------- Gewohnheits-Formular (Onboarding, Neu, Bearbeiten) ---------- */
@@ -243,12 +267,12 @@
     let months = ''; for (let m = 1; m <= 12; m++) { const k = `${year}-${String(m).padStart(2, '0')}-01`, c = g.cells.find(x => x.k === k); if (c) months += `<span class="m" style="grid-column:${c.col + 2}">${fmt(k, { month: 'short' }).replace('.', '')}</span>`; }
     const wd = [['Mo', 0], ['Mi', 2], ['Fr', 4]].map(([l, r]) => `<span class="wd" style="grid-row:${r + 2}">${l}</span>`).join('');
     const cells = g.cells.map(c => { if (c.v === 'none') return ''; const tip = typeof c.v === 'number' ? `${c.v === 0 ? 'nichts' : c.v === 4 ? '5 oder mehr' : c.v === 3 ? '3–4' : c.v} erledigt` : label[c.v];
-      return `<i class="v-${c.v}${c.k === t ? ' v-today' : ''}" style="grid-column:${c.col + 2};grid-row:${c.row + 2}"${tip ? ` title="${fmt(c.k)}: ${tip}"` : ''}></i>`; }).join('');
+      return `<i class="v-${c.v}${c.late ? ' late' : ''}${c.k === t ? ' v-today' : ''}" style="grid-column:${c.col + 2};grid-row:${c.row + 2}"${tip ? ` title="${fmt(c.k)}: ${tip}${c.late ? ', nachgetragen' : ''}"` : ''}></i>`; }).join('');
     let stat;
     if (hid) { const days = Object.entries(D.H[hid].days).filter(([k]) => k.startsWith(year)); const done = days.filter(([, v]) => v === 'done').length, tiny = days.filter(([, v]) => v === 'tiny').length, rep = days.filter(([, v]) => v === 'repaired' || v === 'watered').length;
       stat = `${done + tiny} erledigt in ${year}${tiny ? `, davon ${tiny} als Mini-Version` : ''}${rep ? ` · ${rep} gerettet` : ''}`; }
     else { const n = g.cells.filter(c => typeof c.v === 'number' && c.v > 0).length; stat = `${n} ${n === 1 ? 'Tag' : 'Tage'} in ${year} mit mindestens einer Erledigung`; }
-    const legend = hid ? [['done', 'erledigt'], ['tiny', 'Mini'], ['repaired', 'nachgeholt'], ['watered', 'Regentag'], ['empty', 'offen'], ['off', 'nicht geplant']].map(([v, l]) => `<span><i class="v-${v}"></i>${l}</span>`).join('')
+    const legend = hid ? [['done', 'erledigt'], ['tiny', 'Mini'], ['repaired', 'nachgeholt'], ['watered', 'Regentag'], ['empty', 'offen'], ['off', 'nicht geplant'], ['done late', 'nachgetragen']].map(([v, l]) => `<span><i class="v-${v}"></i>${l}</span>`).join('')
       : `<span>wenig</span>${[0, 1, 2, 3, 4].map(v => `<i class="v-${v}"></i>`).join('')}<span>viel</span>`;
     return `<div class="harvest"><div class="ctl"><select class="in" id="calHabit" aria-label="Kalender für">${[['', 'Alle Gewohnheiten'], ...S.habits.map(h => [h.id, h.title + (h.archivedAt ? ' (pausiert)' : '')])].map(([v, l]) => `<option value="${v}" ${v === hid ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
       <button class="btn ghost" type="button" data-act="cal-prev" ${+year <= firstYear ? 'disabled' : ''} aria-label="Vorheriges Jahr">‹</button><span>${year}</span><button class="btn ghost" type="button" data-act="cal-next" ${year >= t.slice(0, 4) ? 'disabled' : ''} aria-label="Nächstes Jahr">›</button></div>
@@ -317,6 +341,7 @@
       if (new Date().getDate() <= 3 && S.freshSeen !== ym && S.startedAt < ym + '-01') h += `<div class="banner"><span class="sp">Ein neuer Monat beginnt, ein guter Moment für einen frischen Start. Möchtest du eine Gewohnheit anpassen oder neu anfangen?</span><button class="btn sm" type="button" data-act="fresh-go">Gewohnheiten ansehen</button><button class="btn ghost" type="button" data-act="fresh-no">Später</button></div>`;
       if (!S.checkins[t] && hour() >= 5) h += `<div class="row-btns"><button class="btn ghost" type="button" data-act="ci-open">Check-in für heute öffnen</button></div>`;
       h += '<h3>Gewohnheiten</h3><div class="list">' + (due.length ? due.map(habitRow).join('') : `<div class="empty">${active().length ? 'Heute steht keine Gewohnheit an.' : 'Noch keine Gewohnheit. Unter „Gewohnheiten“ kannst du eine pflanzen.'}</div>`) + '</div>';
+      h += lateHTML();
       if (free.length) h += `<h3>Heute frei</h3><div class="list">${free.map(x => { const d = D.H[x.id]; return `<div class="row off"><span></span><div><div class="row-title">${esc(x.title)}</div><div class="meta"><span>${d.weekly ? `Wochenziel erreicht: ${d.weekCnt} von ${d.N}` : 'Heute nicht geplant · ' + freqText(x.frequency)}</span></div></div><span></span></div>`; }).join('')}</div>`;
       h += `<h3>To-dos</h3><form class="add" id="todoForm"><input class="in" id="tTitle" placeholder="Neue Aufgabe, z. B. Steuerunterlagen sortieren" maxlength="90" aria-label="Aufgabe">
         <select class="in" id="tEff" aria-label="Aufwand"><option value="1">Leicht · 10 XP</option><option value="2" selected>Mittel · 20 XP</option><option value="3">Schwer · 30 XP</option></select>
@@ -418,8 +443,15 @@
       <div class="meta"><span>${img('p' + d.stage, 2, '', { F: st.c, f: st.dk })}${L.STAGES[d.stage][1]} · ${Math.round(d.s * 100)} %</span><span>${img(sk.icon, 2, '')}${esc(sk.name)} +${10 * h.effort}</span>
       <span>${d.weekly ? `${d.weekCnt} von ${d.N} diese Woche` : `${d.month}× diesen Monat`}</span>
       ${h.streakEnabled && d.streak ? `<span>${img('flame', 2, '')}${d.streak}${d.weekly ? ' Wo.' : ''}</span>` : ''}${h.streakEnabled && !d.weekly ? `<span class="tok" title="Regentage retten automatisch einen verpassten Tag" aria-label="Regentage: ${d.tokens} von 2">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</span>` : ''}</div>
-      ${d.canRepair ? `<div class="repair">Gestern ist ausgefallen. Mach heute eine Runde extra, dann bleibt deine Serie bestehen. <button class="btn sm" type="button" data-act="repair" data-id="${h.id}">Extra-Runde erledigt</button></div>` : ''}</div>
+      ${d.canRepair ? repairHTML(h, d) : ''}</div>
       <div class="side"><button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" title="${esc(h.tinyVersion)}">Mini: ${esc(h.tinyVersion)}</button></div></div>`;
+  }
+  function repairHTML(h, d) {
+    const k = d.repairKey, day = dayName(k), Day = day[0].toUpperCase() + day.slice(1);
+    if (U.repairAsk !== h.id + k && L.canLogLate(h, k, today())) return `<div class="repair"><span>${Day} ist nichts eingetragen. Doch erledigt?</span>
+      <button class="btn sm" type="button" data-act="late" data-id="${h.id}" data-k="${k}" data-st="done">Nachtragen</button><button class="btn sm alt" type="button" data-act="late" data-id="${h.id}" data-k="${k}" data-st="tiny">Mini nachtragen</button>
+      <button class="btn ghost" type="button" data-act="repair-ask" data-id="${h.id}" data-k="${k}">Nein, ist ausgefallen</button></div>`;
+    return `<div class="repair">${Day} ist ausgefallen. Mach heute eine Runde extra, dann bleibt deine Serie bestehen. <button class="btn sm" type="button" data-act="repair" data-id="${h.id}">Extra-Runde erledigt</button></div>`;
   }
   function habitCard(h) {
     if (U.editHabit === h.id) return `<div class="hcard"><div class="hd"><div class="row-title">„${esc(h.title)}“ bearbeiten</div></div>${habitForm('edit', h)}</div>`;
@@ -431,7 +463,7 @@
       <dt>Stärke</dt><dd>${pct} % · ${stageName} · Tag ${d.age} von etwa 66</dd>${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : (d.streak === 1 ? 'Termin' : 'Termine')}${d.weekly ? '' : ` · Regentage <span class="tok" aria-label="${d.tokens} von 2">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}</span>`}</dd>` : ''}<dt>Gesamt</dt><dd>${d.year}× dieses Jahr</dd>
       <dt>Erinnerung</dt><dd>${h.remindersEnabled ? 'an' : h.remOffAt ? `aus seit ${L.daysBetween(h.remOffAt, today())} Tagen${!d.graduated ? ' (30 für „Gemeistert“)' : ''}` : 'aus'}</dd></dl>
       <div class="bar sm sk" style="--c:${st.c};--hi:${st.hi};--dk:${st.dk}" role="progressbar" aria-label="Gewohnheitsstärke" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
-      ${d.suggestOff ? `<div class="suggest">Läuft fast von allein: ${d.run}× in Folge. Erinnerung abschalten? Hältst du die Gewohnheit danach 30 Tage, gilt sie als gemeistert. <button class="btn sm" type="button" data-act="remoff" data-id="${h.id}">Abschalten</button></div>` : ''}
+      ${d.suggestOff ? `<div class="suggest">Läuft fast von allein: ${d.weekly ? 'Wochenziel zwei Wochen nacheinander erreicht' : `${d.held14} der letzten ${d.of14} Termine geschafft`}. Erinnerung abschalten? Hältst du die Gewohnheit danach 30 Tage lang an mindestens 70 % der Termine, gilt sie als gemeistert. <button class="btn sm" type="button" data-act="remoff" data-id="${h.id}">Abschalten</button></div>` : ''}
       <div class="row-btns">${h.archivedAt ? `<button class="btn sm" type="button" data-act="resume" data-id="${h.id}">Fortsetzen</button>` : `<button class="btn sm alt" type="button" data-act="edit" data-id="${h.id}">Bearbeiten</button><button class="btn sm alt" type="button" data-act="pause" data-id="${h.id}">Pausieren</button>`}<button class="btn ghost" type="button" data-act="delhabit" data-id="${h.id}">Löschen</button></div></div>`;
   }
   function refresh(...parts) { if (!S) return; if (!parts.length) parts = ['cal', 'hud', 'legend', 'skills', 'today', 'habits', 'journal', 'progress', 'chest', 'npc']; parts.forEach(p => R[p]()); }
@@ -522,6 +554,8 @@
       switch (act) {
         case 'hdone': { const h = habit(); logHabit(h, h.logs[t] === 'tiny' ? 'tiny' : 'done', pt); scene.refresh(); break; }
         case 'htiny': logHabit(habit(), 'tiny', pt); scene.refresh(); break;
+        case 'late': logLateUI(habit(), el.dataset.k, el.dataset.st, pt); break;
+        case 'repair-ask': U.repairAsk = el.dataset.id + el.dataset.k; au.sfx.tick(); R.today(); break;
         case 'repair': { const h = habit(), d = D.H[h.id]; if (d.repairKey) { h.logs[d.repairKey] = 'repaired'; au.sfx.tiny(); toast(`${img('flame', 3, '')}<span><b>Serie gerettet.</b> Der verpasste Tag ist nachgeholt.</span>`); derive(); save(); refresh(); } break; }
         case 'todo': { const row = el.closest('[data-tid]'), x = S.todos.find(y => y.id === row.dataset.tid), before = snapshot();
           if (x.doneAt) { delete x.doneAt; au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); break; }
