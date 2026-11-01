@@ -252,6 +252,13 @@
     return true;
   }
 
+  /** U8 (v7, nur Anzeige): Gibt ein Nachtrag für Tag k einen verbrauchten Regentag zurück? Die Regel selbst steckt in computeHabit. */
+  function freesRainDay(h, k, today) {
+    const before = computeHabit(h, today);
+    if (before.days[k] !== 'watered' || !canLogLate(h, k, today)) return false;
+    const trial = Object.assign({}, h, { logs: Object.assign({}, h.logs, { [k]: 'done' }) });
+    return computeHabit(trial, today).tokens > before.tokens;
+  }
   /** 4.4: Zufallsfund nur für Eintragungen am selben Tag, höchstens einmal pro Gewohnheit und Tag, nie für Nachgetragenes. */
   const dropAllowed = (h, k, today) => k === today && !isLate(h, k) && h.rolled !== today;
 
@@ -439,7 +446,7 @@
     dkey, parseKey, addDays, daysBetween, weekday, weekStart, seasonOf, hashStr, rng,
     xpFor, charNeed, skillNeed, lvl, unitsToNext, stageOf, settingsAt, isPaused, isScheduled,
     computeHabit, derive, rollDrop, pickItem, harvestsDue, gradRewardDue, slotsFor, dropOdds, heldAt, betaMetrics,
-    isHeld, heldShare, isLate, canLogLate, lateDays, logLate, dropAllowed,
+    isHeld, heldShare, isLate, canLogLate, lateDays, logLate, dropAllowed, freesRainDay,
     canAddHabit, validateHabitInput, cleanAnchor, newHabit, applyEdit, pause, resume,
     dayWeather, journalOn, currentWeather, needsCheckin, farmSleeps, yearGrid,
     emptyState, migrateV3, importState

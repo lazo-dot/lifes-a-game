@@ -373,3 +373,9 @@ label.due{display:grid;gap:2px;font-size:0.9375rem;color:var(--text-soft)}
   .cal-grid .wd{line-height:14px}
   button.tok{min-width:44px;justify-content:center}
 }
+
+/* v7: Legende mit einem Satz je Zustand (U9) */
+.cal-legend.full{display:grid;gap:4px}
+.cal-legend.full span{align-items:flex-start}
+.cal-legend.full i{flex:none;margin-top:3px}
+.cal-legend.full b{font-weight:400;color:var(--text)}

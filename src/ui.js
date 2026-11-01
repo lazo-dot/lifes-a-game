@@ -138,24 +138,27 @@
 
   /** v6 Nachtragen: zählt voll, würfelt aber keinen Fund. Derselbe Knopf nimmt den Nachtrag zurück. */
   function logLateUI(h, k, status, pt) {
-    const t = today(), before = snapshot(), was = h.logs[k], undo = L.isLate(h, k) && was === status;
+    const t = today(), before = snapshot(), was = h.logs[k], undo = L.isLate(h, k) && was === status, frees = !undo && L.freesRainDay(h, k, t);
     if (!L.logLate(h, k, status, t)) { au.sfx.err(); return; }
     U.repairAsk = null;
     if (undo) { au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); return; }
     status === 'tiny' ? au.sfx.tiny() : au.sfx.check();
     derive(); const sk = skillById(h.skillId), x = Math.max(0, L.xpFor(h.effort, status) - L.xpFor(h.effort, was));
-    afterAction(before, h.skillId, pt, x, `${img(sk.icon, 3, '')}<span><b>Nachgetragen.</b> ${esc(h.title)}, ${dayName(k)}${status === 'tiny' ? ' (Mini)' : ''} · zählt voll für Stärke und Serie</span>`);
+    afterAction(before, h.skillId, pt, x, `${img(sk.icon, 3, '')}<span><b>Nachgetragen.</b> ${esc(h.title)}, ${dayName(k)}${status === 'tiny' ? ' (Mini)' : ''} · zählt voll für Stärke und Serie${frees ? '. <b>Dein Regentag ist wieder frei.</b>' : ''}</span>`);
     refresh(); scene.refresh();
   }
+  const lateNote = (h, x) => { const v = D.H[h.id].days[x.k];
+    const n = x.late ? 'nachgetragen' : v === 'watered' ? 'von einem Regentag gerettet' : v === 'repaired' ? 'mit einer Extra-Runde gerettet' : '';
+    return n ? `<div class="meta"><span>${n}</span></div>` : ''; };
   const dayName = k => { const n = L.daysBetween(k, today()); return n === 1 ? 'gestern' : n === 2 ? 'vorgestern' : fmt(k); };
   function lateHTML() {
     const t = today(), rows = [];
     active().forEach(h => L.lateDays(h, t).forEach(x => { if (x.status !== 'done' && x.status !== 'tiny' || x.late) rows.push([h, x]); }));
     if (!rows.length) return '';
     rows.sort((a, b) => a[1].k.localeCompare(b[1].k) || a[0].title.localeCompare(b[0].title));
-    return `<h3>Gestern und vorgestern</h3><p class="hint">Vergessen einzutragen? Hier lässt sich das nachholen. Nachgetragenes zählt voll, nur Funde gibt es dafür keine.</p>
+    return `<h3>Gestern und vorgestern</h3><p class="hint">Vergessen einzutragen? Hier lässt sich das nachholen. Nachgetragenes zählt voll, nur Funde gibt es dafür keine. Hat ein Regentag den Tag gerettet, bekommst du ihn durch das Nachtragen zurück.</p>
       <div class="list">${rows.map(([h, x]) => { const lbl = dayName(x.k);
-        return `<div class="row late-row"><span class="late-day">${lbl[0].toUpperCase() + lbl.slice(1)}</span><div><div class="row-title">${esc(h.title)}</div>${x.late ? '<div class="meta"><span>nachgetragen</span></div>' : ''}</div>
+        return `<div class="row late-row"><span class="late-day">${lbl[0].toUpperCase() + lbl.slice(1)}</span><div><div class="row-title">${esc(h.title)}</div>${lateNote(h, x)}</div>
           <div class="side">${['done', 'tiny'].map(st => { const on = x.late && x.status === st;
             return `<button class="btn sm${st === 'tiny' ? ' alt' : ''}" type="button" data-act="late" data-id="${h.id}" data-k="${x.k}" data-st="${st}" aria-pressed="${on}" aria-label="${on ? 'Nachtrag zurücknehmen' : 'Nachtragen'}: ${esc(h.title)}, ${lbl}, ${st === 'tiny' ? 'Mini-Version' : 'erledigt'}">${on ? '✓ ' : ''}${st === 'tiny' ? 'Mini' : 'Erledigt'}</button>`; }).join('')}</div></div>`; }).join('')}</div>`;
   }
@@ -275,10 +278,14 @@
   }
 
   /* ---------- Erntekalender ---------- */
+  const LEGEND = [['done', 'Erledigt:', 'an diesem Tag geschafft.'], ['tiny', 'Mini:', 'die Mini-Version geschafft, zählt voll.'],
+    ['repaired', 'Extra-Runde:', 'ausgefallen, mit einer Extra-Runde am Tag danach gerettet.'], ['watered', 'Regentag:', 'ausgefallen, automatisch von einem Regentag gerettet.'],
+    ['empty', 'Offen:', 'geplant, aber nicht erledigt.'], ['off', 'Nicht geplant:', 'an diesem Tag stand nichts an.'],
+    ['done late', 'Nachgetragen (abgeschrägte Ecke):', 'später eingetragen, zählt voll, bringt aber keinen Fund.']];
   function calendarHTML() {
     const t = today(), year = U.calYear || t.slice(0, 4), hid = U.calHabit && S.habits.some(h => h.id === U.calHabit) ? U.calHabit : '';
     const g = L.yearGrid(S, D, hid || null, year, t), firstYear = Math.min(+S.startedAt.slice(0, 4), ...S.habits.map(h => +h.createdAt.slice(0, 4)));
-    const label = { done: 'erledigt', tiny: 'Mini-Version', repaired: 'nachgeholt', watered: 'Regentag', empty: 'offen', off: 'nicht geplant', before: 'noch nicht angelegt', future: '', none: '' };
+    const label = { done: 'erledigt', tiny: 'Mini-Version', repaired: 'mit Extra-Runde gerettet', watered: 'Regentag', empty: 'offen', off: 'nicht geplant', before: 'noch nicht angelegt', future: '', none: '' };
     let months = ''; for (let m = 1; m <= 12; m++) { const k = `${year}-${String(m).padStart(2, '0')}-01`, c = g.cells.find(x => x.k === k); if (c) months += `<span class="m" style="grid-column:${c.col + 2}">${fmt(k, { month: 'short' }).replace('.', '')}</span>`; }
     const wd = [['Mo', 0], ['Mi', 2], ['Fr', 4]].map(([l, r]) => `<span class="wd" style="grid-row:${r + 2}">${l}</span>`).join('');
     const cells = g.cells.map(c => { if (c.v === 'none') return ''; const tip = typeof c.v === 'number' ? `${c.v === 0 ? 'nichts' : c.v === 4 ? '5 oder mehr' : c.v === 3 ? '3–4' : c.v} erledigt` : label[c.v];
@@ -288,13 +295,13 @@
     if (hid) { const days = Object.entries(D.H[hid].days).filter(([k]) => k.startsWith(year)); const done = days.filter(([, v]) => v === 'done').length, tiny = days.filter(([, v]) => v === 'tiny').length, rep = days.filter(([, v]) => v === 'repaired' || v === 'watered').length;
       stat = `${done + tiny} erledigt in ${year}${tiny ? `, davon ${tiny} als Mini-Version` : ''}${rep ? ` · ${rep} gerettet` : ''}`; }
     else { const n = g.cells.filter(c => typeof c.v === 'number' && c.v > 0).length; stat = `${n} ${n === 1 ? 'Tag' : 'Tage'} in ${year} mit mindestens einer Erledigung`; }
-    const legend = hid ? [['done', 'erledigt'], ['tiny', 'Mini'], ['repaired', 'nachgeholt'], ['watered', 'Regentag'], ['empty', 'offen'], ['off', 'nicht geplant'], ['done late', 'nachgetragen']].map(([v, l]) => `<span><i class="v-${v}"></i>${l}</span>`).join('')
+    const legend = hid ? LEGEND.map(([v, l, d]) => `<span><i class="v-${v}"></i><b>${l}</b> ${d}</span>`).join('')
       : `<span>wenig</span>${[0, 1, 2, 3, 4].map(v => `<i class="v-${v}"></i>`).join('')}<span>viel</span>`;
     return `<div class="harvest"><div class="ctl"><select class="in" id="calHabit" aria-label="Kalender für">${[['', 'Alle Gewohnheiten'], ...S.habits.map(h => [h.id, h.title + (h.archivedAt ? ' (pausiert)' : '')])].map(([v, l]) => `<option value="${v}" ${v === hid ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
       <button class="btn ghost" type="button" data-act="cal-prev" ${+year <= firstYear ? 'disabled' : ''} aria-label="Vorheriges Jahr">‹</button><span>${year}</span><button class="btn ghost" type="button" data-act="cal-next" ${year >= t.slice(0, 4) ? 'disabled' : ''} aria-label="Nächstes Jahr">›</button></div>
       <div class="cal-scroll"><div class="cal-grid" style="--cols:${g.cols}" role="img" aria-label="Erntekalender ${year}: ${esc(stat)}">${months}${wd}${cells}</div></div>
       <div class="cal-info" id="calInfo" aria-live="polite">Tippe auf einen Tag, um Datum und Status zu sehen.</div>
-      <div class="hint">${esc(stat)}</div><div class="cal-legend">${legend}</div></div>`;
+      <div class="hint">${esc(stat)}</div><div class="cal-legend${hid ? ' full' : ''}">${legend}</div></div>`;
   }
 
   /* ---------- Darstellung (H4) ---------- */
@@ -582,7 +589,7 @@
         case 'info': showInfo(el); break;
         case 'late': logLateUI(habit(), el.dataset.k, el.dataset.st, pt); break;
         case 'repair-ask': U.repairAsk = el.dataset.id + el.dataset.k; au.sfx.tick(); R.today(); break;
-        case 'repair': { const h = habit(), d = D.H[h.id]; if (d.repairKey) { h.logs[d.repairKey] = 'repaired'; au.sfx.tiny(); toast(`${img('flame', 3, '')}<span><b>Serie gerettet.</b> Der verpasste Tag ist nachgeholt.</span>`); derive(); save(); refresh(); } break; }
+        case 'repair': { const h = habit(), d = D.H[h.id]; if (d.repairKey) { h.logs[d.repairKey] = 'repaired'; au.sfx.tiny(); toast(`${img('flame', 3, '')}<span><b>Serie gerettet.</b> Die Extra-Runde zählt für den verpassten Tag.</span>`); derive(); save(); refresh(); } break; }
         case 'todo': { const row = el.closest('[data-tid]'), x = S.todos.find(y => y.id === row.dataset.tid), before = snapshot();
           if (x.doneAt) { delete x.doneAt; au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); break; }
           x.doneAt = t; au.sfx.check(); if (!x.rolled) { x.rolled = true; rollDrop(pt); } derive(); const sk = skillById(x.skillId);
