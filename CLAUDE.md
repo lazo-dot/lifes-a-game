@@ -1,15 +1,16 @@
 # Life's a Game – Hinweise für Claude Code
 
-Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v6 (installierbare PWA, GitHub Pages). **Nächstes Ziel: Prototyp v7 – Bedienbarkeit.**
+Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v7 (installierbare PWA, GitHub Pages, Bedienbarkeit). **In Arbeit auf Branch `v8a`: Grafik auf Sprite-Sheets (Stil B).**
 
 ## Quellen der Wahrheit
 
 - `docs/habit-tracker-entwicklungsleitfaden.md` – **verbindlich** für Mechaniken, Formeln, Datenmodell und Prinzipien (aktuell v1.6).
-- `docs/ux-heuristische-evaluation-v6.md` – **Grundlage für v7** (Funde U1–U18 mit Empfehlungen).
+- `docs/pixel-styleguide-stil-b.md` – **Grundlage für v8a** (Raster, Lesbarkeit, Licht-Ebenen, Lieferformat, Asset-Liste).
+- `docs/ux-heuristische-evaluation-v6.md` – Grundlage für v7 (Funde U1–U18 mit Empfehlungen).
 - `docs/ux-testleitfaden-v6.md` – der Usability-Test, der nach v7 läuft; Aufgaben dort müssen weiter funktionieren.
 - `docs/abgleich-checkliste.md`, `docs/simulation-*.md`, `docs/marketingkonzept.md` – Hintergrund.
 
-Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game“ gepflegt (Koordinations-Chat). **Hier nicht inhaltlich ändern.** Bewusste Abweichungen mit Grund in `docs/ABWEICHUNGEN.md` eintragen (Abschnitt „v7“).
+Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game“ gepflegt (Koordinations-Chat). **Hier nicht inhaltlich ändern.** Bewusste Abweichungen mit Grund in `docs/ABWEICHUNGEN.md` eintragen (Abschnitt der jeweiligen Version, aktuell „v8a“).
 
 ## Unverhandelbare Prinzipien (Kurzfassung, Details im Leitfaden)
 
@@ -24,42 +25,33 @@ Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game�
 
 ## Architekturregeln
 
-- `src/logic.js` bleibt UI-frei. **v7 ändert keine Spielregeln** – Logik und bestehende Tests bleiben inhaltlich unverändert (nur Hilfsfunktionen ergänzen, falls nötig, mit Tests).
-- Gespeichert werden nur Eingaben; das Speicherschema bleibt gleich. Lars' Selbsttest-Daten müssen das Update unverändert überstehen.
+- `src/logic.js` bleibt UI-frei. **v8a ändert keine Spielregeln** – Logik und bestehende Tests bleiben inhaltlich unverändert (nur Hilfsfunktionen ergänzen, falls nötig, mit Tests).
+- Gespeichert werden nur Eingaben; das Speicherschema bleibt `4`. v8a ergänzt nur `skill.buildingType` und `habit.plantType` (`LAG.migrateV8a`); alle übrigen Daten bleiben unverändert.
 - Klassische Skripte, Kopier-Build nach `dist/`, kein Bundler. `npm test` grün vor jedem Commit.
 
-## Arbeitsliste v7 – Bedienbarkeit (Funde aus `docs/ux-heuristische-evaluation-v6.md`)
+## Arbeitsliste v8a – Grafik auf Sprite-Sheets (Stil B)
 
-Referenzgerät: iPhone, 390 × 844 pt, Safari und als installierte App. Prüfen mit `npm start` und den Browser-Werkzeugen auf dieser Größe, zusätzlich auf Desktop-Breite (dort darf das bisherige Layout bleiben).
+Grundlage: `docs/pixel-styleguide-stil-b.md` (Abschnitte 2, 3, 6, 7, 8), Leitfaden 5.4, `art/platzhalter/README.md`. Arbeit auf Branch `v8a`, **nicht nach main mergen, nicht auf GitHub Pages veröffentlichen** (auf v7 laufen Selbsttest und Usability-Test). Regeln, Stärke, XP, Funde und Graduierung bleiben unverändert.
 
 **Muss (H)**
-1. **U1 – Abhaken ohne Scrollen.** Auf schmalen Bildschirmen ist der erste Haken im Tab „Heute“ ohne Scrollen sichtbar. Vorschlag: Tab-Leiste fest unten (Symbol + kurzer Text, Safe Area beachten), Hof-Szene kompakt oben, Erfahrung und Fähigkeiten in den Tab „Fortschritt“ oder einklappbar. Wilma bleibt erreichbar, aber nicht vor der Liste. Damit erledigt sich U15 (Tabs in zwei Zeilen).
-2. **U17 – Keine Information nur im Tooltip.** Alles, was heute nur über `title` erklärt wird (Regentage, Kalenderkacheln inkl. „nachgetragen“), lässt sich antippen: kleines Info-Feld bzw. bei Kalenderkacheln Datum + Status. `title` darf zusätzlich bleiben.
-3. **U8/U9 – Regentag und Nachtragen verständlich.** Wenn ein Tag mit verbrauchtem Regentag nachgetragen wird, sagt die App das: „Dein Regentag ist wieder frei.“ (Die Logik leitet das bereits ab – prüfen und per Test absichern.) Im Bereich „Gestern und vorgestern“ einen Satz ergänzen, dass Nachtragen einen Regentag zurückgibt. „Nachgeholt“ in der Oberfläche einheitlich „Extra-Runde“ nennen; Kalenderlegende mit einem kurzen Satz je Zustand.
-4. **U12/U13 – Tap-Flächen und Haken.** Alle Bedienelemente mindestens 44 × 44 pt (Haken, Mini, To-do-Löschen, Kalender-Pfeile, Chips). Der Haken ist im Ruhezustand als Haken-Feld erkennbar (z. B. Haken-Symbol gedimmt); Mini als gleichwertige zweite Option daneben. Löschen-× mit Abstand zum Haken.
+1. **Sprite-System:** Loader für Aseprite-JSON (Array) + PNG mit Ebenen base/glow/shadow, Frame-Tags, `meta.anchor`, `meta.platzhalter` (`src/sheets.js`). Build kopiert die Exporte nach `public/sprites/` (`tools/sprites.js`, Quelle `art/src/` vor `art/platzhalter/`); der Service Worker cached sie. Fehlt eine Datei: Rückfall auf den bisherigen Zeichencode. Reihenfolge: Boden → Schatten (eine Farbe, 30 %, nachts aus) → base nach Fußpunkt-y → Tönung (multiplizieren) → glow (addieren); kein Glätten.
+2. **Ganzzahlige Skalierung:** Szene logisch 256 × 160, nur 1×/2×/3× in CSS-Pixeln, Canvas = CSS-Größe × devicePixelRatio. iPhone kompakt 1:1 (256 × 160 pt). Antippen öffnet die Großansicht (größter ganzzahliger Faktor, verschiebbar, Schließen 44 pt).
+3. **Gebäude je Fähigkeit:** `skill.buildingType` (muehle, archiv, gewaechshaus, schmiede, gemeinschaftshaus, musikpavillon, backhaus, kontor, scheune), Migration nach Symbol, Auswahl als Raster mit Namen (≥ 44 pt). Ausbaustufe 1–2 → 1, 3–5 → 2, 6–9 → 3, ab 10 → 4 (`LAG.buildingStage`).
+4. **Pflanzen und Beete:** `habit.plantType` (beere, blume, kuerbis, baeumchen), Wachstumsstufen keim … ausgewachsen + gemeistert (`LAG.plantFrame`). Beete 48 × 16 nach Style-Guide 2, bis zu 3 Pflanzen je Beet.
+5. **Hof als Karte:** `public/sprites/hof-karte.json` mit Plätzen und Zonen, Streuung per festem Seed. Statische Ebenen nur bei Änderung neu zeichnen.
 
-**Sollte (M)**
-5. **U3** Zahlen auf der Heute-Karte mit Kurztext statt nur Symbol („90 in Folge“, „2 Regentage“).
-6. **U4/U5/U6 Wortwahl:** Kopfzeile „1. November · Herbst“ statt „Tag 1“; ab Tag 66 „Tag 93 · die üblichen 66 Tage sind geschafft“; „Noch 3× Dehnen bis Körper Stufe 2“ statt „Einheiten“.
-7. **U11** Schalter „Erinnerung“ heißt bis zur Flutter-Version „Wilma erinnert in der App“ (mit einem Satz Erklärung).
-8. **U10** Versionsanzeige aus `package.json`; `package.json` auf 7.0.0.
-9. **U2** Hinweise (Toasts) unten über der Tab-Leiste, verdecken keine Bedienelemente.
+**Sollte (M):** Stufe-4-Gebäude, Gewächshaus und Schmiede leuchten abends (glow). Hinweis „Vorläufige Grafiken“ in den Einstellungen, solange `meta.platzhalter` gilt.
 
-**Kann (N)**
-10. **U14** Anlegen-Formular: Schritte 5–6 (Fähigkeit, Aufwand, Optionen) einklappbar mit sinnvollen Vorgaben, damit das Formular kürzer wirkt. Keine Pflichtfelder entfernen.
-11. **U16** Option „Lesbare Schrift“ unter Darstellung: Fließtext in einer gut lesbaren Systemschrift, Überschriften und Zahlen bleiben Pixel-Schrift.
-
-**Nicht in v7:** Spielregeln, neue Mechaniken (Etappen-Weg, Knospe, Tagesrhythmus, Freischaltungen, Vorlagen-Ausbau), Sprite-Sheets/Grafikstil – das wird nach Selbsttest und Usability-Test entschieden.
+**Nicht in v8a:** Truhengegenstände (Paket 3), Farbthemen, Figuren, Tiere, neue Wetter-Partikel, Flutter.
 
 ## Prüfen vor dem Push
 
-- `npm test` grün; Simulation muss nicht neu laufen (Regeln unverändert).
-- `tools/ux/testhof.js` erzeugt weiterhin einen gültigen Test-Hof; alle 8 Aufgaben aus `docs/ux-testleitfaden-v6.md` sind in v7 lösbar.
-- Auf 390 × 844: erster Haken ohne Scrollen sichtbar; keine Tap-Fläche unter 44 pt (kurz messen, z. B. per Skript in den DevTools).
-- Bestehende v6-Daten laden unverändert.
+- `npm test` grün (68 bestehende + v8a-Tests).
+- `node tools/ux/screenshots-v8a.js` (bei laufendem `npm start`): Szene genau 256 × 160 pt, keine verschwommenen Pixel, erster Haken ohne Scrollen (v7: 468 pt). Screenshots unter `docs/screenshots-v8a/`.
+- Alle 8 Aufgaben aus `docs/ux-testleitfaden-v6.md` weiter lösbar; v7-Daten werden migriert (nur Gebäude- und Pflanzentyp kommen dazu).
 
 ## Arbeitsweise
 
 - Kleine, thematische Commits. Vor dem Push auf `main` Lars fragen (danach aktualisiert sich die App auf seinem iPhone).
-- Zum Schluss `docs/V7-ZUSAMMENFASSUNG.md`: je Fund U… umgesetzt / teilweise / nicht, mit kurzer Begründung; Vorher/Nachher der Position des ersten Hakens und der kleinsten Tap-Fläche; Abweichungen in `docs/ABWEICHUNGEN.md` (v7). Checkliste nicht selbst ausfüllen.
+- Zum Schluss je Version eine Zusammenfassung (v8a: `docs/V8A-ZUSAMMENFASSUNG.md`): was umgesetzt ist (Muss/Sollte), Testanzahl, Messwerte (Szenengröße, erster Haken), Abweichungen in `docs/ABWEICHUNGEN.md` (v8a), offene Punkte. Checkliste nicht selbst ausfüllen.
 - Keine Gesundheitsversprechen in App-Texten, keine fremden Markennamen.
