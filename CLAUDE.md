@@ -1,6 +1,6 @@
 # Life's a Game – Hinweise für Claude Code
 
-Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v8a (8.0.0) auf `main` (installierbare PWA, GitHub Pages; Hof in Stil B mit Platzhalter-Grafiken). **Selbsttest und Usability-Test laufen auf v8a (main).** In Arbeit: v8b (8.1.0) auf Branch `v8b`.
+Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v8b (8.1.0) auf `main` (installierbare PWA, GitHub Pages; Hof in Stil B mit Platzhalter-Grafiken, Truhe mit Sammelalbum, sieben Farbthemen). **Selbsttest und Usability-Test laufen auf main.**
 
 ## Quellen der Wahrheit
 
@@ -29,7 +29,7 @@ Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game�
 - Gespeichert werden nur Eingaben; das Speicherschema bleibt `4`. v8a ergänzt nur `skill.buildingType` und `habit.plantType` (`LAG.migrateV8a`), v8b nur das optionale `theme`. Bestehende Truhen, platzierte Gegenstände und Exporte bleiben gültig.
 - Klassische Skripte, Kopier-Build nach `dist/`, kein Bundler. `npm test` grün vor jedem Commit.
 
-## Arbeitsliste v8b – Truhe und Personalisierung (Version 8.1.0, Branch `v8b`)
+## Arbeitsliste v8b – Truhe und Personalisierung (Version 8.1.0, auf main)
 
 Grundlage: Leitfaden 4.4 und 5.4, Style-Guide Paket 3 und Staffelung, `art/platzhalter/README.md`. v8a (Sprite-System, Skalierung, Gebäude, Pflanzen, Karte) ist auf `main`.
 
