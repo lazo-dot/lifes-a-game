@@ -1,4 +1,4 @@
-# Life's a Game – Abgleich-Checkliste Prototyp ↔ Leitfaden v1.8
+# Life's a Game – Abgleich-Checkliste Prototyp ↔ Leitfaden v1.9
 
 Stand: 02.11.2026 (v7 abgeglichen) · Wird für jede Prototyp-Version neu ausgefüllt (v3, v4 …). Referenz: [Entwicklungsleitfaden v1.2](habit-tracker-entwicklungsleitfaden.md)
 
@@ -248,6 +248,27 @@ Tests: 79/79 grün, Build läuft (nachgeprüft). Abweichungen 1 und 3 in Leitfad
 Tests: 95/95 grün (nachgeprüft). Abweichungen 1–11 übernommen; 5 (`theme` auf oberster Ebene) im Leitfaden-Datenmodell ergänzt.
 
 **Im Koordinations-Chat gefunden:** Der **leere Abhak-Kasten** hat zu wenig Kontrast für ein Bedienelement (WCAG 1.4.11 verlangt 3:1): Innenrand `panel-3` auf `panel-dk` 2,05:1 im Standardthema, 1,49:1 in Pergament; Außenrand `edge` 1,14:1 bzw. 2,25:1. Im Pergament-Thema ist der Kasten kaum zu sehen. Fix für 8.1.1: Innenrand und Haken-Andeutung in `text-soft` (≥ 6,4:1 in allen Themen). Außerdem wirkt der Titel-Schatten in Pergament verwaschen.
+
+---
+
+## Ergebnis v8c – Ruhiger Bildschirm (8.2.0, 02.11.2026, auf main)
+
+| Ziel (Konzept 6) | v8.1 | v8c | |
+|---|---|---|---|
+| Wörter auf Heute | 220 | 86 | ✅ |
+| Karten im ersten Bildschirm | 2 | 3 | ✅ |
+| Seitenhöhe Heute / Fortschritt | 2.311 / 4.120 pt | 1.085 / 1.546 pt | ✅ |
+| Wörter in allen Tabs | 1.430 | 453 | ✅ (−68 %) |
+| Ebenen | – | 2 | ✅ |
+| Erster Haken | 478 pt | 469 pt | ✅ |
+| Tap-Flächen, Kontraste | | ≥ 44 pt, AA, Akzente ≥ 4,98:1 | ✅ |
+
+Alle Muss-Punkte H1–H9 und 8.1.1 umgesetzt, Text-Inventar vollständig (entfallen nur wörtliche Doppelungen). Tests 105/105 grün (nachgeprüft). Abweichungen 1–11 übernommen (Leitfaden v1.9), Ausnahme 3 (siehe unten).
+
+**Im Koordinations-Chat beobachtet:**
+- **Anker wird abgeschnitten:** Die Kontextzeile beginnt mit der Uhrzeit, der Anker endet mit „…“ („8 Uhr · nach dem ersten Ka…“, Abweichung 3). Der Anker ist das Alleinstellungsmerkmal (Prinzip 4) und sollte vollständig lesbar sein: Anker zuerst, Uhrzeit danach, Kontextzeile darf auf zwei Zeilen umbrechen. → mit v9 gebündelt.
+- Zahnrad im Pergament-Thema blass (von Claude Code selbst benannt). → mit v9.
+- Beim ersten Besuch liegt der erste Haken bei 686 pt, weil die Erklärung zu „Heute“ einmal offen steht – vertretbar, einmalig.
 
 ---
 

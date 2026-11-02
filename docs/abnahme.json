@@ -1,0 +1,30 @@
+{
+ "hinweis": "Abnahme-Grenzwerte, gepflegt im Koordinations-Chat. npm run abnahme misst sie im Browser (Headless-Chrome, Test-Hof aus tools/ux/testhof.js, 12 Uhr, Erklärungen als gesehen markiert) und bricht bei Verletzung mit Fehler ab. Abschnitt 'immer' gilt für jede Version; versionsbezogene Abschnitte ergänzen oder verschärfen.",
+ "geraete": [
+  {"name": "iPhone 13–15", "breite": 390, "hoehe": 844, "dpr": 3},
+  {"name": "iPhone Pro Max", "breite": 430, "hoehe": 932, "dpr": 3}
+ ],
+ "themen": ["standard", "wald", "herbst", "frost", "meer", "kirschbluete", "pergament"],
+ "immer": {
+  "tests_gruen": true,
+  "erster_haken_max_pt": 480,
+  "karten_im_ersten_bildschirm_min": 3,
+  "tapflaeche_min_pt": 44,
+  "tapflaeche_ausnahmen": [".cal-cell"],
+  "kontrast_text_min": 4.5,
+  "kontrast_nichttext_min": 3.0,
+  "kontrast_pruefen_in": ["ruhezustand", "aktiv", "hover", "gut-unterscheidbar"],
+  "szene_ganzzahlig": true,
+  "szene_seitenstreifen": false,
+  "grossansicht_faktor_min": 3,
+  "woerter_max": {"heute": 100, "gewohnheiten": 100, "logbuch": 80, "fortschritt": 130, "truhe": 160, "summe": 500},
+  "seitenhoehe_max_pt": {"heute": 1300, "fortschritt": 1800},
+  "erklaerung_woerter_max": 60,
+  "ebenen_max": 2,
+  "kontextzeile_ohne_abschneiden": ["anker"],
+  "konsolenfehler": 0,
+  "speicherschema": 4,
+  "migration_exporte": ["v3", "v5", "v7", "v8"]
+ },
+ "v9": {}
+}
