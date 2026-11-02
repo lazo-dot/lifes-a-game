@@ -29,12 +29,21 @@
   const PNAME = { beere: 'Beere', blume: 'Blume', kuerbis: 'Kürbis', baeumchen: 'Bäumchen' };
   const sheetUrls = new Map();
   /** Vorschaubild aus einem Sprite-Sheet (Ebene base), ganzzahlig vergrößert. Ohne Sheet: leer. */
-  function sheetImg(sheet, tag, scale) {
-    const key = sheet + tag + scale; if (sheetUrls.has(key)) return sheetUrls.get(key);
-    const sh = SH && SH.get(sheet); if (!sh) return '';
+  function sheetImg(sheet, tag, scale, sil) {
+    const key = sheet + tag + scale + (sil ? 's' : ''); if (sheetUrls.has(key)) return sheetUrls.get(key);
+    const sh = SH && SH.get(sheet); if (!sh || !sh.rect('base', tag)) return '';
     const c = document.createElement('canvas'); c.width = sh.w * scale; c.height = sh.h * scale; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.scale(scale, scale);
-    SH.draw(x, sh, 'base', tag, sh.anchor.x, sh.anchor.y);
+    SH.draw(x, sh, 'base', tag, sh.anchor.x, sh.anchor.y); if (sil) silhouette(x, c);
     const h = `<img class="pi" src="${c.toDataURL()}" alt="" width="${c.width}" height="${c.height}">`; sheetUrls.set(key, h); return h;
+  }
+  /** v8b: noch nicht gefundene Gegenstände als neutrale Silhouette (eine Farbe, gleiche Form). */
+  function silhouette(x, c) { x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = '#56666b'; x.fillRect(0, 0, c.width, c.height); x.globalCompositeOperation = 'source-over'; }
+  /** v8b: Bild eines Truhengegenstands aus dem Sheet deko bzw. tiere; ohne Sheet die bisherige Zeichnung (gibt es nur für die 12 alten IDs), sonst eine Kiste. */
+  function itemImg(id, scale = 2, sil) {
+    const it = L.ITEMS[id], h = sheetImg(it && it.animal ? 'tiere' : 'deko', id, scale, sil); if (h) return h;
+    const name = SP.MAPS[id] ? id : 'crate', key = 'legacy' + name + scale + (sil ? 's' : ''); if (sheetUrls.has(key)) return sheetUrls.get(key);
+    const sp = SP.sprite(name), k = scale * 2, c = document.createElement('canvas'); c.width = sp.width * k; c.height = sp.height * k; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(sp, 0, 0, c.width, c.height); if (sil) silhouette(x, c);
+    const out = `<img class="pi" src="${c.toDataURL()}" alt="" width="${c.width}" height="${c.height}">`; sheetUrls.set(key, out); return out;
   }
 
   /* ---------- Hilfen ---------- */
@@ -114,9 +123,9 @@
     else if (sk && D.levels[sk.id].l > before.s[sk.id]) setTimeout(() => levelUp(sk.name + ' · Stufe ' + D.levels[sk.id].l, 'Das Gebäude dieser Fähigkeit wächst auf deinem Hof.'), 450);
   }
   function rollDrop(pt) {
-    const type = L.rollDrop(Math.random); if (!type) return; grant(type); save();
+    const type = L.rollDrop(Math.random, today()); if (!type) return; grant(type); save();
     setTimeout(() => { au.sfx.drop(); floatText('Fund: ' + L.ITEMS[type].name, pt[0], pt[1] - 24, 'drop'); sparks(pt[0], pt[1] - 20, ['#c99cf2', '#f4d58e', '#ffffff'], 12); }, 650);
-    toast(`${img(type, 3, '')}<span><b>Fund!</b> ${L.ITEMS[type].name}${L.ITEMS[type].rare ? ' (selten)' : ''} liegt jetzt in deiner Truhe.</span>`);
+    toast(`${itemImg(type, 1)}<span><b>Fund!</b> ${L.ITEMS[type].name}${L.ITEMS[type].rare ? ' (selten)' : ''} liegt jetzt in deiner Truhe.</span>`);
   }
   /** B2 Ernte bei neuer Wachstumsstufe, B4 Fund bei „Gemeistert“. */
   function checkRewards(pt) {
@@ -125,12 +134,12 @@
       const d = D.H[h.id], n = L.harvestsDue(h, d);
       if (n > 0) {
         h.harvestStage = d.stage; any = true; const got = [];
-        for (let i = 0; i < n; i++) { const t = L.pickItem(Math.random, Math.random() < L.C.RARE_P); grant(t); got.push(L.ITEMS[t].name); }
+        for (let i = 0; i < n; i++) { const t = L.pickItem(Math.random, Math.random() < L.C.RARE_P, today()); grant(t); got.push(L.ITEMS[t].name); }
         if (scene) scene.glowBed(h.id); setTimeout(() => au.sfx.harvest(), 300);
         toast(`${img('p' + d.stage, 4, '', { F: styleOf(skillById(h.skillId)).c, f: styleOf(skillById(h.skillId)).dk })}<span><b>Ernte!</b> „${esc(h.title)}“ ist jetzt ${L.STAGES[d.stage][1]}. In der Truhe: ${esc(got.join(', '))}.</span>`, null, 5200);
       }
       if (L.gradRewardDue(h, d)) {
-        h.gradRewarded = true; any = true; const t = L.pickItem(Math.random, true); grant(t);
+        h.gradRewarded = true; any = true; const t = L.pickItem(Math.random, true, today()); grant(t);
         toast(`${img('gem', 3, '')}<span><b>Gemeistert!</b> „${esc(h.title)}“ hält ohne Erinnerung. Als Dank liegt ${L.ITEMS[t].name} in deiner Truhe.</span>`, null, 6000);
       }
     });
@@ -323,17 +332,22 @@
 
   /* ---------- Darstellung (H4) ---------- */
   const SCALES = [[1, 'Normal'], [1.15, 'Groß'], [1.3, 'Sehr groß']];
+  /** v8b: Farbthemen der Oberfläche (CSS [data-theme]); gespeichert als S.theme, Standard = Feld fehlt. */
+  const THEMES = [['', 'Standard'], ['wald', 'Wald'], ['herbst', 'Herbst'], ['meer', 'Meer'], ['kirschbluete', 'Kirschblüte']];
   function applyLook() {
     const de = document.documentElement; de.style.setProperty('--ts', S.textScale || 1);
+    if (THEMES.some(([v]) => v && v === S.theme)) de.dataset.theme = S.theme; else delete de.dataset.theme;
+    const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = getComputedStyle(de).getPropertyValue('--bg-a').trim() || '#0d1719';
     if (S.readableFont) de.dataset.font = 'lesbar'; else delete de.dataset.font;
     if (S.palette === 'cb') de.dataset.palette = 'cb'; else delete de.dataset.palette;
   }
   function settingsHTML() {
     return `<h3>Darstellung</h3><div class="look"><div class="ctl" role="group" aria-label="Schriftgröße"><span class="lab">Schrift</span>${SCALES.map(([v, l]) => `<button type="button" class="chip" data-act="scale" data-v="${v}" aria-pressed="${(S.textScale || 1) === v}">${l}</button>`).join('')}</div>
+      <div class="ctl thm" role="group" aria-label="Farbthema"><span class="lab">Thema</span>${THEMES.map(([v, l]) => `<button type="button" class="chip tchip" data-act="theme" data-v="${v}" aria-pressed="${(S.theme || '') === v}"><span class="tpv" data-theme="${v || 'standard'}" aria-hidden="true"><i></i><i></i><i></i></span>${l}</button>`).join('')}</div>
       <div class="ctl" role="group" aria-label="Farben"><span class="lab">Farben</span><button type="button" class="chip" data-act="palette" data-v="" aria-pressed="${S.palette !== 'cb'}">Standard</button><button type="button" class="chip" data-act="palette" data-v="cb" aria-pressed="${S.palette === 'cb'}">Gut unterscheidbar</button></div>
       <div class="ctl" role="group" aria-label="Schriftart"><span class="lab">Schriftart</span><button type="button" class="chip" data-act="font" data-v="" aria-pressed="${!S.readableFont}">Pixel</button><button type="button" class="chip" data-act="font" data-v="1" aria-pressed="${!!S.readableFont}">Lesbare Schrift</button></div>
-      <p class="hint">„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p>
-      ${SH && SH.placeholder() ? '<p class="hint"><b>Vorläufige Grafiken:</b> Gebäude, Pflanzen und Natur auf dem Hof sind Platzhalter. Sie werden vor dem Start durch handgezeichnete Grafiken ersetzt.</p>' : ''}</div>`;
+      <p class="hint">„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. Das Thema ändert nur die Farben der Oberfläche, nicht den Hof. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind, und lässt sich mit jedem Thema kombinieren. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p>
+      ${SH && SH.placeholder() ? '<p class="hint"><b>Vorläufige Grafiken:</b> Gebäude, Pflanzen, Natur, Deko, Tiere, Wohnhaus und Bauer auf dem Hof sind Platzhalter. Sie werden vor dem Start durch handgezeichnete Grafiken ersetzt.</p>' : ''}</div>`;
   }
 
   /* ---------- Beta-Metriken (H5) ---------- */
@@ -464,23 +478,33 @@
       if (sleep) h += `<div class="sleep">Die Farm schläft. Ab 6 Uhr kannst du wieder dekorieren. Abhaken geht natürlich jederzeit.</div>`;
       h += `<h3>Funde · ${used} von ${cap} Plätzen belegt</h3>`;
       const inv = Object.entries(S.chest.items).filter(([, n]) => n > 0);
-      h += inv.length ? `<div class="inv">${inv.map(([k, n]) => { const it = L.ITEMS[k], full = !it.animal && used >= cap; return `<div class="item${it.rare ? ' r' : ''}"><div class="pv">${img(k, 4, '')}</div><h4>${it.name}<span class="badge ${it.rare ? 'rare' : 'com'}">${it.rare ? 'selten' : 'häufig'}</span></h4><div class="cnt">${n}× in der Truhe</div><button class="btn sm" type="button" data-act="place" data-type="${k}" ${sleep || full ? 'disabled' : ''}>${full ? 'Kein Platz frei' : 'Aufstellen'}</button></div>`; }).join('')}</div>`
+      h += inv.length ? `<div class="inv">${inv.map(([k, n]) => { const it = L.ITEMS[k], full = !it.animal && used >= cap; return `<div class="item${it.rare ? ' r' : ''}"><div class="pv">${itemImg(k, 2)}</div><h4>${it.name}<span class="badge ${it.rare ? 'rare' : 'com'}">${it.rare ? 'selten' : 'häufig'}</span></h4><div class="cnt">${n}× in der Truhe</div><button class="btn sm" type="button" data-act="place" data-type="${k}" ${sleep || full ? 'disabled' : ''}>${full ? 'Kein Platz frei' : 'Aufstellen'}</button></div>`; }).join('')}</div>`
         : '<div class="empty">Die Truhe ist leer. Erledige Gewohnheiten und To-dos, manchmal taucht dabei etwas auf.</div>';
-      h += '<h3>Auf dem Hof</h3>' + (S.chest.placed.length ? `<div class="inv">${S.chest.placed.map((p, i) => `<div class="item${L.ITEMS[p.itemId].rare ? ' r' : ''}"><div class="pv">${img(p.itemId, 4, '')}</div><h4>${L.ITEMS[p.itemId].name}</h4><div class="cnt">${L.ITEMS[p.itemId].animal ? 'Läuft frei herum' : 'Platz ' + (p.slot + 1)}</div><button class="btn sm alt" type="button" data-act="stash" data-i="${i}" ${sleep ? 'disabled' : ''}>Einlagern</button></div>`).join('')}</div>` : '<div class="empty">Noch nichts aufgestellt.</div>');
+      h += '<h3>Auf dem Hof</h3>' + (S.chest.placed.length ? `<div class="inv">${S.chest.placed.map((p, i) => `<div class="item${L.ITEMS[p.itemId].rare ? ' r' : ''}"><div class="pv">${itemImg(p.itemId, 2)}</div><h4>${L.ITEMS[p.itemId].name}</h4><div class="cnt">${L.ITEMS[p.itemId].animal ? 'Läuft frei herum' : 'Platz ' + (p.slot + 1)}</div><button class="btn sm alt" type="button" data-act="stash" data-i="${i}" ${sleep ? 'disabled' : ''}>Einlagern</button></div>`).join('')}</div>` : '<div class="empty">Noch nichts aufgestellt.</div>');
       h += `<p class="hint">Mit jedem Level wird ein weiterer Deko-Platz frei (Level ${D.char.l}: ${cap} Plätze).</p>`;
-      const o = L.dropOdds(), names = ks => ks.map(k => L.ITEMS[k].name).join(', ');
+      h += albumHTML();
+      const o = L.dropOdds(today()), names = ks => ks.map(k => L.ITEMS[k].name).join(', ');
       h += `<details class="odds"${U.oddsOpen ? ' open' : ''}><summary>Wie Funde entstehen</summary><div class="odds-body">
         <p>Funde sind Zufall, aber offen: Es gibt nichts zu kaufen, keine versteckten Quoten und keine Pechsträhnen-Ausgleiche.</p>
         <dl class="kv"><dt>Bei jeder Erledigung</dt><dd>${pct(o.any)} Chance auf einen Fund, einmal pro Gewohnheit und Tag bzw. einmal pro To-do</dd>
         <dt>Davon selten</dt><dd>${pct(o.rareShare)} der Funde, also ${pct(o.rare, 1)} pro Erledigung. Häufig: ${pct(o.common, 1)}</dd>
         <dt>Ernte</dt><dd>Jede neu erreichte Wachstumsstufe bringt sicher einen Fund (${pct(o.harvestRare)} davon selten), einmal pro Stufe</dd>
         <dt>Gemeistert</dt><dd>Sicher ein seltener Fund</dd>
-        <dt>Häufige Funde</dt><dd>${esc(names(o.commonItems))}</dd><dt>Seltene Funde</dt><dd>${esc(names(o.rareItems))}</dd></dl>
+        <dt>Welcher Fund</dt><dd>Jeder gerade findbare Gegenstand der Art (häufig oder selten) ist gleich wahrscheinlich</dd>
+        <dt>Jetzt findbar, häufig</dt><dd>${esc(names(o.commonItems))}</dd><dt>Jetzt findbar, selten</dt><dd>${esc(names(o.rareItems))}</dd></dl>
+        <p class="hint">Jetzt ist ${L.SEASON_NAME[o.season]}. Gegenstände einer Jahreszeit sind nur in ihr findbar und bleiben danach dauerhaft in der Truhe. Mehr Gegenstände bedeuten nicht mehr Funde, die Chance bleibt gleich.</p>
         <p class="hint">Im Mittel bringen etwa 8 Erledigungen einen Fund und etwa 42 einen seltenen. Logbuch-Einträge geben XP, aber keine Funde.</p></div></details>`;
       $('#p-chest').innerHTML = h;
     },
     npc() { $('#npcFace').innerHTML = portrait(); const l = nudges(); $('#npcText').textContent = l[U.npcIdx % l.length]; }
   };
+  /** v8b Sammelalbum: alle Gegenstände nach Gruppen, gefundene mit Bild, offene als Silhouette. Ohne Fortschrittsprozente, ohne Fristen. */
+  function albumHTML() {
+    return `<h3>Sammelalbum</h3><div class="album">${L.album(S.chest).map(g => `<section class="alb-g" aria-label="${g.name}: ${g.found} von ${g.total} gefunden"><h4>${g.name} <span>${g.found} von ${g.total} gefunden</span></h4><div class="alb">${g.items.map(({ id, found }) => {
+      const it = L.ITEMS[id], when = it.season ? `Findbar im ${L.SEASON_NAME[it.season]}` : '', n = S.chest.items[id] || 0, out = S.chest.placed.filter(p => p.itemId === id).length;
+      const info = found ? `${it.name} · ${it.rare ? 'selten' : 'häufig'}${it.season ? ' · ' + L.SEASON_NAME[it.season] : ''}. ${n ? n + '× in der Truhe' : ''}${n && out ? ', ' : ''}${out ? out + '× auf dem Hof' : ''}.` : `${it.name}: noch nicht gefunden.${when ? ' ' + when + '.' : ''}`;
+      return `<button type="button" class="alb-i${found ? '' : ' open'}" data-act="info" data-info="${esc(info)}" aria-label="${esc(it.name)}, ${found ? 'gefunden' : 'noch nicht gefunden'}${when ? ', ' + when : ''}"><span class="pv">${itemImg(id, 2, !found)}</span><span class="nm">${esc(it.name)}</span>${!found && when ? `<span class="wh">${when}</span>` : ''}</button>`; }).join('')}</div></section>`).join('')}</div>`;
+  }
   /** U17: Regentage als Knopf, Antippen erklärt sie (kein Tooltip nötig). */
   const tokInfo = d => `Regentage: ${d.tokens} von 2. Ein Regentag rettet automatisch einen verpassten Tag deiner Serie. Für je 7 erledigte Termine bekommst du einen, höchstens zwei.`;
   const tokBtn = (d, text) => `<button type="button" class="tok" data-act="info" data-info="${esc(tokInfo(d))}" aria-label="Regentage: ${d.tokens} von 2. Erklärung anzeigen">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}${text ? `<span>${d.tokens} ${d.tokens === 1 ? 'Regentag' : 'Regentage'}</span>` : ''}</button>`;
@@ -664,6 +688,7 @@
         case 'unlock-no': S.unlockSeen = true; save(); R.today(); break;
         case 'scale': S.textScale = +el.dataset.v; applyLook(); save(); R.progress(); au.sfx.tick(); break;
         case 'font': S.readableFont = !!el.dataset.v || undefined; applyLook(); save(); R.progress(); au.sfx.tick(); break;
+        case 'theme': S.theme = el.dataset.v || undefined; applyLook(); save(); R.progress(); au.sfx.tick(); break;
         case 'palette': S.palette = el.dataset.v || undefined; applyLook(); save(); R.progress(); scene.refresh(true); au.sfx.tick(); break;
         case 'metrics-save': { const a = document.createElement('a'), url = URL.createObjectURL(new Blob([metricsJSON()], { type: 'application/json' }));
           a.href = url; a.download = `lifes-a-game-beta-${t}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); break; }
