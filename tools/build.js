@@ -1,5 +1,5 @@
 /* Life's a Game · Build
- * Kopiert public/ und src/ nach dist/ (auslieferbare App) und setzt im Service Worker Version und Dateiliste.
+ * Übernimmt die Sprite-Exporte (tools/sprites.js), kopiert public/ und src/ nach dist/ (auslieferbare App) und setzt im Service Worker Version und Dateiliste.
  * Kein Bundler, keine Abhängigkeiten: dist/ ist dieselbe App aus klassischen Skripten, nur zusammengestellt.
  *   node tools/build.js           → dist/
  *   node tools/build.js --bundle  → zusätzlich dist-bundle/lifes-a-game.html (eine Datei, z. B. für die Artifact-Vorschau)
@@ -8,6 +8,7 @@
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const ROOT = path.resolve(__dirname, '..'), DIST = path.join(ROOT, 'dist');
 const pkg = require(path.join(ROOT, 'package.json'));
+const { syncSprites } = require('./sprites');
 
 const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
   if (e.name.startsWith('.')) return [];
@@ -15,6 +16,7 @@ const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
 });
 
 function build() {
+  syncSprites();                                          // v8a: Aseprite-Exporte → public/sprites/ (nur bei Änderung)
   fs.rmSync(DIST, { recursive: true, force: true });
   const files = [];                                       // [Zielpfad relativ zu dist, Quelle]
   for (const f of walk(path.join(ROOT, 'public'))) files.push([path.relative(path.join(ROOT, 'public'), f), f]);

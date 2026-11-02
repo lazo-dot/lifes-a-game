@@ -42,7 +42,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .demo-bar span{flex:1 1 240px}
 
 .main{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
-@media (min-width:960px){.main{grid-template-columns:minmax(0,480px) minmax(0,1fr);align-items:start}}
+@media (min-width:960px){.main{grid-template-columns:minmax(0,532px) minmax(0,1fr);align-items:start}}
 .col{display:grid;gap:18px;min-width:0}
 .frame{position:relative;padding:18px;border:3px solid var(--edge);color:var(--text);
   background:linear-gradient(var(--wood-lt),var(--wood-lt)) left 6px top 6px/3px 3px no-repeat,linear-gradient(var(--wood-lt),var(--wood-lt)) right 6px top 6px/3px 3px no-repeat,linear-gradient(var(--wood-lt),var(--wood-lt)) left 6px bottom 6px/3px 3px no-repeat,linear-gradient(var(--wood-lt),var(--wood-lt)) right 6px bottom 6px/3px 3px no-repeat,linear-gradient(180deg,var(--panel-2),var(--panel) 55%,var(--panel-dk));
@@ -53,7 +53,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .plank::after{content:"";flex:1;height:2px;background:linear-gradient(90deg,var(--wood-dk),transparent)}
 
 .scene{padding:6px}
-.scene canvas{display:block;width:100%;aspect-ratio:16/10;max-width:100%;background:#4a845c}
+.scene canvas{display:block;margin:0 auto;background:#4a845c;cursor:zoom-in}   /* v8a: Größe setzt die Szene ganzzahlig (sizeScene) */
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 6px 2px;font-size:1.0625rem;color:var(--text-soft)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 
@@ -309,7 +309,6 @@ h2[tabindex="-1"]:focus{outline:none}
   .top-r .cal{order:3;flex:1 1 100%;font-size:1.125rem}
   .top-r .cal img{display:none}
   .scene{padding:4px}
-  .scene canvas{width:auto;height:min(150px,22vh);margin:0 auto}
   .legend{display:none}
   .panel{min-height:0;padding:14px}
   .tabs{position:fixed;left:0;right:0;bottom:0;z-index:70;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:0;
@@ -393,3 +392,17 @@ details.more .step{margin-top:12px}
 :root[data-font="lesbar"] body{line-height:1.3;font-size-adjust:0.45}
 /* Pixel-Schrift (Überschriften, Zahlen, Knöpfe) behält ihre Größe */
 :root[data-font="lesbar"] :is(h1,h2,h3,h4,b,strong,button,summary,.badge,.plank,.cal b,.lvl-badge,.stat-line .t,.skill .lv,.npc-name,.step>b,.entry header,.week-review b,.tile strong,.say .who,.fx,.late-day){font-size-adjust:none}
+
+/* ---------- v8a: Großansicht des Hofs, Gebäude- und Pflanzenwahl ---------- */
+.bigscene{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:var(--panel-dk);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.big-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:3px solid var(--edge);font-family:var(--f-display);color:var(--wood-lt)}
+.big-bar .btn{min-height:44px;min-width:44px}
+.big-scroll{flex:1;min-height:0;display:flex;overflow:auto;-webkit-overflow-scrolling:touch}
+.big-scroll canvas{flex:none;margin:auto;image-rendering:pixelated}
+.bpick{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-top:6px}
+.bpick .lab{grid-column:1/-1;font-size:1.0625rem;color:var(--text-soft)}
+.bchip{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-height:44px;padding:4px;text-align:center;line-height:1.1;hyphens:manual}
+.bchip img{width:48px;height:48px}
+.ppick{flex-wrap:wrap}
+.pchip{display:inline-flex;align-items:center;gap:6px;min-height:44px}

@@ -1,0 +1,29 @@
+{
+ "_hinweis": "Hof-Karte v8a (256 × 160 px). Von Hand gepflegt. Gebäude: Fußpunkt (unten Mitte) je Fähigkeit in Reihenfolge. Beete: linke obere Ecke der Erde (48 × 16), bis zu 3 Pflanzen je Beet. Deko: linke obere Ecke der Truhengegenstände. Rechtecke als [x, y, b, h]. Zonen mit „rechteck“ werden per festem Seed bestreut (Rechteck = Bereich der Fußpunkte, „abstand“ = freizuhaltende Fläche um den Fußpunkt); „fest“ nennt die linke obere Ecke. „frei“ hält Wege, Wohnhaus und Teich von der Streuung frei; belegte Plätze (Gebäude, Beete, aufgestellte Deko) ebenso.",
+ "groesse": [256, 160],
+ "seed": 5,
+ "boden": {
+  "flecken": [[40, 146, 46, 18, 3], [200, 30, 40, 16, 1], [150, 150, 30, 10, 1], [16, 40, 22, 14, 3], [176, 92, 26, 8, 3]],
+  "wege": [[0, 104, 256, 9], [126, 56, 9, 48], [137, 113, 7, 9]],
+  "erdstellen": [[100, 134], [166, 84]],
+  "teich": { "cx": 220, "cy": 139, "rx": 32, "ry": 19 }
+ },
+ "wohnhaus": { "x": 104, "y": 16, "b": 52, "dach": 16, "wand": 14 },
+ "gebaeude": [[24, 53], [66, 53], [194, 53], [236, 53], [118, 158], [166, 158]],
+ "beete": [[8, 66], [62, 66], [142, 68], [196, 68]],
+ "pflanzenAbstand": 15,
+ "deko": [[92, 40], [162, 44], [12, 93], [58, 93], [112, 93], [140, 93], [190, 93], [244, 93], [20, 122], [52, 142], [84, 124], [70, 150]],
+ "wanderweg": [[130, 58], [130, 108], [20, 108], [130, 108], [140, 116], [140, 120], [140, 108], [244, 108], [130, 108]],
+ "huehner": [20, 118, 70, 34],
+ "schlafZ": [154, 10],
+ "frei": [[0, 102, 256, 13], [124, 54, 13, 50], [135, 111, 11, 12], [100, 10, 60, 48], [186, 118, 70, 42]],
+ "zonen": [
+  { "name": "waldrand", "rechteck": [0, 0, 256, 30], "teile": ["natur-baeume:tanne", "natur-baeume:eiche", "natur-baeume:birke"], "versuche": 14, "abstand": [16, 10] },
+  { "name": "waldrand-unten", "rechteck": [0, 112, 256, 48], "teile": ["natur-baeume:eiche", "natur-baeume:weide", "natur-baeume:birke"], "versuche": 6, "abstand": [16, 10] },
+  { "name": "wegsaeume", "rechteck": [0, 92, 256, 26], "teile": ["natur-klein:gras-hoch", "natur-klein:kleefleck", "natur-klein:wildblumen-gelb", "natur-klein:wildblumen-weiss", "natur-klein:gras-hoch"], "versuche": 40, "abstand": [10, 6] },
+  { "name": "wiese", "rechteck": [0, 116, 112, 44], "teile": ["natur-klein:wildblumen-rosa", "natur-klein:wildblumen-gelb", "natur-klein:wildblumen-weiss", "natur-klein:lavendel", "natur-klein:kleefleck", "natur-klein:gras-hoch"], "versuche": 60, "abstand": [9, 5] },
+  { "name": "teichufer", "fest": [["natur-klein:schilf", 194, 126], ["natur-klein:schilf", 248, 128], ["natur-klein:schilf", 196, 152], ["natur-klein:schilf", 250, 150], ["natur-klein:seerose", 214, 136], ["natur-klein:seerose", 230, 148], ["natur-klein:stein-moos", 184, 120], ["natur-klein:trittstein", 178, 124], ["natur-klein:trittstein", 166, 120]] },
+  { "name": "ruheecke", "fest": [["natur-klein:baumstumpf", 150, 128], ["natur-klein:pilze", 140, 134], ["natur-klein:farn", 162, 124]] },
+  { "name": "zwischenflaechen", "rechteck": [0, 28, 256, 70], "teile": ["natur-klein:busch-rund", "natur-klein:busch-blueten", "natur-klein:farn", "natur-klein:stein-klein", "natur-klein:gras-hoch", "natur-klein:pilze", "natur-klein:holzstamm", "natur-klein:kleefleck"], "versuche": 40, "abstand": [14, 9] }
+ ]
+}
