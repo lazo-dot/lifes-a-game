@@ -30,12 +30,30 @@
     CHECKIN_UNTIL_HOUR: 14 // 4.6 Morgen-Check-in nur bis zum frühen Nachmittag anbieten
   };
   const STAGES = [[0.15, 'Keim'], [0.35, 'Setzling'], [0.6, 'Jungpflanze'], [0.9, 'Blüte'], [2, 'Ausgewachsen']];
-  const ITEMS = {
-    flowers: { name: 'Blumenbeet', rare: false }, bench: { name: 'Holzbank', rare: false }, lantern: { name: 'Laterne', rare: false },
-    barrel: { name: 'Fass', rare: false }, pot: { name: 'Blumentopf', rare: false }, sign: { name: 'Wegweiser', rare: false }, hay: { name: 'Heuballen', rare: false },
-    scarecrow: { name: 'Vogelscheuche', rare: true }, beehive: { name: 'Bienenstock', rare: true }, well: { name: 'Brunnen', rare: true },
-    chicken: { name: 'Huhn', rare: true, animal: true }, duck: { name: 'Ente', rare: true, animal: true }
-  };
+  /* v8b: Truhengegenstände nach art/platzhalter/deko/deko-katalog.json (Test prüft die Übereinstimmung).
+   * Die 12 IDs bis v8a bleiben unverändert. group: garten, hof, selten, tiere, saison; season: nur dann findbar (gefunden bleibt). */
+  const ITEMS = {};
+  [['flowers', 'Blumenbeet', 'garten'], ['pot', 'Blumentopf', 'garten'], ['watering_can', 'Gießkanne', 'garten'], ['arch', 'Rosenbogen', 'garten'],
+    ['herb_box', 'Kräuterkiste', 'garten'], ['sunflower', 'Sonnenblume', 'garten'], ['birdbath', 'Vogeltränke', 'garten'],
+    ['bench', 'Holzbank', 'hof'], ['lantern', 'Laterne', 'hof'], ['sign', 'Wegweiser', 'hof'], ['barrel', 'Fass', 'hof'], ['hay', 'Heuballen', 'hof'],
+    ['fence', 'Zaun', 'hof'], ['wheelbarrow', 'Schubkarre', 'hof'], ['woodpile', 'Holzstapel', 'hof'], ['mailbox', 'Briefkasten', 'hof'],
+    ['wagon_wheel', 'Wagenrad', 'hof'], ['milk_can', 'Milchkanne', 'hof'], ['crate_planter', 'Blumenkisten', 'garten'], ['farm_bell', 'Hofglocke', 'hof'],
+    ['ladder', 'Holzleiter', 'hof'], ['rust_rooster', 'Rost-Hahn', 'garten'], ['egg_basket', 'Eierkorb', 'hof'],
+    ['scarecrow', 'Vogelscheuche', 'selten', 1], ['beehive', 'Bienenstock', 'selten', 1], ['well', 'Brunnen', 'selten', 1],
+    ['sundial', 'Sonnenuhr', 'selten', 1], ['telescope', 'Fernrohr', 'selten', 1], ['weathervane', 'Wetterhahn', 'selten', 1],
+    ['birdhouse', 'Vogelhaus', 'saison', 0, 'fruehling'], ['tulip_basket', 'Tulpenkorb', 'saison', 0, 'fruehling'],
+    ['parasol', 'Sonnenschirm', 'saison', 0, 'sommer'], ['hammock', 'Hängematte', 'saison', 1, 'sommer'],
+    ['pumpkin_lantern', 'Kürbislaterne', 'saison', 0, 'herbst'], ['leaf_pile', 'Laubhaufen', 'saison', 0, 'herbst'],
+    ['snowman', 'Schneemann', 'saison', 1, 'winter'], ['feeder', 'Futterhaus', 'saison', 0, 'winter'],
+    ['chicken', 'Huhn', 'tiere', 1, null, 1], ['duck', 'Ente', 'tiere', 1, null, 1], ['cat', 'Katze', 'tiere', 1, null, 1],
+    ['rabbit', 'Hase', 'tiere', 1, null, 1], ['hedgehog', 'Igel', 'tiere', 1, null, 1]
+  ].forEach(([id, name, group, rare, season, animal]) => { ITEMS[id] = { name, rare: !!rare, group, season: season || null }; if (animal) ITEMS[id].animal = true; });
+  /** Reihenfolge und Namen der Gruppen im Sammelalbum. */
+  const ITEM_GROUPS = [['garten', 'Garten'], ['hof', 'Hof'], ['selten', 'Selten'], ['tiere', 'Tiere'], ['saison', 'Jahreszeiten']];
+  const SEASON_NAME = { fruehling: 'Frühling', sommer: 'Sommer', herbst: 'Herbst', winter: 'Winter' };
+  /** v8b Farbthemen (docs/farbthemen.json): feste Themen und „passend zur Jahreszeit“. */
+  const THEMES = ['standard', 'wald', 'herbst', 'frost', 'meer', 'kirschbluete', 'pergament'];
+  const THEME_BY_SEASON = { fruehling: 'kirschbluete', sommer: 'meer', herbst: 'herbst', winter: 'frost' };
   const WEATHER = ['sonnig', 'heiter', 'bewoelkt', 'regen', 'gewitter'];
 
   /* ---------- Datum (nur Tagesschlüssel) ---------- */
@@ -47,6 +65,8 @@
   const weekday = k => parseKey(k).getDay();                 // 0 = Sonntag
   const weekStart = k => addDays(k, -((weekday(k) + 6) % 7)); // Montag
   const seasonOf = m => (m >= 2 && m <= 4 ? 'Frühling' : m >= 5 && m <= 7 ? 'Sommer' : m >= 8 && m <= 10 ? 'Herbst' : 'Winter');
+  /** v8b: Jahreszeit eines Tages als Schlüssel des Katalogs (fruehling, sommer, herbst, winter), wie seasonOf. */
+  const seasonKey = k => ({ 'Frühling': 'fruehling', Sommer: 'sommer', Herbst: 'herbst', Winter: 'winter' })[seasonOf(parseKey(k).getMonth())];
 
   /* ---------- Zufall (deterministisch, injizierbar) ---------- */
   const hashStr = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
@@ -205,17 +225,29 @@
   }
 
   /* ---------- Funde (4.4) ---------- */
-  function pickItem(rand, rare) { const pool = Object.keys(ITEMS).filter(k => ITEMS[k].rare === rare); return pool[Math.floor(rand() * pool.length)]; }
-  function rollDrop(rand) { if (rand() >= C.DROP_P) return null; return pickItem(rand, rand() < C.RARE_P); }
+  /** v8b: Gegenstände, die am Tag k findbar sind (ganzjährige plus die der aktuellen Jahreszeit). Ohne Tag nur ganzjährige. */
+  const findable = (k, rare) => Object.keys(ITEMS).filter(id => ITEMS[id].rare === rare && (!ITEMS[id].season || (k && ITEMS[id].season === seasonKey(k))));
+  /** Ziehung: gleichverteilt aus den passenden, jetzt findbaren Gegenständen. Ob es ein Fund ist und ob er selten ist, entscheidet der Aufrufer (Fundchance unverändert). */
+  function pickItem(rand, rare, k) { const pool = findable(k, rare); return pool[Math.floor(rand() * pool.length)]; }
+  function rollDrop(rand, k) { if (rand() >= C.DROP_P) return null; return pickItem(rand, rand() < C.RARE_P, k); }
   /** B2: neue Wachstumsstufe = garantierter Fund. Hochwassermarke verhindert Mehrfach-Ernte nach Rückgängig. */
   const harvestsDue = (h, d) => Math.max(0, d.stage - (h.harvestStage || 0));
   const gradRewardDue = (h, d) => d.graduated && !h.gradRewarded;
   const slotsFor = L => Math.min(12, 3 + L);
   /** H3: Fundchancen zum Anzeigen. Gewürfelt wird höchstens einmal pro Gewohnheit und Tag bzw. einmal pro To-do. */
-  function dropOdds() {
-    const pool = rare => Object.keys(ITEMS).filter(k => ITEMS[k].rare === rare);
+  function dropOdds(k) {
     return { any: C.DROP_P, rare: C.DROP_P * C.RARE_P, common: C.DROP_P * (1 - C.RARE_P), rareShare: C.RARE_P,
-      harvestRare: C.RARE_P, commonItems: pool(false), rareItems: pool(true) };
+      harvestRare: C.RARE_P, commonItems: findable(k, false), rareItems: findable(k, true), season: k ? seasonKey(k) : null };
+  }
+  /** Angezeigtes Thema: gespeicherte Wahl, bei „jahreszeit“ das Thema der Jahreszeit von Tag k, sonst Standard. */
+  const themeFor = (choice, k) => choice === 'jahreszeit' ? THEME_BY_SEASON[seasonKey(k)] : THEMES.includes(choice) ? choice : 'standard';
+  /** v8b Sammelalbum: gefunden ist, was in der Truhe liegt oder auf dem Hof steht (Gegenstände gehen nie verloren). */
+  function album(chest) {
+    const got = new Set([...Object.keys((chest && chest.items) || {}), ...((chest && chest.placed) || []).map(p => p.itemId)]);
+    return ITEM_GROUPS.map(([id, name]) => {
+      const items = Object.keys(ITEMS).filter(k => ITEMS[k].group === id).map(k => ({ id: k, found: got.has(k) }));
+      return { id, name, items, found: items.filter(i => i.found).length, total: items.length };
+    });
   }
 
   /* ---------- Nachtragen (4.3, v6) ----------
@@ -464,7 +496,7 @@
   }
 
   const LAG = {
-    C, STAGES, ITEMS, WEATHER,
+    C, STAGES, ITEMS, ITEM_GROUPS, SEASON_NAME, THEMES, THEME_BY_SEASON, themeFor, WEATHER, seasonKey, findable, album,
     dkey, parseKey, addDays, daysBetween, weekday, weekStart, seasonOf, hashStr, rng,
     xpFor, charNeed, skillNeed, lvl, unitsToNext, stageOf, settingsAt, isPaused, isScheduled,
     computeHabit, derive, rollDrop, pickItem, harvestsDue, gradRewardDue, slotsFor, dropOdds, heldAt, betaMetrics,

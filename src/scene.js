@@ -7,6 +7,8 @@
  * Die Szene rechnet in Höhe 160 und wird auf die Anzeige-Canvas nur ganzzahlig vergrößert (1×, 2×, 3×).
  * v8a.1: Der Kern (256 × 160, alle Spielobjekte) steht mittig; ist eine Anzeige breiter, zeigt sie seitlich mehr Welt
  * (Randzonen der Karte, nur Natur). Ohne Karte bleibt es bei 256 px Breite.
+ * v8b: Truhengegenstände (Sheet deko), Tiere (Sheet tiere, 2 Frames Leerlauf an festen Plätzen), Wohnhaus und Bauer (Sheets wohnhaus, bauer;
+ *   Richtung nach Bewegung, Gehen-Animation nur beim Gehen). Bei reduzierter Bewegung steht alles still. Fehlt ein Sheet: bisherige Zeichnung.
  */
 (function (root) {
   'use strict';
@@ -53,10 +55,11 @@
     let FW = W, OX = 0;                                  // Breite der gezeichneten Welt, Versatz des 256er-Kerns darin
     const core = (c, on) => c.setTransform(1, 0, 0, 1, on ? OX : 0, 0);
     let env = null, envKey = '', lights = [], parts = [], shadows = [], smoke = [], frame = 0, flash = 0, nextBolt = 0, animals = [], glints = [];
-    const walker = { i: 0, x: 90, y: 60, pause: 0, flip: false };
+    const walker = { i: 0, x: 90, y: 60, pause: 0, flip: false, dir: 'unten', walked: 0 };
+    let animalSpots = [];
     function setMode() {
       M = SH && SH.map(); mode = M ? 'sprites' : 'legacy';
-      lay = M ? { way: M.wanderweg, deko: M.deko, chick: M.huehner, z: M.schlafZ } : LEGACY;
+      lay = M ? { way: M.wanderweg, deko: M.deko, foot: M.dekoFuss || M.deko.map(([x, y]) => [x + 4, y + 8]), chick: M.huehner, z: M.schlafZ } : LEGACY;
       walker.i = 0; [walker.x, walker.y] = lay.way[0];
     }
     const activeHabits = () => deps.state().habits.filter(h => !h.archivedAt).slice(0, L.C.MAX_BEDS);
@@ -131,13 +134,15 @@
         if (d.graduated) { rect(c, x + 17, y - 4, 1, 6, O); rect(c, x + 18, y - 4, 3, 2, '#f4d58e'); }
       });
       S.chest.placed.forEach(p => {
-        if (L.ITEMS[p.itemId].animal || p.slot === undefined) return; const [x, y] = DSLOTS[p.slot] || [0, 0], spr = SP.sprite(p.itemId);
+        if (L.ITEMS[p.itemId].animal || p.slot === undefined) return; const [x, y] = DSLOTS[p.slot] || [0, 0], spr = legacySprite(p.itemId);
         c.fillStyle = 'rgba(10,20,30,.25)'; c.fillRect(x + 1, y + spr.height - 1, spr.width, 2); c.drawImage(spr, x, y); if (p.itemId === 'lantern' && lit) lights.push([x + 3, y + 2, 14]);
       });
       TREES.filter(t => t[1] >= 20).forEach(t => drawTree(c, t[0], t[1], t[2], t[3], P, night));
       if (lit) lights.push([fh.doorX, fh.bottom + 2, 10]);
       smoke.length = 0; e.smokeAt = smokeAt;
     }
+    /** Bisherige Zeichnung eines Gegenstands; für die v8b-Gegenstände gibt es keine, dann eine Kiste. */
+    const legacySprite = id => SP.sprite(SP.MAPS[id] ? id : 'crate');
     /* ---------- v8a: Hof aus Karte und Sprite-Sheets ---------- */
     const seasonal = (e, col) => { const s = SEASONGROUND[e.season]; return s ? mix(col, s[0], s[1]) : col; };
     function drawGround(c, e) {
@@ -199,20 +204,28 @@
           else { const st = sk ? styleOf(skillById(h.skillId) || sk) : SP.STYLES[0]; items.push({ fy, draw: cc => { cc.drawImage(SP.sprite('p' + d.stage, { F: st.c, f: st.dk }), x0 + 5, by + 8); if (d.graduated) { rect(cc, x0 + 12, by + 2, 1, 6, O); rect(cc, x0 + 13, by + 2, 3, 2, '#f4d58e'); } } }); }
         });
       }
-      // Wohnhaus (noch Code-Zeichnung, bis es ein Sheet gibt)
-      const WH = M.wohnhaus;
-      items.push({ fy: WH.y + WH.dach + WH.wand + 4, draw: cc => {
+      // Wohnhaus: Sheet wohnhaus (Fenster leuchten abends), sonst Code-Zeichnung
+      const WH = M.wohnhaus, whs = SH.get('wohnhaus');
+      if (whs && whs.rect('base', 'wohnhaus')) items.push({ fy: WH.y + WH.dach + WH.wand + 4, fx: WH.x + (WH.b >> 1), sh: whs, tag: 'wohnhaus', glow: lit });
+      else items.push({ fy: WH.y + WH.dach + WH.wand + 4, draw: cc => {
         const fh = drawHouse(cc, WH.x, WH.y, WH.b, WH.dach, WH.wand, '#5a548e', { night: false, windows: 4, chimney: true, smokeAt, lit });
         const porch = '#a8784a'; rect(cc, WH.x - 1, fh.bottom, WH.b + 2, 4, O); rect(cc, WH.x, fh.bottom, WH.b, 3, porch); for (let x = WH.x + 2; x < WH.x + WH.b; x += 8) rect(cc, x, fh.bottom, 1, 3, mix(porch, '#3a2010', .4));
         if (e.season === 'Winter') rect(cc, WH.x - 2, WH.y - 1, WH.b + 4, 3, '#f6f8ff');
         if (lit) lights.push([fh.doorX, fh.bottom + 2, 10]);
       } });
-      // Truhengegenstände auf ihren Deko-Plätzen
+      // Truhengegenstände auf ihren Deko-Plätzen: Sheet deko (16 × 24, Fußpunkt unten Mitte), sonst bisherige Zeichnung
+      const dk = SH.get('deko');
       S.chest.placed.forEach(p => {
-        if (L.ITEMS[p.itemId].animal || p.slot === undefined || !lay.deko[p.slot]) return; const [x, y] = lay.deko[p.slot], spr = SP.sprite(p.itemId);
+        if (L.ITEMS[p.itemId].animal || p.slot === undefined || !lay.deko[p.slot]) return;
+        if (dk && dk.rect('base', p.itemId)) { const [fx, fy] = lay.foot[p.slot]; occ.push([fx - 8, fy - 14, 16, 16]); items.push({ fy, fx, sh: dk, tag: p.itemId, glow: lit }); return; }
+        const [x, y] = lay.deko[p.slot], spr = legacySprite(p.itemId);
         occ.push([x - 2, y - 2, spr.width + 4, spr.height + 4]);
         items.push({ fy: y + spr.height, draw: cc => { cc.fillStyle = 'rgba(27,22,48,.3)'; cc.fillRect(x + 1, y + spr.height - 1, spr.width, 2); cc.drawImage(spr, x, y); if (p.itemId === 'lantern' && lit) lights.push([x + 3, y + 2, 14]); } });
       });
+      // Tierplätze: freie Plätze (nicht auf Gebäuden, Beeten, Deko) für die aufgestellten Landtiere freihalten, damit dort nichts gestreut wird
+      const nLand = S.chest.placed.filter(p => L.ITEMS[p.itemId].animal && p.itemId !== 'duck').length;
+      animalSpots = (M.tiere || []).filter(([x, y]) => !occ.some(o => overlaps(o, [x - 8, y - 12, 16, 12])));
+      animalSpots.slice(0, nLand).forEach(([x, y]) => occ.push([x - 9, y - 13, 18, 15]));
       // Zwischenbereiche: feste Teile und Streuung per festem Seed (kein Zufall bei jedem Start)
       const placed = [], frei = M.frei || [];
       const flora = (ref, fx, fy) => {
@@ -245,7 +258,25 @@
       [c, gc, sc].forEach(x => core(x, false));
       smoke.length = 0; e.smokeAt = smokeAt;
     }
-    const makeAnimals = () => deps.state().chest.placed.filter(p => L.ITEMS[p.itemId].animal).map((p, i) => p.itemId === 'duck' ? { t: 'duck', y: (20 + i * 37) % 120, v: .25, p: i * 2.1 } : { t: 'chicken', x: lay.chick[0] + 6 + i * 5, y: lay.chick[1] + 4 + i * 9, dx: .4, dy: .2 });
+    /** Tiere: mit Sheet tiere an festen Plätzen der Karte (Ente im Teich), Leerlauf-Frames, kein Umherlaufen (kommt in v9). Sonst bisherige Huhn/Ente-Zeichnung. */
+    function makeAnimals() {
+      const list = deps.state().chest.placed.filter(p => L.ITEMS[p.itemId].animal), ts = mode === 'sprites' && SH.get('tiere');
+      if (!ts) return list.filter(p => p.itemId === 'duck' || p.itemId === 'chicken').map((p, i) => p.itemId === 'duck' ? { t: 'duck', y: (20 + i * 37) % 120, v: .25, p: i * 2.1 } : { t: 'chicken', x: lay.chick[0] + 6 + i * 5, y: lay.chick[1] + 4 + i * 9, dx: .4, dy: .2 });
+      const land = animalSpots.length ? animalSpots : M.tiere || [], pond = M.teichTiere || []; let a = 0, d = 0;
+      return list.map((p, i) => { const sp = p.itemId === 'duck' && pond.length ? pond[d++ % pond.length] : land[a++ % Math.max(1, land.length)] || [40, 130];
+        return { t: 'sheet', id: p.itemId, sh: ts, fx: sp[0], fy: sp[1], off: i * 170, flip: i % 2 === 1 }; });
+    }
+    /** Schatten-Ebene eines Sheets einmal in der Schattenfarbe einfärben (für bewegte Teile, die nicht in der statischen Ebene liegen). */
+    const shadowImgs = new Map();
+    function shadowImg(sh) {
+      let c = shadowImgs.get(sh); if (c) return c; c = document.createElement('canvas'); c.width = sh.img.width; c.height = sh.img.height;
+      const x = c.getContext('2d'); x.drawImage(sh.img, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = SHADOW.color; x.fillRect(0, 0, c.width, c.height);
+      shadowImgs.set(sh, c); return c;
+    }
+    function drawDyn(sh, tag, i, fx, fy, night) {
+      if (!night) { const r = sh.rect('shadow', tag, i); if (r) { g.globalAlpha = SHADOW.alpha; g.drawImage(shadowImg(sh), r.x, r.y, r.w, r.h, fx - sh.anchor.x + r.ox, fy - sh.anchor.y + r.oy, r.w, r.h); g.globalAlpha = 1; } }
+      SH.draw(g, sh, 'base', tag, fx, fy, i);
+    }
     // Ente: im Fluss (bisher) oder im Teich der Karte
     const duckPos = a => { if (mode !== 'sprites') return [riverX(a.y) - 2, Math.round(a.y)]; const T = M.boden.teich; return [Math.round(T.cx - 3 + Math.cos(a.p) * (T.rx - 12)), Math.round(T.cy - 2 + Math.sin(a.p) * (T.ry - 8))]; };
     function initDynamics(e) {
@@ -256,7 +287,7 @@
       if (e.phase === 'night' && !wet && e.season !== 'Winter') for (let i = 0; i < 14; i++) parts.push({ t: 'fly', x: rr() * FW, y: rr() * H, p: rr() * 6.28 });
       if (!wet && (e.season === 'Herbst' || e.season === 'Frühling')) for (let i = 0; i < 8; i++) parts.push({ t: 'leaf', x: rr() * FW, y: rr() * H, p: rr() * 6.28, c: e.season === 'Herbst' ? pick(rr, SEASONPAL.Herbst.tree) : SEASONPAL.Frühling.blossom });
       animals = makeAnimals();
-      deps.state().chest.placed.filter(p => p.itemId === 'beehive').forEach(p => { const [x, y] = lay.deko[p.slot] || [0, 0]; for (let i = 0; i < 3; i++) parts.push({ t: 'bee', cx: x + 3, cy: y + 2, p: rr() * 6.28 }); });
+      deps.state().chest.placed.filter(p => p.itemId === 'beehive').forEach(p => { const [x, y] = mode === 'sprites' && SH.get('deko') ? (([fx, fy]) => [fx - 3, fy - 14])(lay.foot[p.slot] || [0, 0]) : lay.deko[p.slot] || [0, 0]; for (let i = 0; i < 3; i++) parts.push({ t: 'bee', cx: x + 3, cy: y + 2, p: rr() * 6.28 }); });
       nextBolt = frame + 60 + Math.floor(rr() * 90); flash = 0;
     }
     function tick() {
@@ -274,7 +305,7 @@
       for (let i = glints.length - 1; i >= 0; i--) if (--glints[i].l <= 0) glints.splice(i, 1);
       if (walker.pause > 0) walker.pause--; else {
         const [tx, ty] = lay.way[(walker.i + 1) % lay.way.length], dx = tx - walker.x, dy = ty - walker.y, dist = Math.hypot(dx, dy);
-        if (dist < .7) { walker.i = (walker.i + 1) % lay.way.length; walker.pause = Math.random() < .4 ? 30 + Math.floor(Math.random() * 40) : 0; } else { walker.x += dx / dist * .55; walker.y += dy / dist * .55; if (Math.abs(dx) > .3) walker.flip = dx < 0; }
+        if (dist < .7) { walker.i = (walker.i + 1) % lay.way.length; walker.pause = Math.random() < .4 ? 30 + Math.floor(Math.random() * 40) : 0; } else { walker.x += dx / dist * .55; walker.y += dy / dist * .55; walker.walked += STEP; if (Math.abs(dx) > .3) walker.flip = dx < 0; walker.dir = Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'links' : 'rechts') : (dy < 0 ? 'oben' : 'unten'); }
       }
       const [cx0, cy0, cw, ch] = lay.chick;
       animals.forEach(a => { if (a.t === 'duck') { a.y += a.v; a.p += .01; if (a.y > H + 4) a.y = -6; } else { a.x += a.dx; a.y += a.dy; if (a.x < cx0 || a.x > cx0 + cw) a.dx *= -1; if (a.y < cy0 || a.y > cy0 + ch) a.dy *= -1; if (Math.random() < .02) { a.dx = (Math.random() - .5) * .8; a.dy = (Math.random() - .5) * .6; } } });
@@ -296,9 +327,14 @@
         rect(g, cx - 1, cy - 1, 3, 3, '#7a4a2a');
       }
       smoke.forEach(s => { g.fillStyle = `rgba(220,224,232,${.45 * (1 - s.l / 40)})`; g.fillRect(Math.round(s.x), Math.round(s.y), s.l > 15 ? 3 : 2, s.l > 15 ? 3 : 2); });
-      const step = deps.reduce ? 0 : Math.floor(frame / 5) % 2;
-      g.fillStyle = 'rgba(10,20,30,.3)'; g.fillRect(Math.round(walker.x) - 3, Math.round(walker.y) + 5, 7, 2);
-      g.drawImage(SP.sprite(walker.pause === 0 && step ? 'farmerB' : 'farmerA', null, walker.flip), Math.round(walker.x) - 4, Math.round(walker.y) - 7);
+      const step = deps.reduce ? 0 : Math.floor(frame / 5) % 2, bs = mode === 'sprites' && SH.get('bauer'), now = frame * STEP;
+      // Tiere und Bauer nach Fußpunkt-y, damit der Bauer vor oder hinter einem Tier steht
+      const dyn = animals.filter(a => a.t === 'sheet').map(a => { const an = a.sh.anim(a.id); return { fy: a.fy, f: () => drawDyn(a.sh, a.id, deps.reduce || !an ? 0 : SH.frameAt(an.n, an.dir, now + a.off, an.ms), a.fx, a.fy, night) }; });
+      if (bs && bs.rect('base', walker.dir)) { const an = bs.anim(walker.dir), moving = walker.pause === 0 && !deps.reduce, fx = Math.round(walker.x), fy = Math.round(walker.y) + 4;
+        dyn.push({ fy, f: () => drawDyn(bs, walker.dir, moving ? SH.frameAt(an.n, an.dir, walker.walked, an.ms) : 0, fx, fy, night) }); }
+      else dyn.push({ fy: walker.y + 5, f: () => { g.fillStyle = 'rgba(10,20,30,.3)'; g.fillRect(Math.round(walker.x) - 3, Math.round(walker.y) + 5, 7, 2);
+        g.drawImage(SP.sprite(walker.pause === 0 && step ? 'farmerB' : 'farmerA', null, walker.flip), Math.round(walker.x) - 4, Math.round(walker.y) - 7); } });
+      dyn.sort((a, b) => a.fy - b.fy).forEach(d => d.f());
       animals.forEach(a => { if (a.t === 'chicken') { g.fillStyle = 'rgba(10,20,30,.25)'; g.fillRect(Math.round(a.x), Math.round(a.y) + 4, 5, 1); g.drawImage(SP.sprite('chicken', null, a.dx < 0), Math.round(a.x), Math.round(a.y)); } });
       for (const p of parts) if (p.t === 'bee') rect(g, Math.round(p.cx + Math.cos(p.p) * 6), Math.round(p.cy + Math.sin(p.p * 1.3) * 4), 1, 1, '#ffd84a');
       core(g, false);                                    // Wolken, Partikel und Tönung über die ganze Breite

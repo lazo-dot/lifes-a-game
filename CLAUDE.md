@@ -1,16 +1,16 @@
 # Life's a Game – Hinweise für Claude Code
 
-Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v8a (8.0.0; installierbare PWA, GitHub Pages; Bedienbarkeit aus v7, Hof in Stil B mit Platzhalter-Grafiken). **Selbsttest und Usability-Test laufen auf v8a.**
+Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v8a (8.0.0) auf `main` (installierbare PWA, GitHub Pages; Hof in Stil B mit Platzhalter-Grafiken). **Selbsttest und Usability-Test laufen auf v8a (main).** In Arbeit: v8b (8.1.0) auf Branch `v8b`.
 
 ## Quellen der Wahrheit
 
 - `docs/habit-tracker-entwicklungsleitfaden.md` – **verbindlich** für Mechaniken, Formeln, Datenmodell und Prinzipien (aktuell v1.8).
-- `docs/pixel-styleguide-stil-b.md` – **Grundlage für v8a** (Raster, Lesbarkeit, Licht-Ebenen, Lieferformat, Asset-Liste).
+- `docs/pixel-styleguide-stil-b.md` – **Grundlage für v8a/v8b** (Raster, Lesbarkeit, Licht-Ebenen, Lieferformat, Asset-Liste, Paket 3, Staffelung).
 - `docs/ux-heuristische-evaluation-v6.md` – Grundlage für v7 (Funde U1–U18 mit Empfehlungen).
 - `docs/ux-testleitfaden-v6.md` – der Usability-Test, der auf v8a läuft (Aufgabe 8: Gebäude ändern); Aufgaben dort müssen weiter funktionieren.
 - `docs/abgleich-checkliste.md`, `docs/simulation-*.md`, `docs/marketingkonzept.md` – Hintergrund.
 
-Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game“ gepflegt (Koordinations-Chat). **Hier nicht inhaltlich ändern.** Bewusste Abweichungen mit Grund in `docs/ABWEICHUNGEN.md` eintragen (Abschnitt der jeweiligen Version, aktuell „v8a“).
+Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game“ gepflegt (Koordinations-Chat). **Hier nicht inhaltlich ändern.** Bewusste Abweichungen mit Grund in `docs/ABWEICHUNGEN.md` eintragen (Abschnitt der jeweiligen Version, aktuell „v8b“).
 
 ## Unverhandelbare Prinzipien (Kurzfassung, Details im Leitfaden)
 
@@ -25,11 +25,24 @@ Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game�
 
 ## Architekturregeln
 
-- `src/logic.js` bleibt UI-frei. **v8a ändert keine Spielregeln** – Logik und bestehende Tests bleiben inhaltlich unverändert (nur Hilfsfunktionen ergänzen, falls nötig, mit Tests).
-- Gespeichert werden nur Eingaben; das Speicherschema bleibt `4`. v8a ergänzt nur `skill.buildingType` und `habit.plantType` (`LAG.migrateV8a`); alle übrigen Daten bleiben unverändert.
+- `src/logic.js` bleibt UI-frei. **v8a/v8b ändern keine Spielregeln** – keine Änderung an Stärke, XP, Fundchance (12 %, davon 20 % selten), Regentagen, Nachtragen oder Graduierung (der Selbsttest läuft parallel auf main). Bestehende Tests bleiben inhaltlich unverändert.
+- Gespeichert werden nur Eingaben; das Speicherschema bleibt `4`. v8a ergänzt nur `skill.buildingType` und `habit.plantType` (`LAG.migrateV8a`), v8b nur das optionale `theme`. Bestehende Truhen, platzierte Gegenstände und Exporte bleiben gültig.
 - Klassische Skripte, Kopier-Build nach `dist/`, kein Bundler. `npm test` grün vor jedem Commit.
 
-## Arbeitsliste v8a – Grafik auf Sprite-Sheets (Stil B)
+## Arbeitsliste v8b – Truhe und Personalisierung (Version 8.1.0, Branch `v8b`)
+
+Grundlage: Leitfaden 4.4 und 5.4, Style-Guide Paket 3 und Staffelung, `art/platzhalter/README.md`. v8a (Sprite-System, Skalierung, Gebäude, Pflanzen, Karte) ist auf `main`.
+
+**Muss (H)**
+1. **Gegenstände aus dem Katalog:** `ITEMS` nach `art/platzhalter/deko/deko-katalog.json` (37 Deko + 5 Tiere, Gruppe, selten, Jahreszeit, Tier), die 12 bisherigen IDs bleiben; Test auf Übereinstimmung. Saisonale nur in ihrer Jahreszeit findbar (Herbst = Sep–Nov usw.), gefunden bleiben sie. Ziehung: Fund und Seltenheit wie bisher, dann gleichverteilt aus den jetzt findbaren (`LAG.findable`, `pickItem`, `rollDrop` mit Tag). Fundchancen-Anzeige zeigt die jetzt findbaren.
+2. **Sammelalbum in der Truhe:** Gruppen Garten, Hof, Selten, Tiere, Jahreszeiten mit „x von y gefunden“; gefundene mit Bild und Name, offene als Silhouette mit Name und „Findbar im …“. Kein Countdown, keine Vollständigkeits-Prozente, kein Hinweis auf Verpasstes. Tap-Flächen ≥ 44 pt, Information nicht nur über Farbe.
+3. **Deko und Tiere als Sprites:** Sheet `deko` (16 × 24) auf den Deko-Plätzen, Schatten und Leucht-Ebene; Tiere aus `tiere` mit 2 Frames Leerlauf (pingpong, 500 ms) auf freien Plätzen, bei reduzierter Bewegung still. Rückfall auf die bisherige Zeichnung.
+4. **Wohnhaus und Bauer als Sprites:** `wohnhaus` (Fenster leuchten abends), `bauer` 4 Richtungen × 4 Frames entlang des Wanderwegs, Animation nur beim Gehen, bei reduzierter Bewegung kein Laufen.
+5. **Farbthemen:** 7 Themen nach `docs/farbthemen.json` (Standard, Wald, Herbst, Frost, Meer, Kirschblüte, Pergament hell) und „Passend zur Jahreszeit“, nur Oberfläche (nicht die Hof-Grafik), WCAG AA mit Test aller Paare, kombinierbar mit „Gut unterscheidbar“, Auswahl in Fortschritt → Darstellung mit Vorschau.
+
+**Nicht in v8b:** Freischaltungen (v9, Entscheidung 7 offen), umherlaufende Tiere, Wetter-Partikel, Gebäude-Animationen, Regeländerungen, Flutter.
+
+<details><summary>Arbeitsliste v8a (erledigt, 8.0.0 auf main)</summary>
 
 Grundlage: `docs/pixel-styleguide-stil-b.md` (Abschnitte 2, 3, 6, 7, 8), Leitfaden 5.4, `art/platzhalter/README.md`. Entwickelt auf Branch `v8a`, nach Freigabe als 8.0.0 nach `main` gemergt und auf GitHub Pages veröffentlicht; Selbsttest und Usability-Test laufen auf v8a. Regeln, Stärke, XP, Funde und Graduierung bleiben unverändert.
 
@@ -46,14 +59,17 @@ Grundlage: `docs/pixel-styleguide-stil-b.md` (Abschnitte 2, 3, 6, 7, 8), Leitfad
 
 **Nicht in v8a:** Truhengegenstände (Paket 3), Farbthemen, Figuren, Tiere, neue Wetter-Partikel, Flutter.
 
+</details>
+
 ## Prüfen vor dem Push
 
-- `npm test` grün (68 bestehende + v8a-Tests).
+- `npm test` grün (68 bestehende + 12 v8a- + 15 v8b-Tests).
 - `node tools/ux/screenshots-v8a.js` (bei laufendem `npm start`): Szene genau 256 × 160 pt, keine verschwommenen Pixel, erster Haken ohne Scrollen (v7: 468 pt). Screenshots unter `docs/screenshots-v8a/`.
-- Alle 8 Aufgaben aus `docs/ux-testleitfaden-v6.md` weiter lösbar; v7-Daten werden migriert (nur Gebäude- und Pflanzentyp kommen dazu).
+- `node tools/ux/screenshots-v8b.js`: Hof Tag/Abend mit Deko, Tieren, Wohnhaus und Bauer, Sammelalbum, alle 7 Themen und „Jahreszeit“ unter `docs/screenshots-v8b/`.
+- Alle 8 Aufgaben aus `docs/ux-testleitfaden-v6.md` weiter lösbar; v7-Daten werden migriert (nur Gebäude- und Pflanzentyp kommen dazu), v8-Exporte laden unverändert.
 
 ## Arbeitsweise
 
 - Kleine, thematische Commits. Vor dem Push auf `main` Lars fragen (danach aktualisiert sich die App auf seinem iPhone).
-- Zum Schluss je Version eine Zusammenfassung (v8a: `docs/V8A-ZUSAMMENFASSUNG.md`): was umgesetzt ist (Muss/Sollte), Testanzahl, Messwerte (Szenengröße, erster Haken), Abweichungen in `docs/ABWEICHUNGEN.md` (v8a), offene Punkte. Checkliste nicht selbst ausfüllen.
+- Zum Schluss je Version eine Zusammenfassung (v8b: `docs/V8B-ZUSAMMENFASSUNG.md`): was umgesetzt ist (Muss/Sollte), Testanzahl, Messwerte (Szenengröße, erster Haken), Abweichungen in `docs/ABWEICHUNGEN.md` (v8b), offene Punkte. Checkliste nicht selbst ausfüllen.
 - Keine Gesundheitsversprechen in App-Texten, keine fremden Markennamen.

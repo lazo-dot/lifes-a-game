@@ -335,6 +335,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 - Gewohnheit pausieren/archivieren ✅. Löschen sofort mit Rückgängig, ohne Bestätigungsdialog; nur „Alles löschen“ mit einer neutralen zweiten Bestätigung ✅.
 - **Barrierefreiheit ✅:** Schriftgrößen in rem mit Einstellung Normal / Groß / Sehr groß, Farbschema „Gut unterscheidbar“ (Okabe-Ito), eigene Muster je Status im Erntekalender, ARIA-Labels. iOS-Dynamic-Type folgt nativ in Flutter.
 - Sounds, Musik, Nudges einzeln schaltbar; reduzierte Bewegung respektieren ✅.
+- **Farbthemen (ab v8b):** 7 kuratierte Themen für Oberfläche und Schrift (Standard, Wald, Herbst, Frost, Meer, Kirschblüte, Pergament hell) und „passend zur Jahreszeit“; kein freier Farbwähler, damit jedes Thema geprüft lesbar bleibt (WCAG AA: Text ≥ 4,5:1, Akzente ≥ 3:1). „Gut unterscheidbar“ ist mit jedem Thema kombinierbar. Die Hof-Grafik bleibt unverändert. Werte: `farbthemen.json`.
 
 ---
 

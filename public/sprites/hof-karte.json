@@ -1,5 +1,5 @@
 {
- "_hinweis": "Hof-Karte v8a (256 × 160 px). Von Hand gepflegt. Gebäude: Fußpunkt (unten Mitte) je Fähigkeit in Reihenfolge. Beete: linke obere Ecke der Erde (48 × 16), bis zu 3 Pflanzen je Beet. Deko: linke obere Ecke der Truhengegenstände. Rechtecke als [x, y, b, h]. Zonen mit „rechteck“ werden per festem Seed bestreut (Rechteck = Bereich der Fußpunkte, „abstand“ = freizuhaltende Fläche um den Fußpunkt); „fest“ nennt die linke obere Ecke. „frei“ hält Wege, Wohnhaus und Teich von der Streuung frei; belegte Plätze (Gebäude, Beete, aufgestellte Deko) ebenso. Kern 256 × 160 (alle Spielobjekte); Zonen mit „rand: true“ liegen links (x < 0) und rechts (x ≥ 256) davon und füllen breitere Anzeigen nur mit Natur. Wege, die über die ganze Kernbreite gehen, laufen in den Rand weiter.",
+ "_hinweis": "Hof-Karte v8a/v8b (256 × 160 px). Von Hand gepflegt. Gebäude: Fußpunkt (unten Mitte) je Fähigkeit in Reihenfolge. Beete: linke obere Ecke der Erde (48 × 16), bis zu 3 Pflanzen je Beet. Deko: linke obere Ecke der Truhengegenstände (bisherige Zeichnung), dekoFuss: Fußpunkt derselben Plätze für die Sprites (16 × 24, v8b). tiere: Fußpunkte für Tiere nahe dem Hof (belegte werden übersprungen), teichTiere: für die Ente. Wohnhaus-Sprite: Fußpunkt unten Mitte des Rechtecks wohnhaus (inklusive Veranda). Rechtecke als [x, y, b, h]. Zonen mit „rechteck“ werden per festem Seed bestreut (Rechteck = Bereich der Fußpunkte, „abstand“ = freizuhaltende Fläche um den Fußpunkt); „fest“ nennt die linke obere Ecke. „frei“ hält Wege, Wohnhaus und Teich von der Streuung frei; belegte Plätze (Gebäude, Beete, aufgestellte Deko) ebenso. Kern 256 × 160 (alle Spielobjekte); Zonen mit „rand: true“ liegen links (x < 0) und rechts (x ≥ 256) davon und füllen breitere Anzeigen nur mit Natur. Wege, die über die ganze Kernbreite gehen, laufen in den Rand weiter.",
  "groesse": [
   256,
   160
@@ -224,6 +224,56 @@
    150
   ]
  ],
+ "dekoFuss": [
+  [
+   96,
+   48
+  ],
+  [
+   166,
+   52
+  ],
+  [
+   16,
+   101
+  ],
+  [
+   62,
+   101
+  ],
+  [
+   116,
+   101
+  ],
+  [
+   144,
+   101
+  ],
+  [
+   194,
+   101
+  ],
+  [
+   248,
+   101
+  ],
+  [
+   24,
+   130
+  ],
+  [
+   56,
+   150
+  ],
+  [
+   88,
+   132
+  ],
+  [
+   74,
+   158
+  ]
+ ],
  "wanderweg": [
   [
    130,
@@ -267,6 +317,54 @@
   118,
   70,
   34
+ ],
+ "tiere": [
+  [
+   38,
+   128
+  ],
+  [
+   62,
+   132
+  ],
+  [
+   46,
+   146
+  ],
+  [
+   80,
+   142
+  ],
+  [
+   30,
+   156
+  ],
+  [
+   100,
+   62
+  ],
+  [
+   160,
+   64
+  ],
+  [
+   112,
+   140
+  ]
+ ],
+ "teichTiere": [
+  [
+   206,
+   136
+  ],
+  [
+   228,
+   146
+  ],
+  [
+   216,
+   128
+  ]
  ],
  "schlafZ": [
   154,

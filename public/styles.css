@@ -1,6 +1,6 @@
 /* Life's a Game · Oberfläche
    Layout: Hof in Draufsicht links mit Charakter und Fähigkeiten, holzgerahmte Schiefer-Panels rechts.
-   Bewusst nur ein Farbschema (eine dunkle Spielwelt). */
+   Eine dunkle Spielwelt; v8b: fünf kuratierte Farbthemen der Oberfläche (data-theme), unabhängig von „Gut unterscheidbar“. */
 :root{
   --tick:polygon(0 43%,22% 43%,22% 64%,33% 64%,33% 79%,44% 79%,44% 64%,56% 64%,56% 43%,67% 43%,67% 21%,78% 21%,78% 0,100% 0,100% 21%,89% 21%,89% 43%,78% 43%,78% 64%,67% 64%,67% 86%,56% 86%,56% 100%,33% 100%,33% 86%,22% 86%,22% 79%,11% 79%,11% 64%,0 64%);
   --bg-a:#0d1719; --bg-b:#14231f; --bg-check:#16262a; --edge:#0a1013;
@@ -11,12 +11,29 @@
   --water:#6fa8d0; --water-dk:#2f4f6e; --red:#e8604f; --rare:#c99cf2; --repair:#e0a85a; --rain:#5a7ea8;
   --c0:#1c2a2e; --c1:#2f5a3e; --c2:#3f7f50; --c3:#5aa866; --c4:#8fd88f;
   --dim:rgba(6,10,12,.78);
+  --on-leaf-dk:#ffffff; --tx-rare:#e6d6fa; --tx-info:#d6ecfa; --tx-err:#ffb4a8; --tx-night:#cfd0f6; --night-bd:#3a3a6a;
   --f-display:"Pixelify Sans","Courier New",monospace; --f-body:"VT323","Courier New",monospace;
   color-scheme:dark;
 }
+/* v8b: Farbthemen nach docs/farbthemen.json (Rollen, nicht Farbnamen: wood = Rahmen/Knopf, wood-lt = Überschrift, ink-dk = Schrift auf Knopf).
+   Selektor ohne :root, damit die Vorschau in der Auswahl dieselben Werte nutzt. tests/v8b.test.js prüft Übereinstimmung mit der JSON und WCAG AA.
+   --on-leaf-dk, --tx-* sind die bisher fest eingetragenen hellen Schriftfarben; nur das helle Thema ändert sie. */
+[data-theme="standard"]{--bg-a:#0d1719;--bg-b:#14231f;--bg-check:#16262a;--edge:#0a1013;--panel-dk:#141f24;--panel:#1b2a2f;--panel-2:#24373a;--panel-3:#3a5450;--panel-in:#121d21;--wood:#d4a25a;--wood-lt:#f4d58e;--wood-dk:#76502a;--text:#f1e9d6;--text-soft:#9fb4ad;--ink-dk:#2a1708;--leaf:#7fcf8a;--leaf-dk:#367a4c;--leaf-hi:#c8f2cc;--water:#6fa8d0;--red:#e8604f;--rare:#c99cf2;--repair:#e0a85a}
+[data-theme="wald"]{--bg-a:#0c1610;--bg-b:#132116;--bg-check:#15261a;--edge:#08100b;--panel-dk:#122017;--panel:#192b1f;--panel-2:#22392a;--panel-3:#365a40;--panel-in:#0f1c13;--wood:#c9b27a;--wood-lt:#eee0b0;--wood-dk:#6b5a30;--text:#eef0dc;--text-soft:#a7bfa2;--ink-dk:#1f1a0a;--leaf:#9ad67c;--leaf-dk:#3f7a34;--leaf-hi:#d6f5c4;--water:#7fb7c4;--red:#ec6a52;--rare:#cfa4f0;--repair:#e3b25e}
+[data-theme="herbst"]{--bg-a:#1a100c;--bg-b:#241610;--bg-check:#2a1a13;--edge:#120a07;--panel-dk:#22150f;--panel:#2e1d15;--panel-2:#3b271c;--panel-3:#5a3d2a;--panel-in:#1b110c;--wood:#e39a4c;--wood-lt:#f7cf8a;--wood-dk:#7a4320;--text:#f6e8d6;--text-soft:#c7ab92;--ink-dk:#2b1206;--leaf:#c9c76a;--leaf-dk:#6e6a2a;--leaf-hi:#efedb8;--water:#8fb0c8;--red:#f06a4a;--rare:#d4a6ee;--repair:#f0b860}
+[data-theme="frost"]{--bg-a:#0c1420;--bg-b:#121c2a;--bg-check:#152132;--edge:#080e17;--panel-dk:#121c29;--panel:#1a2636;--panel-2:#233246;--panel-3:#3a4f6a;--panel-in:#0f1824;--wood:#a9c4e0;--wood-lt:#e4f0fb;--wood-dk:#41597a;--text:#eef3f8;--text-soft:#a4b6c8;--ink-dk:#0c1a2c;--leaf:#86d0b8;--leaf-dk:#2f7462;--leaf-hi:#cdf2e6;--water:#7fb4ec;--red:#f07a74;--rare:#cbb0f6;--repair:#e8c07a}
+[data-theme="meer"]{--bg-a:#08171c;--bg-b:#0d2026;--bg-check:#10252c;--edge:#051013;--panel-dk:#0e1f25;--panel:#132a32;--panel-2:#1b3842;--panel-3:#2e5a66;--panel-in:#0b1a1f;--wood:#e6c48a;--wood-lt:#f8e6bf;--wood-dk:#7a6036;--text:#eef6f4;--text-soft:#9cc0c0;--ink-dk:#2a1d08;--leaf:#6fd6c0;--leaf-dk:#24786a;--leaf-hi:#c6f4ea;--water:#79c4ee;--red:#f2766a;--rare:#c8a8f4;--repair:#ecb868}
+[data-theme="kirschbluete"]{--bg-a:#1a0f17;--bg-b:#22141e;--bg-check:#281824;--edge:#12090f;--panel-dk:#21131d;--panel:#2c1a27;--panel-2:#3a2434;--panel-3:#5a3a52;--panel-in:#1a0f17;--wood:#f2a6c4;--wood-lt:#fbd9e7;--wood-dk:#7c3d5a;--text:#f8ecf2;--text-soft:#c9a9bd;--ink-dk:#2c0f1e;--leaf:#9ed88c;--leaf-dk:#467a3a;--leaf-hi:#d8f4cc;--water:#8fb4e6;--red:#f2707a;--rare:#d0a8f4;--repair:#eab070}
+[data-theme="pergament"]{--bg-a:#e9dfc8;--bg-b:#e2d6bb;--bg-check:#ddd0b2;--edge:#b9a882;--panel-dk:#efe6d2;--panel:#f7f0e0;--panel-2:#ece2cb;--panel-3:#cdbd98;--panel-in:#fffaf0;--wood:#8a5a24;--wood-lt:#5c3a12;--wood-dk:#d9b98a;--text:#2a2116;--text-soft:#5c4f3c;--ink-dk:#fffaf0;--leaf:#2e7a3c;--leaf-dk:#a9d8a8;--leaf-hi:#1f5a2a;--water:#2c6a98;--red:#b8352a;--rare:#7a4aa8;--repair:#9a5a12}
+[data-theme="pergament"]{color-scheme:light;--leaf:#246832;--water:#255c86;--repair:#82480c;   /* etwas dunkler als farbthemen.json: als Schrift 4,5:1 (ABWEICHUNGEN v8b) */
+  --on-leaf-dk:#16351c;--tx-rare:#4a2a70;--tx-info:#1d4a6e;--tx-err:#9a2a1e;--tx-night:#2e2e66;--night-bd:#8a8ac4;--water-dk:#4f7fa8;--dim:rgba(60,48,30,.55);
+  --c0:#e2d8c0;--c1:#b9d9b4;--c2:#86bf86;--c3:#4f9a5c;--c4:#2e7a3c}
 /* H4: Palette, die auch bei Rot-Grün-Schwäche unterscheidbar bleibt (angelehnt an Okabe & Ito). */
 :root[data-palette="cb"]{--leaf:#56b4e9;--leaf-dk:#1f5f86;--leaf-hi:#cde9f8;--water:#f0e442;--repair:#e69f00;--rain:#cc79a7;
   --c1:#1d4a66;--c2:#2b6f99;--c3:#4a9ccc;--c4:#9fd3f2}
+/* v8b: „Gut unterscheidbar“ im hellen Thema mit dunklen Varianten derselben Farbtöne (Okabe & Ito), damit Text 4,5:1 erreicht */
+:root[data-palette="cb"][data-theme="pergament"]{--leaf:#085c90;--leaf-dk:#a8d0ec;--leaf-hi:#0b4a74;--water:#6b5a00;--repair:#844b00;--rain:#a8457e;
+  --c1:#cfe3f2;--c2:#9fc8e6;--c3:#4a9ccc;--c4:#1f6a9a}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{min-height:100%}
@@ -38,7 +55,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .top-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .cal{display:flex;align-items:center;gap:8px;font-size:1.375rem}
 .cal b{font-family:var(--f-display);font-weight:600;color:var(--wood-lt);font-size:1rem;letter-spacing:.06em;text-transform:uppercase}
-.demo-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 12px;border:2px dashed var(--rare);color:#e6d6fa;font-size:1.25rem}
+.demo-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 12px;border:2px dashed var(--rare);color:var(--tx-rare);font-size:1.25rem}
 .demo-bar span{flex:1 1 240px}
 
 .main{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
@@ -92,7 +109,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .tab{font-family:var(--f-display);font-weight:600;font-size:0.9375rem;background:var(--panel-dk);color:var(--text-soft);border:3px solid var(--edge);border-bottom:none;padding:8px 12px;cursor:pointer}
 .tab:hover{color:var(--text)}
 .tab[aria-selected="true"]{background:var(--panel-2);color:var(--wood-lt);box-shadow:inset 0 2px 0 var(--wood);padding-bottom:11px}
-.tab .n{display:inline-block;min-width:1.4em;margin-left:5px;padding:0 4px;background:var(--leaf-dk);color:var(--leaf-hi);font-size:0.75rem;line-height:1.5;text-align:center}
+.tab .n{display:inline-block;min-width:1.4em;margin-left:5px;padding:0 4px;background:var(--leaf-dk);color:var(--on-leaf-dk);font-size:0.75rem;line-height:1.5;text-align:center}   /* v8b: eigene Schriftfarbe (dunkle Themen Weiß), damit 4,5:1 erreicht wird */
 .panel{min-height:460px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-content:start}
 .panel h2,.overlay h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:1.6875rem;color:var(--wood-lt);text-shadow:0 2px 0 var(--edge);text-wrap:balance}
 .panel h3,.overlay h3{margin:4px 0 0;font-family:var(--f-display);font-weight:600;font-size:0.9375rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-soft)}
@@ -136,17 +153,17 @@ textarea.in{width:100%;min-height:120px;resize:vertical;line-height:1.2}
 .chk:hover::after{background:var(--wood-dk)}
 .chk[aria-pressed="true"]::after{content:"";width:18px;height:14px;background:var(--edge);clip-path:polygon(0 43%,22% 43%,22% 64%,33% 64%,33% 79%,44% 79%,44% 64%,56% 64%,56% 43%,67% 43%,67% 21%,78% 21%,78% 0,100% 0,100% 21%,89% 21%,89% 43%,78% 43%,78% 64%,67% 64%,67% 86%,56% 86%,56% 100%,33% 100%,33% 86%,22% 86%,22% 79%,11% 79%,11% 64%,0 64%)}
 .minib{font-family:var(--f-display);font-size:0.8125rem;padding:3px 7px;background:var(--panel-dk);color:var(--water);border:2px solid var(--water-dk);cursor:pointer;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.minib[aria-pressed="true"]{background:var(--water-dk);color:#e6f4ff}
+.minib[aria-pressed="true"]{background:var(--water-dk);color:#fff}
 .del{background:none;border:none;padding:4px 6px;font-family:var(--f-display);font-size:1.125rem;color:var(--text-soft);cursor:pointer;line-height:1}
 .del:hover{color:var(--red)}
 .empty{padding:18px;border:2px dashed var(--panel-3);color:var(--text-soft);text-align:center;font-size:1.25rem}
 .tok{display:inline-flex;gap:2px}
 .tok i{width:7px;height:9px;background:var(--water);clip-path:polygon(50% 0,100% 60%,80% 100%,20% 100%,0 60%)}
 .tok i.e{background:var(--panel-3)}
-.repair{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;padding:8px 10px;border:2px dashed var(--water-dk);color:#cfe6f6;font-size:1.1875rem}
+.repair{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;padding:8px 10px;border:2px dashed var(--water-dk);color:var(--tx-info);font-size:1.1875rem}
 .banner{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px;background:rgba(127,207,138,.1);border:2px solid var(--leaf-dk);color:var(--leaf-hi);font-size:1.25rem}
 .banner .sp{flex:1 1 100%}
-.banner.info{background:rgba(111,168,208,.1);border-color:var(--water-dk);color:#d6ecfa}
+.banner.info{background:rgba(111,168,208,.1);border-color:var(--water-dk);color:var(--tx-info)}
 .planned{font-size:1.0625rem;color:var(--wood-lt)}
 
 .hform{display:grid;gap:12px;padding:14px;background:var(--panel-in);border:2px solid var(--panel-3)}
@@ -158,9 +175,13 @@ textarea.in{width:100%;min-height:120px;resize:vertical;line-height:1.2}
 .pre{font-size:1.3125rem;color:var(--wood-lt)}
 .chip{font-family:var(--f-display);font-size:0.875rem;padding:5px 9px;background:var(--panel-dk);color:var(--text-soft);border:2px solid var(--panel-3);cursor:pointer}
 .chip[aria-pressed="true"]{color:var(--ink-dk);background:var(--wood);border-color:var(--edge)}
+.tchip{gap:6px}
+.tpv{display:inline-flex;border:2px solid var(--edge)}   /* Vorschau: Hintergrund, Fläche, Holz des jeweiligen Themas */
+.tpv i{width:9px;height:16px;display:block}
+.tpv i:nth-child(1){background:var(--bg-a)} .tpv i:nth-child(2){background:var(--panel-2)} .tpv i:nth-child(3){background:var(--wood)}
 .chip.idea{color:var(--text);text-align:left}
 .preview{font-size:1.3125rem;color:var(--leaf-hi);padding:8px 10px;border-left:3px solid var(--leaf)}
-.err{color:#ffb4a8;font-size:1.1875rem}
+.err{color:var(--tx-err);font-size:1.1875rem}
 .sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:1.1875rem;color:var(--text-soft)}
 .sw input{appearance:none;-webkit-appearance:none;width:34px;height:18px;background:var(--panel-dk);border:2px solid var(--panel-3);position:relative;cursor:pointer;margin:0}
 .sw input::after{content:"";position:absolute;top:2px;left:2px;width:10px;height:10px;background:var(--text-soft)}
@@ -236,7 +257,17 @@ h2[tabindex="-1"]:focus{outline:none}
 .item h4{margin:0;font-family:var(--f-display);font-weight:600;font-size:0.9375rem;color:var(--wood-lt);display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
 .item .cnt{color:var(--text-soft);font-size:1.125rem}
 .item .btn{width:100%}
-.sleep{padding:10px 12px;border:2px solid #3a3a6a;background:rgba(80,80,160,.12);color:#cfd0f6;font-size:1.25rem}
+/* v8b Sammelalbum: gefunden = Bild, offen = Silhouette mit gestricheltem Rand und Text (nicht nur Farbe) */
+.album{display:grid;gap:14px}
+.alb-g h4{margin:0 0 6px;font-family:var(--f-display);font-weight:600;font-size:0.9375rem;color:var(--wood-lt);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.alb-g h4 span{font-family:var(--f-body);font-weight:400;font-size:1.125rem;color:var(--text-soft)}
+.alb{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.alb-i{display:grid;justify-items:center;align-content:start;gap:4px;min-height:44px;min-width:44px;padding:6px 4px;background:var(--panel-in);border:2px solid var(--panel-3);color:var(--text);cursor:pointer;font-size:1.0625rem;line-height:1.05;text-align:center}
+.alb-i .pv{height:52px;display:grid;place-items:end center}
+.alb-i .nm{overflow-wrap:anywhere}
+.alb-i.open{border-style:dashed;color:var(--text-soft)}
+.alb-i .wh{font-size:0.9375rem;color:var(--text-soft)}
+.sleep{padding:10px 12px;border:2px solid var(--night-bd);background:rgba(80,80,160,.12);color:var(--tx-night);font-size:1.25rem}
 .foot{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;color:var(--text-soft);font-size:1.1875rem}
 
 /* Overlays: Onboarding, Check-in */

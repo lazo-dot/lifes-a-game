@@ -1,0 +1,112 @@
+{
+ "frames": [
+  {
+   "filename": "wohnhaus (base) wohnhaus",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "wohnhaus (glow) wohnhaus",
+   "frame": {
+    "x": 0,
+    "y": 48,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "wohnhaus (shadow) wohnhaus",
+   "frame": {
+    "x": 0,
+    "y": 96,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "app": "lifes-a-game art/platzhalter/pix.py (Aseprite-kompatibel)",
+  "version": "1.0",
+  "image": "wohnhaus.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 48,
+   "h": 144
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "wohnhaus",
+    "from": 0,
+    "to": 0,
+    "direction": "forward"
+   }
+  ],
+  "layers": [
+   {
+    "name": "base",
+    "opacity": 255,
+    "blendMode": "normal"
+   },
+   {
+    "name": "glow",
+    "opacity": 255,
+    "blendMode": "addition"
+   },
+   {
+    "name": "shadow",
+    "opacity": 77,
+    "blendMode": "normal"
+   }
+  ],
+  "anchor": {
+   "x": 24,
+   "y": 47,
+   "note": "Fußpunkt unten Mitte"
+  },
+  "platzhalter": true
+ }
+}
