@@ -1,0 +1,8 @@
+#!/bin/sh
+# Life's a Game · vor jedem Push: npm run abnahme (enthält npm test, misst docs/abnahme.json im Headless-Chrome, ca. 3–4 Minuten).
+# Bewusst überspringen: git push --no-verify
+. "$(dirname "$0")/node-pfad.sh"
+echo "pre-push: npm run abnahme …"
+npm run abnahme --silent -- --ohne-bilder || { echo "pre-push: Abnahme rot – Push abgebrochen (Bericht: docs/abnahme-ergebnis.md)."; exit 1; }
+# Der Bericht ist eine Arbeitsdatei; nur ein Lauf ohne Hook (npm run abnahme) mit Screenshots gehört in einen Commit.
+git checkout -- docs/abnahme-ergebnis.md 2>/dev/null || true

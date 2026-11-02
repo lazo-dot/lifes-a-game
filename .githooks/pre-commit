@@ -1,0 +1,6 @@
+#!/bin/sh
+# Life's a Game · vor jedem Commit: npm test (schnell, ohne Browser). Bewusst überspringen: git commit --no-verify
+. "$(dirname "$0")/node-pfad.sh"
+echo "pre-commit: npm test …"
+npm test --silent >/tmp/lag-pre-commit.log 2>&1 || { tail -40 /tmp/lag-pre-commit.log; echo "pre-commit: Tests rot – Commit abgebrochen (Log: /tmp/lag-pre-commit.log)."; exit 1; }
+grep -E '^(# |ℹ )(pass|fail) ' /tmp/lag-pre-commit.log | tr '\n' ' '; echo

@@ -16,7 +16,7 @@ Verbindliche Regeln: [CLAUDE.md](CLAUDE.md) und [Entwicklungsleitfaden](docs/hab
 | `src/demo.js` | Demo-Hof (wird nie gespeichert) | – |
 | `public/` | `index.html`, `styles.css`, Manifest, `sw.js`, Icons, Schriften | entfällt |
 | `tests/` | Node-Tests für alle Formeln | als Dart-Tests übernehmen |
-| `tools/` | `build.js` (dist/ bauen), `serve.js` (lokaler Server), `make_icons.py` | – |
+| `tools/` | `build.js` (dist/ bauen), `serve.js` (lokaler Server), `abnahme.js` (Abnahme im Browser), `ux/` (Test-Hof, Chrome-Steuerung, Aufgaben), `make_icons.py` | – |
 | `docs/` | Leitfaden, Checkliste, Marketing, Abweichungen, Zusammenfassung v5 | – |
 
 `dist/` wird gebaut und nicht eingecheckt: `public/` plus `src/` als `js/`, der Service Worker bekommt Version und Dateiliste automatisch.
@@ -30,9 +30,20 @@ npm test          # alle Tests
 npm start         # baut dist/ und startet http://localhost:8000, baut bei Änderungen neu
 npm run build     # nur dist/ bauen
 npm run bundle    # zusätzlich dist-bundle/lifes-a-game.html (eine Datei, z. B. für die Artifact-Vorschau)
+npm run abnahme   # Grenzwerte aus docs/abnahme.json im Headless-Chrome messen → docs/abnahme-ergebnis.md, docs/screenshots/
 ```
 
+`npm run abnahme` baut `dist/`, startet einen eigenen Server und braucht Google Chrome (anderer Pfad: `CHROME=… npm run abnahme`).
+
 Ohne Server: `dist/index.html` per Doppelklick öffnen (dann ohne Offline-Modus).
+
+## Test-Hooks (einmal nach dem Klonen)
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Danach läuft vor jedem Commit `npm test` und vor jedem Push `npm run abnahme` (ca. 3–4 Minuten). Bewusst überspringen nur mit `--no-verify`.
 
 ## Aufs iPhone bringen
 
@@ -43,6 +54,7 @@ iOS installiert eine Web-App nur über **HTTPS**.
 2. Im Repository: Settings → Pages → Source: **GitHub Actions**.
 3. Dieses Repo hochladen: `git remote add origin https://github.com/<name>/lifes-a-game.git` und `git push -u origin main`.
 4. Der Workflow `.github/workflows/pages.yml` testet, baut und veröffentlicht. Adresse: `https://<name>.github.io/lifes-a-game/`.
+   Vorschau: Ein Push auf einen anderen Branch als `main` landet (nach grünen Tests, Workflow „Vorschau“) unter `https://<name>.github.io/lifes-a-game/preview/` – mit eigenem Speicher, eigenem Service Worker und einem Band „Vorschau · Branch · Version“.
 5. Die Adresse auf dem iPhone in **Safari** öffnen → Teilen → „Zum Home-Bildschirm“.
 
 **B · Netlify Drop (ohne Git, ca. 2 Minuten)**
