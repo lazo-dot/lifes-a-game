@@ -16,4 +16,4 @@ Jeder Entwicklungsschritt hat hier eine Auftragsdatei, angelegt vom Koordination
 
 | Datei | Inhalt | Stand |
 |---|---|---|
-| `arbeitsablauf.md` | Einrichtung: Abnahme-Skript, Vorschau-Adresse, Test-Hook, schlanke CLAUDE.md | offen |
+| `arbeitsablauf.md` | Einrichtung: Abnahme-Skript, Vorschau-Adresse, Test-Hook, schlanke CLAUDE.md | erledigt (8.2.1, Branch `ablauf`) |
