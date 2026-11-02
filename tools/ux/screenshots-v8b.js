@@ -1,7 +1,7 @@
 /* Life's a Game · Screenshots und Messung v8b (Headless-Chrome über das DevTools-Protokoll, ohne Abhängigkeiten)
  * Lädt den Test-Hof, stellt Deko und Tiere auf (nur für die Bilder) und speichert unter docs/screenshots-v8b/ (390 × 844 pt):
  *   hof-tag.png, hof-abend.png (Tab „Heute“), hof-tag-szene-3x.png, hof-abend-szene-3x.png (Szene dreifach, ohne Glätten),
- *   sammelalbum.png (Truhe), thema-<id>.png je Farbthema (Tab „Heute“ und Darstellung).
+ *   sammelalbum.png (Truhe), thema-<id>.png je Farbthema (auch „jahreszeit“) (Tab „Heute“ und Darstellung).
  * Prüft dabei: Szene 160 pt hoch, ganzzahlig, erster Haken ohne Scrollen, Tap-Flächen im Sammelalbum ≥ 44 pt.
  *   npm start   (in einem zweiten Terminal)
  *   node tools/ux/screenshots-v8b.js [http://localhost:8000/]
@@ -20,7 +20,7 @@ hof.chest = {
   placed: [['sunflower', 0], ['lantern', 1], ['wheelbarrow', 2], ['pumpkin_lantern', 3], ['well', 4], ['milk_can', 5]].map(([itemId, slot]) => ({ itemId, slot }))
     .concat(['chicken', 'chicken', 'cat', 'duck', 'rabbit', 'hedgehog'].map(itemId => ({ itemId })))
 };
-const THEMES = ['', 'wald', 'herbst', 'meer', 'kirschbluete'];
+const THEMES = ['', 'wald', 'herbst', 'frost', 'meer', 'kirschbluete', 'pergament', 'jahreszeit'];
 
 async function session(port, hour, minute, theme) {
   const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'lag-shot-'));

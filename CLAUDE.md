@@ -38,7 +38,7 @@ Grundlage: Leitfaden 4.4 und 5.4, Style-Guide Paket 3 und Staffelung, `art/platz
 2. **Sammelalbum in der Truhe:** Gruppen Garten, Hof, Selten, Tiere, Jahreszeiten mit „x von y gefunden“; gefundene mit Bild und Name, offene als Silhouette mit Name und „Findbar im …“. Kein Countdown, keine Vollständigkeits-Prozente, kein Hinweis auf Verpasstes. Tap-Flächen ≥ 44 pt, Information nicht nur über Farbe.
 3. **Deko und Tiere als Sprites:** Sheet `deko` (16 × 24) auf den Deko-Plätzen, Schatten und Leucht-Ebene; Tiere aus `tiere` mit 2 Frames Leerlauf (pingpong, 500 ms) auf freien Plätzen, bei reduzierter Bewegung still. Rückfall auf die bisherige Zeichnung.
 4. **Wohnhaus und Bauer als Sprites:** `wohnhaus` (Fenster leuchten abends), `bauer` 4 Richtungen × 4 Frames entlang des Wanderwegs, Animation nur beim Gehen, bei reduzierter Bewegung kein Laufen.
-5. **Farbthemen:** Standard, Wald, Herbst, Meer, Kirschblüte (nur Oberfläche), WCAG AA mit Test aller Paare, kombinierbar mit „Gut unterscheidbar“, Auswahl in Fortschritt → Darstellung mit Vorschau.
+5. **Farbthemen:** 7 Themen nach `docs/farbthemen.json` (Standard, Wald, Herbst, Frost, Meer, Kirschblüte, Pergament hell) und „Passend zur Jahreszeit“, nur Oberfläche (nicht die Hof-Grafik), WCAG AA mit Test aller Paare, kombinierbar mit „Gut unterscheidbar“, Auswahl in Fortschritt → Darstellung mit Vorschau.
 
 **Nicht in v8b:** Freischaltungen (v9, Entscheidung 7 offen), umherlaufende Tiere, Wetter-Partikel, Gebäude-Animationen, Regeländerungen, Flutter.
 
@@ -63,9 +63,9 @@ Grundlage: `docs/pixel-styleguide-stil-b.md` (Abschnitte 2, 3, 6, 7, 8), Leitfad
 
 ## Prüfen vor dem Push
 
-- `npm test` grün (68 bestehende + 12 v8a- + 13 v8b-Tests).
+- `npm test` grün (68 bestehende + 12 v8a- + 15 v8b-Tests).
 - `node tools/ux/screenshots-v8a.js` (bei laufendem `npm start`): Szene genau 256 × 160 pt, keine verschwommenen Pixel, erster Haken ohne Scrollen (v7: 468 pt). Screenshots unter `docs/screenshots-v8a/`.
-- `node tools/ux/screenshots-v8b.js`: Hof Tag/Abend mit Deko, Tieren, Wohnhaus und Bauer, Sammelalbum, alle 5 Themen unter `docs/screenshots-v8b/`.
+- `node tools/ux/screenshots-v8b.js`: Hof Tag/Abend mit Deko, Tieren, Wohnhaus und Bauer, Sammelalbum, alle 7 Themen und „Jahreszeit“ unter `docs/screenshots-v8b/`.
 - Alle 8 Aufgaben aus `docs/ux-testleitfaden-v6.md` weiter lösbar; v7-Daten werden migriert (nur Gebäude- und Pflanzentyp kommen dazu), v8-Exporte laden unverändert.
 
 ## Arbeitsweise
