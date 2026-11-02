@@ -1,0 +1,896 @@
+{
+ "hinweis": "Farbthemen der Oberfläche (v8b). Werte = CSS-Variablen aus public/styles.css. Kontraste nach WCAG 2.x geprüft (Text ≥ 4,5:1, Akzente/Bedienelemente ≥ 3:1). „Gut unterscheidbar“ überschreibt weiterhin nur Statusfarben.",
+ "jahreszeit_automatisch": {
+  "fruehling": "kirschbluete",
+  "sommer": "meer",
+  "herbst": "herbst",
+  "winter": "frost"
+ },
+ "themen": {
+  "standard": {
+   "name": "Standard",
+   "hinweis": "Abendlicher Hof (wie bisher)",
+   "bg-a": "#0d1719",
+   "bg-b": "#14231f",
+   "bg-check": "#16262a",
+   "edge": "#0a1013",
+   "panel-dk": "#141f24",
+   "panel": "#1b2a2f",
+   "panel-2": "#24373a",
+   "panel-3": "#3a5450",
+   "panel-in": "#121d21",
+   "wood": "#d4a25a",
+   "wood-lt": "#f4d58e",
+   "wood-dk": "#76502a",
+   "text": "#f1e9d6",
+   "text-soft": "#9fb4ad",
+   "ink-dk": "#2a1708",
+   "leaf": "#7fcf8a",
+   "leaf-dk": "#367a4c",
+   "leaf-hi": "#c8f2cc",
+   "water": "#6fa8d0",
+   "red": "#e8604f",
+   "rare": "#c99cf2",
+   "repair": "#e0a85a"
+  },
+  "wald": {
+   "name": "Wald",
+   "hinweis": "Moos, Tannengrün, helles Birkenholz",
+   "bg-a": "#0c1610",
+   "bg-b": "#132116",
+   "bg-check": "#15261a",
+   "edge": "#08100b",
+   "panel-dk": "#122017",
+   "panel": "#192b1f",
+   "panel-2": "#22392a",
+   "panel-3": "#365a40",
+   "panel-in": "#0f1c13",
+   "wood": "#c9b27a",
+   "wood-lt": "#eee0b0",
+   "wood-dk": "#6b5a30",
+   "text": "#eef0dc",
+   "text-soft": "#a7bfa2",
+   "ink-dk": "#1f1a0a",
+   "leaf": "#9ad67c",
+   "leaf-dk": "#3f7a34",
+   "leaf-hi": "#d6f5c4",
+   "water": "#7fb7c4",
+   "red": "#ec6a52",
+   "rare": "#cfa4f0",
+   "repair": "#e3b25e"
+  },
+  "herbst": {
+   "name": "Herbst",
+   "hinweis": "Kürbis, Ahornrot, warmes Braun",
+   "bg-a": "#1a100c",
+   "bg-b": "#241610",
+   "bg-check": "#2a1a13",
+   "edge": "#120a07",
+   "panel-dk": "#22150f",
+   "panel": "#2e1d15",
+   "panel-2": "#3b271c",
+   "panel-3": "#5a3d2a",
+   "panel-in": "#1b110c",
+   "wood": "#e39a4c",
+   "wood-lt": "#f7cf8a",
+   "wood-dk": "#7a4320",
+   "text": "#f6e8d6",
+   "text-soft": "#c7ab92",
+   "ink-dk": "#2b1206",
+   "leaf": "#c9c76a",
+   "leaf-dk": "#6e6a2a",
+   "leaf-hi": "#efedb8",
+   "water": "#8fb0c8",
+   "red": "#f06a4a",
+   "rare": "#d4a6ee",
+   "repair": "#f0b860"
+  },
+  "frost": {
+   "name": "Frost",
+   "hinweis": "Winterblau, Schnee, kühles Silber",
+   "bg-a": "#0c1420",
+   "bg-b": "#121c2a",
+   "bg-check": "#152132",
+   "edge": "#080e17",
+   "panel-dk": "#121c29",
+   "panel": "#1a2636",
+   "panel-2": "#233246",
+   "panel-3": "#3a4f6a",
+   "panel-in": "#0f1824",
+   "wood": "#a9c4e0",
+   "wood-lt": "#e4f0fb",
+   "wood-dk": "#41597a",
+   "text": "#eef3f8",
+   "text-soft": "#a4b6c8",
+   "ink-dk": "#0c1a2c",
+   "leaf": "#86d0b8",
+   "leaf-dk": "#2f7462",
+   "leaf-hi": "#cdf2e6",
+   "water": "#7fb4ec",
+   "red": "#f07a74",
+   "rare": "#cbb0f6",
+   "repair": "#e8c07a"
+  },
+  "meer": {
+   "name": "Meer",
+   "hinweis": "Türkis, Sand, Muschelweiß",
+   "bg-a": "#08171c",
+   "bg-b": "#0d2026",
+   "bg-check": "#10252c",
+   "edge": "#051013",
+   "panel-dk": "#0e1f25",
+   "panel": "#132a32",
+   "panel-2": "#1b3842",
+   "panel-3": "#2e5a66",
+   "panel-in": "#0b1a1f",
+   "wood": "#e6c48a",
+   "wood-lt": "#f8e6bf",
+   "wood-dk": "#7a6036",
+   "text": "#eef6f4",
+   "text-soft": "#9cc0c0",
+   "ink-dk": "#2a1d08",
+   "leaf": "#6fd6c0",
+   "leaf-dk": "#24786a",
+   "leaf-hi": "#c6f4ea",
+   "water": "#79c4ee",
+   "red": "#f2766a",
+   "rare": "#c8a8f4",
+   "repair": "#ecb868"
+  },
+  "kirschbluete": {
+   "name": "Kirschblüte",
+   "hinweis": "Zartrosa, Pflaume, frisches Grün",
+   "bg-a": "#1a0f17",
+   "bg-b": "#22141e",
+   "bg-check": "#281824",
+   "edge": "#12090f",
+   "panel-dk": "#21131d",
+   "panel": "#2c1a27",
+   "panel-2": "#3a2434",
+   "panel-3": "#5a3a52",
+   "panel-in": "#1a0f17",
+   "wood": "#f2a6c4",
+   "wood-lt": "#fbd9e7",
+   "wood-dk": "#7c3d5a",
+   "text": "#f8ecf2",
+   "text-soft": "#c9a9bd",
+   "ink-dk": "#2c0f1e",
+   "leaf": "#9ed88c",
+   "leaf-dk": "#467a3a",
+   "leaf-hi": "#d8f4cc",
+   "water": "#8fb4e6",
+   "red": "#f2707a",
+   "rare": "#d0a8f4",
+   "repair": "#eab070"
+  },
+  "pergament": {
+   "name": "Pergament (hell)",
+   "hinweis": "Heller Hintergrund, dunkle Schrift – gut bei Tageslicht",
+   "bg-a": "#e9dfc8",
+   "bg-b": "#e2d6bb",
+   "bg-check": "#ddd0b2",
+   "edge": "#b9a882",
+   "panel-dk": "#efe6d2",
+   "panel": "#f7f0e0",
+   "panel-2": "#ece2cb",
+   "panel-3": "#cdbd98",
+   "panel-in": "#fffaf0",
+   "wood": "#8a5a24",
+   "wood-lt": "#5c3a12",
+   "wood-dk": "#d9b98a",
+   "text": "#2a2116",
+   "text-soft": "#5c4f3c",
+   "ink-dk": "#fffaf0",
+   "leaf": "#2e7a3c",
+   "leaf-dk": "#a9d8a8",
+   "leaf-hi": "#1f5a2a",
+   "water": "#2c6a98",
+   "red": "#b8352a",
+   "rare": "#7a4aa8",
+   "repair": "#9a5a12"
+  }
+ },
+ "kontraste": {
+  "standard": [
+   {
+    "zweck": "Fließtext auf Karte",
+    "vorne": "text",
+    "hinten": "panel",
+    "wert": 12.24,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Fließtext auf dunkler Karte",
+    "vorne": "text",
+    "hinten": "panel-dk",
+    "wert": 13.88,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Text auf Hintergrund",
+    "vorne": "text",
+    "hinten": "bg-a",
+    "wert": 15.05,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext auf Karte",
+    "vorne": "text-soft",
+    "hinten": "panel",
+    "wert": 6.77,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext in Feld",
+    "vorne": "text-soft",
+    "hinten": "panel-in",
+    "wert": 7.85,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Überschrift auf Karte",
+    "vorne": "wood-lt",
+    "hinten": "panel",
+    "wert": 10.4,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Rahmen/Akzent auf Karte",
+    "vorne": "wood",
+    "hinten": "panel",
+    "wert": 6.42,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Knopftext auf Holzknopf",
+    "vorne": "ink-dk",
+    "hinten": "wood",
+    "wert": 7.44,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Status erledigt",
+    "vorne": "leaf",
+    "hinten": "panel",
+    "wert": 7.89,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Mini/Link",
+    "vorne": "water",
+    "hinten": "panel",
+    "wert": 5.77,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Warnfarbe",
+    "vorne": "red",
+    "hinten": "panel",
+    "wert": 4.38,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Selten",
+    "vorne": "rare",
+    "hinten": "panel",
+    "wert": 6.71,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Repariert",
+    "vorne": "repair",
+    "hinten": "panel",
+    "wert": 6.99,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Eingabefeld",
+    "vorne": "text",
+    "hinten": "panel-in",
+    "wert": 14.2,
+    "mindestens": 4.5
+   }
+  ],
+  "wald": [
+   {
+    "zweck": "Fließtext auf Karte",
+    "vorne": "text",
+    "hinten": "panel",
+    "wert": 12.89,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Fließtext auf dunkler Karte",
+    "vorne": "text",
+    "hinten": "panel-dk",
+    "wert": 14.57,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Text auf Hintergrund",
+    "vorne": "text",
+    "hinten": "bg-a",
+    "wert": 15.94,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext auf Karte",
+    "vorne": "text-soft",
+    "hinten": "panel",
+    "wert": 7.55,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext in Feld",
+    "vorne": "text-soft",
+    "hinten": "panel-in",
+    "wert": 8.88,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Überschrift auf Karte",
+    "vorne": "wood-lt",
+    "hinten": "panel",
+    "wert": 11.32,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Rahmen/Akzent auf Karte",
+    "vorne": "wood",
+    "hinten": "panel",
+    "wert": 7.2,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Knopftext auf Holzknopf",
+    "vorne": "ink-dk",
+    "hinten": "wood",
+    "wert": 8.37,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Status erledigt",
+    "vorne": "leaf",
+    "hinten": "panel",
+    "wert": 8.73,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Mini/Link",
+    "vorne": "water",
+    "hinten": "panel",
+    "wert": 6.73,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Warnfarbe",
+    "vorne": "red",
+    "hinten": "panel",
+    "wert": 4.8,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Selten",
+    "vorne": "rare",
+    "hinten": "panel",
+    "wert": 7.27,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Repariert",
+    "vorne": "repair",
+    "hinten": "panel",
+    "wert": 7.67,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Eingabefeld",
+    "vorne": "text",
+    "hinten": "panel-in",
+    "wert": 15.16,
+    "mindestens": 4.5
+   }
+  ],
+  "herbst": [
+   {
+    "zweck": "Fließtext auf Karte",
+    "vorne": "text",
+    "hinten": "panel",
+    "wert": 13.38,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Fließtext auf dunkler Karte",
+    "vorne": "text",
+    "hinten": "panel-dk",
+    "wert": 14.75,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Text auf Hintergrund",
+    "vorne": "text",
+    "hinten": "bg-a",
+    "wert": 15.52,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext auf Karte",
+    "vorne": "text-soft",
+    "hinten": "panel",
+    "wert": 7.42,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext in Feld",
+    "vorne": "text-soft",
+    "hinten": "panel-in",
+    "wert": 8.54,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Überschrift auf Karte",
+    "vorne": "wood-lt",
+    "hinten": "panel",
+    "wert": 10.94,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Rahmen/Akzent auf Karte",
+    "vorne": "wood",
+    "hinten": "panel",
+    "wert": 6.9,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Knopftext auf Holzknopf",
+    "vorne": "ink-dk",
+    "hinten": "wood",
+    "wert": 7.55,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Status erledigt",
+    "vorne": "leaf",
+    "hinten": "panel",
+    "wert": 9.1,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Mini/Link",
+    "vorne": "water",
+    "hinten": "panel",
+    "wert": 7.07,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Warnfarbe",
+    "vorne": "red",
+    "hinten": "panel",
+    "wert": 5.27,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Selten",
+    "vorne": "rare",
+    "hinten": "panel",
+    "wert": 8.05,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Repariert",
+    "vorne": "repair",
+    "hinten": "panel",
+    "wert": 9.0,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Eingabefeld",
+    "vorne": "text",
+    "hinten": "panel-in",
+    "wert": 15.4,
+    "mindestens": 4.5
+   }
+  ],
+  "frost": [
+   {
+    "zweck": "Fließtext auf Karte",
+    "vorne": "text",
+    "hinten": "panel",
+    "wert": 13.69,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Fließtext auf dunkler Karte",
+    "vorne": "text",
+    "hinten": "panel-dk",
+    "wert": 15.37,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Text auf Hintergrund",
+    "vorne": "text",
+    "hinten": "bg-a",
+    "wert": 16.55,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext auf Karte",
+    "vorne": "text-soft",
+    "hinten": "panel",
+    "wert": 7.35,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext in Feld",
+    "vorne": "text-soft",
+    "hinten": "panel-in",
+    "wert": 8.59,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Überschrift auf Karte",
+    "vorne": "wood-lt",
+    "hinten": "panel",
+    "wert": 13.21,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Rahmen/Akzent auf Karte",
+    "vorne": "wood",
+    "hinten": "panel",
+    "wert": 8.48,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Knopftext auf Holzknopf",
+    "vorne": "ink-dk",
+    "hinten": "wood",
+    "wert": 9.72,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Status erledigt",
+    "vorne": "leaf",
+    "hinten": "panel",
+    "wert": 8.53,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Mini/Link",
+    "vorne": "water",
+    "hinten": "panel",
+    "wert": 7.02,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Warnfarbe",
+    "vorne": "red",
+    "hinten": "panel",
+    "wert": 5.63,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Selten",
+    "vorne": "rare",
+    "hinten": "panel",
+    "wert": 8.06,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Repariert",
+    "vorne": "repair",
+    "hinten": "panel",
+    "wert": 8.91,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Eingabefeld",
+    "vorne": "text",
+    "hinten": "panel-in",
+    "wert": 15.99,
+    "mindestens": 4.5
+   }
+  ],
+  "meer": [
+   {
+    "zweck": "Fließtext auf Karte",
+    "vorne": "text",
+    "hinten": "panel",
+    "wert": 13.61,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Fließtext auf dunkler Karte",
+    "vorne": "text",
+    "hinten": "panel-dk",
+    "wert": 15.41,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Text auf Hintergrund",
+    "vorne": "text",
+    "hinten": "bg-a",
+    "wert": 16.63,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext auf Karte",
+    "vorne": "text-soft",
+    "hinten": "panel",
+    "wert": 7.63,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext in Feld",
+    "vorne": "text-soft",
+    "hinten": "panel-in",
+    "wert": 9.07,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Überschrift auf Karte",
+    "vorne": "wood-lt",
+    "hinten": "panel",
+    "wert": 12.14,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Rahmen/Akzent auf Karte",
+    "vorne": "wood",
+    "hinten": "panel",
+    "wert": 8.99,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Knopftext auf Holzknopf",
+    "vorne": "ink-dk",
+    "hinten": "wood",
+    "wert": 9.88,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Status erledigt",
+    "vorne": "leaf",
+    "hinten": "panel",
+    "wert": 8.58,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Mini/Link",
+    "vorne": "water",
+    "hinten": "panel",
+    "wert": 7.79,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Warnfarbe",
+    "vorne": "red",
+    "hinten": "panel",
+    "wert": 5.39,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Selten",
+    "vorne": "rare",
+    "hinten": "panel",
+    "wert": 7.38,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Repariert",
+    "vorne": "repair",
+    "hinten": "panel",
+    "wert": 8.27,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Eingabefeld",
+    "vorne": "text",
+    "hinten": "panel-in",
+    "wert": 16.18,
+    "mindestens": 4.5
+   }
+  ],
+  "kirschbluete": [
+   {
+    "zweck": "Fließtext auf Karte",
+    "vorne": "text",
+    "hinten": "panel",
+    "wert": 14.23,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Fließtext auf dunkler Karte",
+    "vorne": "text",
+    "hinten": "panel-dk",
+    "wert": 15.54,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Text auf Hintergrund",
+    "vorne": "text",
+    "hinten": "bg-a",
+    "wert": 16.25,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext auf Karte",
+    "vorne": "text-soft",
+    "hinten": "panel",
+    "wert": 7.7,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext in Feld",
+    "vorne": "text-soft",
+    "hinten": "panel-in",
+    "wert": 8.8,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Überschrift auf Karte",
+    "vorne": "wood-lt",
+    "hinten": "panel",
+    "wert": 12.6,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Rahmen/Akzent auf Karte",
+    "vorne": "wood",
+    "hinten": "panel",
+    "wert": 8.59,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Knopftext auf Holzknopf",
+    "vorne": "ink-dk",
+    "hinten": "wood",
+    "wert": 9.23,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Status erledigt",
+    "vorne": "leaf",
+    "hinten": "panel",
+    "wert": 9.85,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Mini/Link",
+    "vorne": "water",
+    "hinten": "panel",
+    "wert": 7.66,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Warnfarbe",
+    "vorne": "red",
+    "hinten": "panel",
+    "wert": 5.74,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Selten",
+    "vorne": "rare",
+    "hinten": "panel",
+    "wert": 8.25,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Repariert",
+    "vorne": "repair",
+    "hinten": "panel",
+    "wert": 8.52,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Eingabefeld",
+    "vorne": "text",
+    "hinten": "panel-in",
+    "wert": 16.25,
+    "mindestens": 4.5
+   }
+  ],
+  "pergament": [
+   {
+    "zweck": "Fließtext auf Karte",
+    "vorne": "text",
+    "hinten": "panel",
+    "wert": 13.93,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Fließtext auf dunkler Karte",
+    "vorne": "text",
+    "hinten": "panel-dk",
+    "wert": 12.74,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Text auf Hintergrund",
+    "vorne": "text",
+    "hinten": "bg-a",
+    "wert": 11.94,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext auf Karte",
+    "vorne": "text-soft",
+    "hinten": "panel",
+    "wert": 7.01,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Nebentext in Feld",
+    "vorne": "text-soft",
+    "hinten": "panel-in",
+    "wert": 7.65,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Überschrift auf Karte",
+    "vorne": "wood-lt",
+    "hinten": "panel",
+    "wert": 8.94,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Rahmen/Akzent auf Karte",
+    "vorne": "wood",
+    "hinten": "panel",
+    "wert": 5.18,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Knopftext auf Holzknopf",
+    "vorne": "ink-dk",
+    "hinten": "wood",
+    "wert": 5.66,
+    "mindestens": 4.5
+   },
+   {
+    "zweck": "Status erledigt",
+    "vorne": "leaf",
+    "hinten": "panel",
+    "wert": 4.66,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Mini/Link",
+    "vorne": "water",
+    "hinten": "panel",
+    "wert": 5.11,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Warnfarbe",
+    "vorne": "red",
+    "hinten": "panel",
+    "wert": 5.17,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Selten",
+    "vorne": "rare",
+    "hinten": "panel",
+    "wert": 5.48,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Repariert",
+    "vorne": "repair",
+    "hinten": "panel",
+    "wert": 4.81,
+    "mindestens": 3.0
+   },
+   {
+    "zweck": "Eingabefeld",
+    "vorne": "text",
+    "hinten": "panel-in",
+    "wert": 15.2,
+    "mindestens": 4.5
+   }
+  ]
+ },
+ "hinweis_rollen": "Rollen gelten je Thema, nicht der Farbname: wood = Rahmen/Akzent/Knopf, wood-lt = Überschriften und aktive Elemente, wood-dk = abgesetzte Kante zum Knopf, ink-dk = Schrift auf Knopf, text = Fließtext, text-soft = Nebentext, leaf/water/red/rare/repair = Statusfarben. Im hellen Thema „Pergament“ sind wood-dk, leaf-dk und ink-dk deshalb hell. Prüfe alle Stellen in styles.css, an denen *-dk als Schattenfarbe oder Schriftfarbe benutzt wird."
+}
