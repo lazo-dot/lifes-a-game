@@ -148,8 +148,8 @@ const tokens = (th, cb) => Object.assign({}, ROOTV, themeBlock(th), cb ? CB : {}
 
 test('Farbthemen: alle sieben aus docs/farbthemen.json mit denselben Werten, Standard entspricht den bisherigen Farben', () => {
   assert.deepEqual(Object.keys(FT.themen), THEMES);
-  // Ausnahme (ABWEICHUNGEN v8b): Pergament-Statusfarben etwas dunkler, weil sie auch als Schrift dienen
-  const EXC = { pergament: ['leaf', 'water', 'repair'] };
+  // Pergament-Statusfarben: seit v8c stehen die dunkleren Werte (ABWEICHUNGEN v8b Nr. 11) auch in der JSON
+  const EXC = {};
   for (const th of THEMES) { const css = themeBlock(th); for (const [k, v] of Object.entries(FT.themen[th])) if (/^#/.test(v)) {
     if ((EXC[th] || []).includes(k)) assert.ok(lum(css[k]) < lum(v.toLowerCase()), th + ' --' + k + ' dunkler'); else assert.equal(css[k], v.toLowerCase(), th + ' --' + k); } }
   const std = themeBlock('standard'); for (const [k, v] of Object.entries(std)) assert.equal(v, ROOTV[k], k);

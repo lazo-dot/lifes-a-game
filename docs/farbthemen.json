@@ -181,13 +181,13 @@
    "text": "#2a2116",
    "text-soft": "#5c4f3c",
    "ink-dk": "#fffaf0",
-   "leaf": "#2e7a3c",
+   "leaf": "#246832",
    "leaf-dk": "#a9d8a8",
    "leaf-hi": "#1f5a2a",
-   "water": "#2c6a98",
+   "water": "#255c86",
    "red": "#b8352a",
    "rare": "#7a4aa8",
-   "repair": "#9a5a12"
+   "repair": "#82480c"
   }
  },
  "kontraste": {
@@ -892,5 +892,239 @@
    }
   ]
  },
- "hinweis_rollen": "Rollen gelten je Thema, nicht der Farbname: wood = Rahmen/Akzent/Knopf, wood-lt = Überschriften und aktive Elemente, wood-dk = abgesetzte Kante zum Knopf, ink-dk = Schrift auf Knopf, text = Fließtext, text-soft = Nebentext, leaf/water/red/rare/repair = Statusfarben. Im hellen Thema „Pergament“ sind wood-dk, leaf-dk und ink-dk deshalb hell. Prüfe alle Stellen in styles.css, an denen *-dk als Schattenfarbe oder Schriftfarbe benutzt wird."
+ "hinweis_rollen": "Rollen gelten je Thema, nicht der Farbname: wood = Rahmen/Akzent/Knopf, wood-lt = Überschriften und aktive Elemente, wood-dk = abgesetzte Kante zum Knopf, ink-dk = Schrift auf Knopf, text = Fließtext, text-soft = Nebentext, leaf/water/red/rare/repair = Statusfarben. Im hellen Thema „Pergament“ sind wood-dk, leaf-dk und ink-dk deshalb hell. Prüfe alle Stellen in styles.css, an denen *-dk als Schattenfarbe oder Schriftfarbe benutzt wird.",
+ "aenderungen": "02.11.2026 (v8b, Abweichung 11): Pergament leaf/water/repair dunkler, weil sie auch als Schrift dienen (≥ 4,5:1).",
+ "akzente": {
+  "hinweis": "Wählbare Schrift-Akzentfarbe für Überschriften, Anker und aktive Elemente (Einstellung accent). „thema“ = wood-lt des Themas. Werte für helle Themen (Pergament) sind dunkel. Alle ≥ 4,5:1 gegen panel, panel-dk, panel-in, panel-2, bg-a.",
+  "dunkel": {
+   "thema": null,
+   "gold": "#f4d58e",
+   "mint": "#9be3b0",
+   "himmel": "#a6cff5",
+   "rose": "#f7b6cf",
+   "lavendel": "#cdb8f5",
+   "weiss": "#ffffff"
+  },
+  "hell": {
+   "thema": null,
+   "gold": "#7a4a10",
+   "mint": "#1f6a3a",
+   "himmel": "#1f5a8a",
+   "rose": "#9a2f5c",
+   "lavendel": "#5a3a96",
+   "weiss": "#1a140c"
+  },
+  "pruefung": {
+   "standard": {
+    "thema": {
+     "farbe": "#f4d58e",
+     "min": 8.77
+    },
+    "gold": {
+     "farbe": "#f4d58e",
+     "min": 8.77
+    },
+    "mint": {
+     "farbe": "#9be3b0",
+     "min": 8.33
+    },
+    "himmel": {
+     "farbe": "#a6cff5",
+     "min": 7.65
+    },
+    "rose": {
+     "farbe": "#f7b6cf",
+     "min": 7.46
+    },
+    "lavendel": {
+     "farbe": "#cdb8f5",
+     "min": 7.0
+    },
+    "weiss": {
+     "farbe": "#ffffff",
+     "min": 12.48
+    }
+   },
+   "wald": {
+    "thema": {
+     "farbe": "#eee0b0",
+     "min": 9.44
+    },
+    "gold": {
+     "farbe": "#f4d58e",
+     "min": 8.75
+    },
+    "mint": {
+     "farbe": "#9be3b0",
+     "min": 8.31
+    },
+    "himmel": {
+     "farbe": "#a6cff5",
+     "min": 7.63
+    },
+    "rose": {
+     "farbe": "#f7b6cf",
+     "min": 7.44
+    },
+    "lavendel": {
+     "farbe": "#cdb8f5",
+     "min": 6.98
+    },
+    "weiss": {
+     "farbe": "#ffffff",
+     "min": 12.45
+    }
+   },
+   "herbst": {
+    "thema": {
+     "farbe": "#f7cf8a",
+     "min": 9.54
+    },
+    "gold": {
+     "farbe": "#f4d58e",
+     "min": 9.88
+    },
+    "mint": {
+     "farbe": "#9be3b0",
+     "min": 9.38
+    },
+    "himmel": {
+     "farbe": "#a6cff5",
+     "min": 8.62
+    },
+    "rose": {
+     "farbe": "#f7b6cf",
+     "min": 8.4
+    },
+    "lavendel": {
+     "farbe": "#cdb8f5",
+     "min": 7.88
+    },
+    "weiss": {
+     "farbe": "#ffffff",
+     "min": 14.07
+    }
+   },
+   "frost": {
+    "thema": {
+     "farbe": "#e4f0fb",
+     "min": 11.23
+    },
+    "gold": {
+     "farbe": "#f4d58e",
+     "min": 9.13
+    },
+    "mint": {
+     "farbe": "#9be3b0",
+     "min": 8.67
+    },
+    "himmel": {
+     "farbe": "#a6cff5",
+     "min": 7.96
+    },
+    "rose": {
+     "farbe": "#f7b6cf",
+     "min": 7.76
+    },
+    "lavendel": {
+     "farbe": "#cdb8f5",
+     "min": 7.28
+    },
+    "weiss": {
+     "farbe": "#ffffff",
+     "min": 12.99
+    }
+   },
+   "meer": {
+    "thema": {
+     "farbe": "#f8e6bf",
+     "min": 10.09
+    },
+    "gold": {
+     "farbe": "#f4d58e",
+     "min": 8.73
+    },
+    "mint": {
+     "farbe": "#9be3b0",
+     "min": 8.28
+    },
+    "himmel": {
+     "farbe": "#a6cff5",
+     "min": 7.61
+    },
+    "rose": {
+     "farbe": "#f7b6cf",
+     "min": 7.42
+    },
+    "lavendel": {
+     "farbe": "#cdb8f5",
+     "min": 6.96
+    },
+    "weiss": {
+     "farbe": "#ffffff",
+     "min": 12.42
+    }
+   },
+   "kirschbluete": {
+    "thema": {
+     "farbe": "#fbd9e7",
+     "min": 10.92
+    },
+    "gold": {
+     "farbe": "#f4d58e",
+     "min": 9.96
+    },
+    "mint": {
+     "farbe": "#9be3b0",
+     "min": 9.45
+    },
+    "himmel": {
+     "farbe": "#a6cff5",
+     "min": 8.68
+    },
+    "rose": {
+     "farbe": "#f7b6cf",
+     "min": 8.47
+    },
+    "lavendel": {
+     "farbe": "#cdb8f5",
+     "min": 7.94
+    },
+    "weiss": {
+     "farbe": "#ffffff",
+     "min": 14.17
+    }
+   },
+   "pergament": {
+    "thema": {
+     "farbe": "#5c3a12",
+     "min": 7.66
+    },
+    "gold": {
+     "farbe": "#7a4a10",
+     "min": 5.63
+    },
+    "mint": {
+     "farbe": "#1f6a3a",
+     "min": 4.98
+    },
+    "himmel": {
+     "farbe": "#1f5a8a",
+     "min": 5.49
+    },
+    "rose": {
+     "farbe": "#9a2f5c",
+     "min": 5.4
+    },
+    "lavendel": {
+     "farbe": "#5a3a96",
+     "min": 6.39
+    },
+    "weiss": {
+     "farbe": "#1a140c",
+     "min": 13.79
+    }
+   }
+  }
+ }
 }

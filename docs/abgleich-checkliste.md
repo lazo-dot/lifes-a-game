@@ -233,6 +233,24 @@ Tests: 79/79 grün, Build läuft (nachgeprüft). Abweichungen 1 und 3 in Leitfad
 
 ---
 
+## Ergebnis v8b – Truhe und Personalisierung (8.1.0, 02.11.2026, auf main)
+
+| Punkt | v8b | Notiz |
+|---|---|---|
+| H1 Katalog 42 Gegenstände, Saison-Ziehung | ✅ | 50 000 Ziehungen im Test: 12 % Funde, 20 % selten, nichts außerhalb der Jahreszeit; Regeln unverändert |
+| H2 Sammelalbum | ✅ | Gruppen mit „x von y“, Silhouetten, „Findbar im …“, keine Fristen oder Prozente (nachgesehen) |
+| H3 Deko und Tiere als Sprites | ✅ | Tiere stehen bis v9 an festen Plätzen (Abweichung 8) |
+| H4 Wohnhaus und Bauer | ✅ | Kaminrauch fehlt bis v9 (Abweichung 10) |
+| H5 7 Farbthemen + Jahreszeit | ✅ | Kontraste je Thema in V8B-ZUSAMMENFASSUNG; Pergament-Statusfarben dunkler (Abweichung 11, in `farbthemen.json` übernommen) |
+| Erster Haken ohne Scrollen | ✅ | 478 pt in allen Themen |
+| Migration v8-Export | ✅ | im Test |
+
+Tests: 95/95 grün (nachgeprüft). Abweichungen 1–11 übernommen; 5 (`theme` auf oberster Ebene) im Leitfaden-Datenmodell ergänzt.
+
+**Im Koordinations-Chat gefunden:** Der **leere Abhak-Kasten** hat zu wenig Kontrast für ein Bedienelement (WCAG 1.4.11 verlangt 3:1): Innenrand `panel-3` auf `panel-dk` 2,05:1 im Standardthema, 1,49:1 in Pergament; Außenrand `edge` 1,14:1 bzw. 2,25:1. Im Pergament-Thema ist der Kasten kaum zu sehen. Fix für 8.1.1: Innenrand und Haken-Andeutung in `text-soft` (≥ 6,4:1 in allen Themen). Außerdem wirkt der Titel-Schatten in Pergament verwaschen.
+
+---
+
 ## Ergebnis Selbsttest / Flutter (später ausfüllen)
 
 - **Erkenntnisse aus dem Selbsttest:** …
