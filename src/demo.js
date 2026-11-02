@@ -35,6 +35,7 @@
     ];
     s.chest = { items: { bench: 1, pot: 2, hay: 1 }, placed: [{ itemId: 'lantern', slot: 0 }, { itemId: 'flowers', slot: 1 }, { itemId: 'chicken' }] };
     s.checkins = { [today]: { weather: null, todos: [] } };
+    L.migrateV8a(s);
     return s;
   }
   root.LAGDemo = { demoState };
