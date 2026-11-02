@@ -1,5 +1,7 @@
 {
  "sheets": [
+  "bauer",
+  "deko",
   "gebaeude-archiv",
   "gebaeude-backhaus",
   "gebaeude-gemeinschaftshaus",
@@ -14,6 +16,8 @@
   "pflanzen-baeumchen",
   "pflanzen-beere",
   "pflanzen-blume",
-  "pflanzen-kuerbis"
+  "pflanzen-kuerbis",
+  "tiere",
+  "wohnhaus"
  ]
 }
