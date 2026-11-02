@@ -1,0 +1,328 @@
+{
+ "frames": [
+  {
+   "filename": "gebaeude-muehle (base) stufe-1",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (base) stufe-2",
+   "frame": {
+    "x": 48,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (base) stufe-3",
+   "frame": {
+    "x": 96,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (base) stufe-4",
+   "frame": {
+    "x": 144,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (glow) stufe-1",
+   "frame": {
+    "x": 0,
+    "y": 48,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (glow) stufe-2",
+   "frame": {
+    "x": 48,
+    "y": 48,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (glow) stufe-3",
+   "frame": {
+    "x": 96,
+    "y": 48,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (glow) stufe-4",
+   "frame": {
+    "x": 144,
+    "y": 48,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (shadow) stufe-1",
+   "frame": {
+    "x": 0,
+    "y": 96,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (shadow) stufe-2",
+   "frame": {
+    "x": 48,
+    "y": 96,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (shadow) stufe-3",
+   "frame": {
+    "x": 96,
+    "y": 96,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  },
+  {
+   "filename": "gebaeude-muehle (shadow) stufe-4",
+   "frame": {
+    "x": 144,
+    "y": 96,
+    "w": 48,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 48,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 48,
+    "h": 48
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "app": "lifes-a-game art/platzhalter/pix.py (Aseprite-kompatibel)",
+  "version": "1.0",
+  "image": "gebaeude-muehle.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 192,
+   "h": 144
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "stufe-1",
+    "from": 0,
+    "to": 0,
+    "direction": "forward"
+   },
+   {
+    "name": "stufe-2",
+    "from": 1,
+    "to": 1,
+    "direction": "forward"
+   },
+   {
+    "name": "stufe-3",
+    "from": 2,
+    "to": 2,
+    "direction": "forward"
+   },
+   {
+    "name": "stufe-4",
+    "from": 3,
+    "to": 3,
+    "direction": "forward"
+   }
+  ],
+  "layers": [
+   {
+    "name": "base",
+    "opacity": 255,
+    "blendMode": "normal"
+   },
+   {
+    "name": "glow",
+    "opacity": 255,
+    "blendMode": "addition"
+   },
+   {
+    "name": "shadow",
+    "opacity": 77,
+    "blendMode": "normal"
+   }
+  ],
+  "anchor": {
+   "x": 24,
+   "y": 47,
+   "note": "Fußpunkt unten Mitte"
+  },
+  "platzhalter": true
+ }
+}

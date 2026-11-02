@@ -1,9 +1,20 @@
 # Life's a Game – Entwicklungsleitfaden Habit Tracker (forschungs- und marktbasiert)
 
-Version 1.5 · Stand: 01.11.2026
-Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp v5 (Repo `lifes-a-game-v4`, GitHub Pages) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
+Version 1.6 · Stand: 01.11.2026
+Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp v6 (Repo `lifes-a-game-v4`, GitHub Pages) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
 
 Dieses Dokument übersetzt die Forschung zu Motivation, Gamification und Gewohnheitsbildung sowie die Erkenntnisse aus der Marktanalyse in konkrete Entwicklungsentscheidungen. Zahlenwerte (XP, Kurven, Wahrscheinlichkeiten) sind begründete Startwerte, die im Prototyp getestet und angepasst werden.
+
+### Änderungen in v1.6 (Abgleich mit Prototyp v6)
+
+| Bereich | Änderung | Grund |
+|---|---|---|
+| Datenmodell | `rulesV6Since`: Tag, ab dem die v6-Regeln auf dem Gerät gelten | Bestandsschutz für „Gemeistert“ und Trennung der Beta-Zahlen |
+| Graduierung | Unter alten Regeln Gemeistertes bleibt gemeistert; für Tage vor dem Stichtag gilt zusätzlich die v5-Regel | Prinzip 7: nichts wird entzogen |
+| Graduierung | Gleitende Spanne: ab dem 30. Tag ohne Erinnerung zählen jeweils die letzten 30 Tage; ein offener heutiger Tag zählt noch nicht als verpasst | Präzisierung von 4.5 |
+| Ausschleichen | Wochen-Gewohnheiten: Ziel der letzten zwei *abgeschlossenen* Wochen | Laufende Woche ist noch nicht entschieden |
+| Nachtragen | Ein per Extra-Runde „nachgeholter“ Tag lässt sich innerhalb von 48 h als erledigt/Mini nachtragen (ersetzt „nachgeholt“) | Ehrliche Korrektur möglich |
+| Extra-Runde | Zwei Schritte: „Doch erledigt? Nachtragen / Mini nachtragen / Nein, ist ausgefallen“, erst danach die Extra-Runde | Umsetzung von 4.3 |
 
 ### Änderungen in v1.5 (für Prototyp v6, aus den Simulationen)
 
@@ -124,6 +135,7 @@ interface Habit {
   pauses: { from: string; to?: string }[];
   log: Record<string, "done" | "tiny" | "repaired">; // Datum → Status; "verpasst" wird abgeleitet
   lateLogs?: Record<string, true>; // ab v6: nachgetragene Tage (zählen voll, würfeln keinen Fund, im Kalender markiert)
+  // Zustand (nicht pro Gewohnheit): rulesV6Since?: string – Tag, ab dem die v6-Regeln gelten
   harvestStage: number;          // höchste bereits geerntete Wachstumsstufe
   gradRewarded: boolean;         // Fund für "Gemeistert" schon vergeben
   plotId?: string;               // Beet auf dem Hof
@@ -204,9 +216,9 @@ a = 0.044   // pro geplantem Termin
 - Pro Gewohnheit ein-/ausschaltbar; Standard **aus** bei wöchentlichen Gewohnheiten.
 - **Streak ≠ Tagesziel:** Die Mini-Version verlängert den Streak (Duolingo: Trennung von Streak und Tagesziel steigerte die Bindung).
 - **Regentag-Token:** Alle 7 erledigten Termine 1 Token, maximal 2 gespeichert (Duolingo: 2 gleichzeitige Freezes wirken besser als 1). Ein verpasster Tag wird automatisch „bewässert“.
-- **Nachtragen ⬜ v6:** Erledigungen von gestern und vorgestern lassen sich nachtragen (voll oder Mini). Sie zählen für Stärke, Serie, XP und Ernte genauso wie Eintragungen am selben Tag, würfeln aber keinen Zufallsfund und sind im Erntekalender dezent markiert. Ältere Tage lassen sich nicht nachtragen.
-- **Reparatur-Quest:** Nur für Tage, an denen die Gewohnheit wirklich ausgefallen ist: Ohne Token kann ein Streak 48 h lang gerettet werden, indem die Gewohnheit am Folgetag zusätzlich erledigt wird („Extra-Runde“). Die App zeigt die Extra-Runde erst an, wenn der Tag nicht nachgetragen wurde, und bietet zuerst „Gestern doch erledigt? Nachtragen“ an.
-- **Regentag und nachgeholt ⬜ v6** zählen für alle Zähler als gehaltener Termin; sie setzen weder die Serie noch den Zähler für das Ausschleichen zurück.
+- **Nachtragen ✅ (v6):** Erledigungen von gestern und vorgestern lassen sich nachtragen (voll oder Mini). Sie zählen für Stärke, Serie, XP und Ernte genauso wie Eintragungen am selben Tag, würfeln aber keinen Zufallsfund und sind im Erntekalender dezent markiert. Ältere Tage lassen sich nicht nachtragen. Ein per Extra-Runde „nachgeholter“ Tag kann innerhalb der 48 h noch als erledigt/Mini nachgetragen werden; Einträge vom selben Tag lassen sich darüber nicht ändern.
+- **Reparatur-Quest:** Nur für Tage, an denen die Gewohnheit wirklich ausgefallen ist: Ohne Token kann ein Streak 48 h lang gerettet werden, indem die Gewohnheit am Folgetag zusätzlich erledigt wird („Extra-Runde“). Die App fragt zuerst „Doch erledigt? Nachtragen / Mini nachtragen / Nein, ist ausgefallen“; erst danach erscheint die Extra-Runde.
+- **Regentag und nachgeholt ✅ (v6)** zählen für alle Zähler als gehaltener Termin; sie setzen weder die Serie noch den Zähler für das Ausschleichen zurück.
 - **Nach einem Bruch:** Anzeige „47 Tage Kochen dieses Jahr“ statt „0 Tage“. Keine Push-Nachricht zum Bruch.
 - **Neustart-Momente:** Zu Monatsbeginn bzw. neuer Jahreszeit freundliche Einladung zum Neustart (Fresh-Start-Effekt).
 - Streak-Schutz wird **nie verkauft**.
@@ -228,8 +240,8 @@ Seit v1.2 ohne Gold und Laden (in v3 so umgesetzt):
 - Text ist der Plan des Nutzers: **„Nach dem Kaffee: dehnen“**, nicht „Zeit zum Dehnen!“.
 - Maximal 1 Nudge pro Gewohnheit und Tag zur Ankerzeit; mit einem Tipp stumm schaltbar.
 - In der App überbringt der NPC den Plan zur Ankerzeit (v3: Wilma ✅), aber ohne Schuldgefühl („Die Pflanzen warten auf dich“ statt „Deine Pflanzen verdursten!“).
-- **Ausschleichen ⬜ v6:** Ab Stärke ≥ 0,6 und wenn 12 der letzten 14 geplanten Termine gehalten wurden (Mini, Regentag und nachgeholt zählen; bei Wochen-Gewohnheiten: Wochenziel der letzten zwei Wochen erreicht), schlägt die App vor, die Erinnerung abzuschalten. Freiwillig, jederzeit umkehrbar.
-- **Graduierung ⬜ v6:** Am ersten Tag, an dem eine Gewohnheit 30 Tage ohne Erinnerung gelaufen ist und in diesen 30 Tagen mindestens 70 % der geplanten Termine gehalten wurden (Mini, Regentag, nachgeholt zählen; Wochen-Gewohnheiten gegen das anteilige Wochenziel) → Badge „Gemeistert“ und Eintrag in die Ruhmeshalle. (Bis v5: Stärke ≥ 0,8 – laut Simulation praktisch unerreichbar.) **Einmal erreicht, wird „Gemeistert“ nie wieder entzogen**, auch wenn die Stärke später sinkt. Schaltet der Nutzer die Erinnerung selbst wieder ein, beginnt eine neue Graduierung. Ziel: Die Gewohnheit funktioniert ohne die App (Stawarz 2015). **Kein großer Wettbewerber bietet das – zentrales Alleinstellungsmerkmal.**
+- **Ausschleichen ✅ (v6):** Ab Stärke ≥ 0,6 und wenn 12 der letzten 14 geplanten Termine gehalten wurden (Mini, Regentag und nachgeholt zählen; bei Wochen-Gewohnheiten: Ziel der letzten zwei abgeschlossenen Wochen erreicht), schlägt die App vor, die Erinnerung abzuschalten. Freiwillig, jederzeit umkehrbar.
+- **Graduierung ✅ (v6):** Am ersten Tag, an dem eine Gewohnheit 30 Tage ohne Erinnerung gelaufen ist und in diesen 30 Tagen mindestens 70 % der geplanten Termine gehalten wurden (Mini, Regentag, nachgeholt zählen; Wochen-Gewohnheiten gegen das anteilige Wochenziel) → Badge „Gemeistert“ und Eintrag in die Ruhmeshalle. Geprüft wird ab dem 30. Tag ohne Erinnerung täglich die gleitende Spanne der letzten 30 Tage; der heutige Tag zählt nur, wenn er schon gehalten ist. Unter den v5-Regeln (Stärke ≥ 0,8) Gemeistertes bleibt gemeistert (Stichtag `rulesV6Since`). **Einmal erreicht, wird „Gemeistert“ nie wieder entzogen**, auch wenn die Stärke später sinkt. Schaltet der Nutzer die Erinnerung selbst wieder ein, beginnt eine neue Graduierung. Ziel: Die Gewohnheit funktioniert ohne die App (Stawarz 2015). **Kein großer Wettbewerber bietet das – zentrales Alleinstellungsmerkmal.**
 - Ausschleichen und Graduierung sind umgesetzt ✅. **Echte Erinnerungen außerhalb der App erst in Flutter** (lokale Notifications zur Ankerzeit, ohne Server). Im PWA-Prototyp übernimmt Wilma diese Rolle, denn Web Push auf iOS bräuchte einen eigenen Push-Server.
 - PWA-Hinweis: Web-Push auf iOS nur, wenn die PWA zum Home-Bildschirm hinzugefügt wurde (ab iOS 16.4). Im Prototyp Installationshinweis; in Flutter native Notifications.
 
@@ -286,7 +298,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 
 ### 5.5 Fortschritt & Statistiken 🟡
 
-- **Erntekalender (Phase 1) ✅:** Jahres-Kachelraster pro Gewohnheit und gesamt im Pixel-Stil; Kachelfarbe nach Status (erledigt / Mini / repariert); nachgetragene Tage ab v6 dezent markiert.
+- **Erntekalender (Phase 1) ✅:** Jahres-Kachelraster pro Gewohnheit und gesamt im Pixel-Stil; Kachelfarbe nach Status (erledigt / Mini / repariert); nachgetragene Tage dezent markiert (abgeschrägte Ecke, Tooltip, Legende) ✅.
 - Pro Skill ein Verlaufsgraph ✅ (v3: 30 Tage) (Vergleich mit sich selbst, nicht mit anderen – Sailer 2017). Gerade hier ist Habitica am schwächsten.
 - Monatsrückblick ✅: erledigte Termine, gewachsene Pflanzen, gemeisterte Gewohnheiten.
 
@@ -336,7 +348,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 | 4 – Langzeit | Jahreszeiten-Inhalte, Freischaltungen, NPC-Story, saisonale Events, Monatsrückblicke, Widgets, Apple Health | Flutter (iOS) | 🟡 Jahreszeiten-Optik, Monatsrückblick |
 | 5 – Sozial (optional) | Kooperatives Dorf mit Freunden, Teilen von Wochenkarten | Flutter (iOS, dann Android) | ⬜ |
 
-**Nächster Schritt:** Prototyp v6 mit Claude Code (Nachtragen, erreichbare Graduierung, siehe Änderungen v1.5), parallel Selbsttest. Danach Entscheidung über die übrigen Simulations-Kandidaten, dann Flutter-Grundgerüst: Logik und Tests 1:1 nach Dart, Szene mit Flame, lokale Notifications.
+**Nächster Schritt:** v6 auf dem iPhone prüfen und den Selbsttest mit v6 fortsetzen (Beta-Zahlen ab `rulesSince` getrennt). Danach Entscheidung über die übrigen Simulations-Kandidaten, dann Flutter-Grundgerüst: Logik und Tests 1:1 nach Dart, Szene mit Flame, lokale Notifications.
 
 ---
 

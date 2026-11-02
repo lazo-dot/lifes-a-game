@@ -1,6 +1,6 @@
-# Life's a Game – Abgleich-Checkliste Prototyp ↔ Leitfaden v1.4
+# Life's a Game – Abgleich-Checkliste Prototyp ↔ Leitfaden v1.6
 
-Stand: 01.11.2026 (v5 abgeglichen) · Wird für jede Prototyp-Version neu ausgefüllt (v3, v4 …). Referenz: [Entwicklungsleitfaden v1.2](habit-tracker-entwicklungsleitfaden.md)
+Stand: 01.11.2026 (v6 abgeglichen) · Wird für jede Prototyp-Version neu ausgefüllt (v3, v4 …). Referenz: [Entwicklungsleitfaden v1.2](habit-tracker-entwicklungsleitfaden.md)
 
 Bewertung: ✅ erfüllt · 🟡 teilweise · ❌ fehlt · ⚠️ widerspricht Leitfaden · — bewusst verschoben
 Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M** sollte · **N** kann
@@ -21,7 +21,7 @@ Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M**
 | A8 | „Noch X bis Level Y“ sichtbar | 4.1 | | ✅ | ✅ | ✅ |  |  |
 | A9 | Rückgängig ohne rote Minus-Animation | 4.1 | ⚠️ Minus-Anzeige | ⚠️ | ✅ | ✅ |  | Minus-Anzeige entfernt |
 | A10 | Gewohnheitsstärke `a = 0.044` pro geplantem Termin | 4.2 | ❌ | ✅ | ✅ | ✅ |  |  |
-| A11 | Wöchentliche Gewohnheiten pro Termin, nicht pro Tag berechnet | 4.2 | ❌ | 🟡 | ✅ | ✅ |  | angebrochene Wochen anteilig (Leitfaden v1.4) |
+| A11 | Wöchentliche Gewohnheiten pro Termin, nicht pro Tag berechnet | 4.2 | ❌ | 🟡 | ✅ | ✅ |  | angebrochene Wochen anteilig (Leitfaden v1.6) |
 | A12 | Streak pro Gewohnheit ein/aus, Standard aus bei wöchentlich | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
 | A13 | Mini-Version verlängert Streak | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
 | A14 | Regentag-Token: 1 pro 7 Termine, max. 2, automatisch eingesetzt | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
@@ -38,7 +38,7 @@ Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M**
 | B2 | Gold aus Ernte bei neuer Wachstumsstufe | 4.4 | ❌ | ❌ | ✅ | ✅ |  | Ernte einmal pro Wachstumsstufe |
 | B3 | Überraschungs-Drops 10–15 %, seltene Items seltener | 4.4 | ❌ | ✅ | ✅ | ✅ |  | 12 %, davon 20 % selten |
 | B4 | Gold bei Meilensteinen (Skill-Level, Gemeistert) | 4.4 | | 🟡 | ✅ | ✅ |  | seltener Fund bei „Gemeistert“ |
-| B5 | Laden nur Kosmetik, nie XP/Wachstum/Streak-Schutz | 4.4 | ✅ | — | — | — |  | kein Laden mehr (Leitfaden v1.4) |
+| B5 | Laden nur Kosmetik, nie XP/Wachstum/Streak-Schutz | 4.4 | ✅ | — | — | — |  | kein Laden mehr (Leitfaden v1.6) |
 | B6 | Nur eine Währung | 4.4, 7 | ✅ | ✅ | ✅ | ✅ |  |  |
 
 ## C. Spielwelt & Atmosphäre (Phase 2)
@@ -75,7 +75,7 @@ Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M**
 | E1 | Nudge-Text = Plan des Nutzers („Nach dem Kaffee: dehnen“) | 4.5 | ❌ | ✅ | ✅ | ✅ |  | über Wilma |
 | E2 | Max. 1 Nudge pro Gewohnheit/Tag zur Ankerzeit | 4.5 | | 🟡 | 🟡 | 🟡 | — | ohne Push-Server nicht machbar → Flutter (lokale Notifications) |
 | E3 | Ausschleichen-Vorschlag ab Stärke ≥ 0,8 und 14 Terminen | 4.5 | ❌ | ✅ | ✅ | ✅ |  |  |
-| E4 | Graduierung „Gemeistert“ nach 30 Tagen ohne Erinnerung | 4.5 | ❌ | ✅ | ✅ | ✅ |  | „Gemeistert“ jetzt dauerhaft (Leitfaden v1.4) |
+| E4 | Graduierung „Gemeistert“ nach 30 Tagen ohne Erinnerung | 4.5 | ❌ | ✅ | ✅ | ✅ |  | „Gemeistert“ jetzt dauerhaft (Leitfaden v1.6) |
 | E5 | Installationshinweis für iOS-Web-Push | 4.5 | ❌ | ❌ | ✅ | ✅ |  |  |
 
 ## F. Technik & Daten
@@ -85,7 +85,7 @@ Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M**
 | F1 | Datenmodell entspricht Leitfaden 3 | 3 | ❌ | ✅ | ✅ | ✅ |  | weitgehend |
 | F2 | Spiellogik als UI-freies Modul (portierbar nach Dart) | 2 | ❌ Einzeldatei | ❌ | ✅ | ✅ |  | Module LAG (Logik), Store, Scene, Sprites, Audio, UI, Demo – klassische Skripte mit Namensraum |
 | F3 | Tests für Formeln (Stärke, Streak, Tokens, XP) | 2 | ❌ | ❌ | 🟡 | ✅ |  | 42 Node-Tests grün, im Koordinations-Chat nachgeprüft |
-| F4 | Manifest + Service Worker (installierbar, offline) | 2 | ❌ | ❌ | 🟡 | 🟡 | H | Manifest, Service Worker, Offline in Headless-Chrome geprüft; Test auf dem iPhone steht aus |
+| F4 | Manifest + Service Worker (installierbar, offline) | 2 | ❌ | ❌ | 🟡 | ✅ |  | Auf dem iPhone installiert, läuft offline (01.11.2026) |
 | F5 | IndexedDB statt localStorage | 2 | ❌ | ❌ | ✅ | ✅ |  | IndexedDB |
 | F6 | Export/Import aller Daten | 5.6 | ❌ | 🟡 | ✅ | ✅ |  | Export, Import, Löschen |
 | F7 | Pausieren/Archivieren statt Löschen, Löschen ohne Hürde | 5.6 | | ❌ | ✅ | ✅ |  | Bearbeiten (ab Datum, ohne Rückwirkung), Pausieren, Archivieren; Löschen mit Rückgängig |
@@ -106,7 +106,7 @@ Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M**
 
 | # | Prüfpunkt | Quelle | v4 | v5 | Prio | Notiz |
 |---|---|---|---|---|---|---|
-| H1 | App ist gehostet (HTTPS, eigene Adresse) und auf dem iPhone installierbar, läuft offline | Leitfaden 2 | ❌ | 🟡 | H | GitHub-Pages-Workflow (testet vor Veröffentlichung), Repo gepusht; Installation auf dem iPhone steht aus |
+| H1 | App ist gehostet (HTTPS, eigene Adresse) und auf dem iPhone installierbar, läuft offline | Leitfaden 2 | ❌ | ✅ |  | GitHub Pages live, auf dem iPhone installiert und offline geprüft (01.11.2026) |
 | H2 | Formeln (Stärke, Streak, Tokens, XP, Wochenziel) mit automatischen Tests abgesichert, Tests laufen grün | Leitfaden 2 | 🟡 | ✅ |  | 42 Tests, alle Formeln |
 | H3 | Fundchancen in der App offen einsehbar (12 %, davon 20 % selten) | Marketing 5, Kritik 3 | ❌ | ✅ |  | Truhe → „Wie Funde entstehen“, Werte direkt aus der Logik |
 | H4 | Barrierefreiheit: skalierbare Schrift, Symbole zusätzlich zur Farbe im Erntekalender, VoiceOver-Labels | Marketing 5, Kritik 7 | ❌ | ✅ |  | Schrift in 3 Stufen, Okabe-Ito-Palette, Muster im Erntekalender, ARIA geprüft; iOS-Dynamic-Type erst in Flutter |
@@ -144,12 +144,34 @@ Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M**
 
 Umgesetzt mit Claude Code im Repo `lifes-a-game-v4` (GitHub: lazo-dot/lifes-a-game).
 
-- **Erfüllt:** 50 von 54 Punkten aus A–F (v4: 49), einer bewusst entfallen (Laden), dazu H2–H5. Alle Ausschlüsse eingehalten. Die 42 Tests wurden im Koordinations-Chat nachgeprüft: alle grün.
-- **Muss vor dem Selbsttest (H):** F4/H1 – App über GitHub Pages auf dem iPhone installieren und offline prüfen (Flugmodus).
+- **Erfüllt:** 51 von 54 Punkten aus A–F (v4: 49), einer bewusst entfallen (Laden), dazu H2–H5. Alle Ausschlüsse eingehalten. Die 42 Tests wurden im Koordinations-Chat nachgeprüft: alle grün.
+- **Muss vor dem Selbsttest (H):** F4/H1 – erledigt am 01.11.2026: auf dem iPhone installiert, läuft offline.
 - **Im Selbsttest (M):** H6 Akkuverbrauch messen.
 - **Bewusst nach Flutter verschoben:** E2 echte Erinnerungen (Web Push auf iOS braucht einen Server; lokale Notifications gehen erst nativ), iOS-Dynamic-Type.
 - **Kann (N):** C9 schrittweise Freischaltung (erst Inhalte festlegen), H7 teilbare Karten.
 - **Leitfaden angepasst (v1.4):** alle 4 Abweichungen übernommen – Kopier-Build nach `dist/`, keine externen Anfragen (Schriften lokal), „Gemeistert“ dauerhaft, Definitionen der Beta-Metriken – plus Push-Entscheidung für Flutter.
+
+---
+
+## Ergebnis v6 (01.11.2026)
+
+Umgesetzt mit Claude Code nach Leitfaden v1.5; Prüfpunkte A–H unverändert gegenüber v5 (51/54), dazu:
+
+| # | Prüfpunkt (neu in v6) | v6 | Notiz |
+|---|---|---|---|
+| V1 | Nachtragen gestern/vorgestern (erledigt, Mini, zurücknehmen); Grenzen eingehalten | ✅ | Tab „Heute“ → „Gestern und vorgestern“, ohne Schuldton |
+| V2 | Nachgetragenes zählt voll, würfelt keinen Fund | ✅ | `dropAllowed` in der Logik |
+| V3 | Nachtragen vor der Extra-Runde | ✅ | zweistufig |
+| V4 | Erntekalender markiert Nachgetragenes mit Form, nicht nur Farbe | ✅ | abgeschrägte Ecke, Legende |
+| V5 | Ausschleichen ab Stärke 0,6 + 12/14 | ✅ | Wochen: zwei abgeschlossene Wochen |
+| V6 | „Gemeistert“ = 30 Tage ohne Erinnerung + ≥ 70 % | ✅ | gleitende Spanne, dauerhaft |
+| V7 | Regentag/nachgeholt setzen keinen Zähler zurück | ✅ | |
+| V8 | v5-Daten überstehen das Update unverändert | ✅ | gleiches Schema, nur `rulesV6Since` ergänzt; per Test und lokal geprüft |
+| V9 | Beta-Zahlen trennen vor/nach Update | ✅ | `rulesSince` |
+| V10 | Simulation erreicht Referenz | ✅ | Koordinations-Chat nachgerechnet: „Gemeistert“ 51 % (Ref. 49 %), „gehalten“ Tag 66 89 %, 1,63 Abschaltungen je Person, erstes „Gemeistert“ Tag ~60 |
+| V11 | Update auf dem iPhone: Hinweis „Neue Version“, Daten erhalten, Nachtragen funktioniert | ⬜ | durch Lars prüfen |
+
+Tests: 65/65 grün (im Koordinations-Chat nachgeprüft). Alle 5 Abweichungen in Leitfaden v1.6 übernommen. Kleinigkeit offen: Fußzeile und `package.json` zeigen noch „V5“ / 5.0.0.
 
 ---
 
