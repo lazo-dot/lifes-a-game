@@ -128,8 +128,29 @@ test('Neue Gewohnheit und neuer Hof speichern die gewählten Typen', () => {
 test('Skalierung immer ganzzahlig (1×, 2×, 3×): 390, 430, 768 und 1024 pt breit', () => {
   const cases = { 390: 1, 430: 1, 768: 3, 1024: 3, 255: 1, 511: 1, 512: 2, 767: 2 };
   for (const [w, k] of Object.entries(cases)) { const s = SH.sceneScale(+w); assert.equal(s, k, w + ' pt'); assert.ok(Number.isInteger(s)); }
-  // Großansicht: größter Faktor, der passt, mindestens 2× (dann verschiebbar)
-  assert.equal(SH.largeScale(390, 780), 2); assert.equal(SH.largeScale(430, 860), 2); assert.equal(SH.largeScale(768, 1000), 3);
-  assert.equal(SH.largeScale(1024, 700), 3); assert.equal(SH.largeScale(1024, 400), 2); assert.equal(SH.largeScale(2560, 1440), 3);
-  for (let w = 200; w <= 2000; w += 7) for (const h of [300, 600, 900]) { assert.ok(Number.isInteger(SH.sceneScale(w))); assert.ok([2, 3].includes(SH.largeScale(w, h))); }
+  // Großansicht (v8a.1): größter Faktor, bei dem die Höhe passt; die Breite darf überstehen (verschiebbar)
+  assert.equal(SH.largeScale(390, 781), 3); assert.equal(SH.largeScale(430, 869), 3); assert.equal(SH.largeScale(768, 1000), 3);
+  assert.equal(SH.largeScale(1024, 400), 2); assert.equal(SH.largeScale(844, 330), 2); assert.equal(SH.largeScale(600, 200), 1); assert.equal(SH.largeScale(2560, 1440), 3);
+  for (let w = 200; w <= 2000; w += 7) for (const h of [170, 300, 600, 900]) { assert.ok(Number.isInteger(SH.sceneScale(w))); const k = SH.largeScale(w, h); assert.ok([1, 2, 3].includes(k)); assert.ok(160 * k <= h); }
+});
+
+test('Breitenregel (v8a.1): logische Breite = floor(verfügbare Breite / Faktor), mindestens 256, Höhe bleibt 160', () => {
+  // kompakt: verfügbare Breite im Rahmen, Faktor aus sceneScale
+  const compact = w => { const k = SH.sceneScale(w); return [k, SH.sceneWidth(w, k)]; };
+  assert.deepEqual(compact(358), [1, 358]);   // iPhone 390 pt: keine Streifen, 51 px mehr Welt je Seite
+  assert.deepEqual(compact(398), [1, 398]);   // 430 pt
+  assert.deepEqual(compact(736), [2, 368]);   // 768 pt, eine Spalte
+  assert.deepEqual(compact(514), [2, 257]);   // Desktop-Spalte
+  assert.deepEqual(compact(992), [3, 330]);   // 1024 pt, eine Spalte
+  assert.deepEqual(compact(200), [1, 256]);   // nie schmaler als der Kern
+  for (let w = 256; w <= 2000; w += 3) { const [k, lw] = compact(w); assert.ok(Number.isInteger(lw)); assert.ok(lw * k <= w); assert.ok((lw + 1) * k > w); }
+  // Großansicht: 3× auf dem iPhone, Kern 768 pt breit und verschiebbar; auf breiten Bildschirmen seitlich mehr Welt
+  assert.equal(SH.sceneWidth(390, SH.largeScale(390, 781)), 256);
+  assert.equal(SH.sceneWidth(1280, SH.largeScale(1280, 740)), 426);
+  // Die Karte füllt die Ränder nur mit Natur: Randzonen enthalten nur natur-Sheets, alle Spielplätze liegen im Kern
+  const map = JSON.parse(fs.readFileSync(path.join(SPR, 'hof-karte.json'), 'utf8'));
+  const rand = map.zonen.filter(z => z.rand); assert.ok(rand.length >= 4);
+  for (const z of rand) { assert.ok(z.teile.every(t => t.startsWith('natur-')), z.name); assert.ok(z.rechteck[0] + z.rechteck[2] <= 0 || z.rechteck[0] >= 256, z.name); }
+  for (const [x] of map.gebaeude) assert.ok(x >= 0 && x < 256);
+  assert.ok(map.deko.every(([x]) => x >= 0 && x < 256)); assert.ok(map.beete.every(([x]) => x >= 0 && x + 48 <= 256));
 });

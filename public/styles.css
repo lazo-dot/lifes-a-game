@@ -400,6 +400,8 @@ details.more .step{margin-top:12px}
 .big-bar .btn{min-height:44px;min-width:44px}
 .big-scroll{flex:1;min-height:0;display:flex;overflow:auto;-webkit-overflow-scrolling:touch}
 .big-scroll canvas{flex:none;margin:auto;image-rendering:pixelated}
+.big-hint{position:absolute;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);margin:0;padding:8px 14px;
+  background:var(--panel-dk);border:2px solid var(--wood);color:var(--wood-lt);font-family:var(--f-display);white-space:nowrap;pointer-events:none}
 .bpick{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-top:6px}
 .bpick .lab{grid-column:1/-1;font-size:1.0625rem;color:var(--text-soft)}
 .bchip{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-height:44px;padding:4px;text-align:center;line-height:1.1;hyphens:manual}

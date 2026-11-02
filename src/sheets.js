@@ -38,8 +38,10 @@
 
   /** Ganzzahliger Faktor der kompakten Szene: 1×, 2× oder 3×, nie krumm. */
   const sceneScale = width => Math.max(1, Math.min(3, Math.floor(width / SCENE_W)));
-  /** Großansicht: größter Faktor, der in Breite und Höhe passt, mindestens 2× (dann verschiebbar), höchstens 3×. */
-  const largeScale = (width, height) => Math.max(2, Math.min(3, Math.floor(width / SCENE_W), Math.floor(height / SCENE_H)));
+  /** Großansicht: größter Faktor, bei dem die Höhe passt (1×–3×); in der Breite darf sie überstehen und wird verschoben. */
+  const largeScale = (width, height) => Math.max(1, Math.min(3, Math.floor(height / SCENE_H)));
+  /** Logische Breite bei Faktor k: so viel Welt, wie ganzzahlig in die verfügbare Breite passt, mindestens der Kern (256). */
+  const sceneWidth = (width, k) => Math.max(SCENE_W, Math.floor(width / k));
 
   /* ---------- Laden (Browser) ---------- */
   const sheets = new Map(); let map = null;
@@ -69,7 +71,7 @@
     return true;
   }
   const api = {
-    SCENE_W, SCENE_H, parseSheet, sceneScale, largeScale, load, loadSheet, draw,
+    SCENE_W, SCENE_H, parseSheet, sceneScale, largeScale, sceneWidth, load, loadSheet, draw,
     get: name => sheets.get(name) || null, map: () => map,
     placeholder: () => [...sheets.values()].some(s => s.platzhalter)
   };

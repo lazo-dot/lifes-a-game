@@ -701,21 +701,30 @@
     else { scene.after($('#charBox')); $('#charBox').after($('#skillsBox')); $('#skillsBox').after($('#npc')); }
     document.documentElement.classList.toggle('narrow', narrow);
   }
-  /** v8a: Szene nur ganzzahlig vergrößert (1×, 2×, 3×), passend zur Breite des Rahmens. */
+  /** v8a: Szene nur ganzzahlig vergrößert (1×, 2×, 3×); statt leerer Seitenstreifen zeigt sie seitlich mehr Welt (v8a.1). */
   function sizeScene() {
     const box = $('.scene'), cs = getComputedStyle(box), w = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    scene.view($('#scene'), SH ? SH.sceneScale(w) : 1);
+    const k = SH ? SH.sceneScale(w) : 1; scene.view($('#scene'), k, SH ? SH.sceneWidth(w, k) : 256);
   }
-  /** Großansicht: größter ganzzahliger Faktor, der passt (mindestens 2×, dann verschiebbar). */
+  const SWIPED = 'lag:umsehen-gewischt';
+  const swiped = () => { try { return localStorage.getItem(SWIPED) === '1'; } catch (e) { return false; } };
+  /** Großansicht: größter ganzzahliger Faktor, bei dem die Höhe passt; breiter als der Bildschirm → waagerecht verschiebbar, startet mittig. */
   function openBig() {
     closeBig(); au.sfx.page();
     const el = document.createElement('div'); el.className = 'bigscene'; el.id = 'bigScene';
     el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Dein Hof in der Großansicht');
-    el.innerHTML = `<div class="big-bar"><span>Dein Hof</span><button class="btn" type="button" data-act="big-close">Schließen</button></div><div class="big-scroll"><canvas aria-label="Dein Hof von oben, vergrößert"></canvas></div>`;
+    el.innerHTML = `<div class="big-bar"><span>Dein Hof</span><button class="btn" type="button" data-act="big-close">Schließen</button></div><div class="big-scroll"><canvas aria-label="Dein Hof von oben, vergrößert"></canvas></div><p class="big-hint" aria-live="polite" hidden>Zum Umsehen wischen</p>`;
     document.body.append(el);
     const sc = el.querySelector('.big-scroll'), cv = el.querySelector('canvas'), k = SH.largeScale(sc.clientWidth, sc.clientHeight);
-    scene.view(cv, k); el.querySelector('.big-bar span').textContent = `Dein Hof · ${k}×`; scene.refresh();
+    scene.view(cv, k, SH.sceneWidth(sc.clientWidth, k)); el.querySelector('.big-bar span').textContent = `Dein Hof · ${k}×`; scene.refresh();
     sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2; sc.scrollTop = (sc.scrollHeight - sc.clientHeight) / 2;
+    // Hinweis „Zum Umsehen wischen“, bis man einmal gewischt hat (gemerkt nur auf diesem Gerät)
+    const hint = el.querySelector('.big-hint');
+    if (sc.scrollWidth > sc.clientWidth + 1 && !swiped()) {
+      hint.hidden = false;
+      const start = sc.scrollLeft;
+      sc.addEventListener('scroll', function moved() { if (Math.abs(sc.scrollLeft - start) < 8) return; hint.hidden = true; try { localStorage.setItem(SWIPED, '1'); } catch (e) { /* egal */ } sc.removeEventListener('scroll', moved); });
+    }
     el.querySelector('[data-act=big-close]').focus();
   }
   function closeBig() { const el = $('#bigScene'); if (!el) return false; scene.unview(el.querySelector('canvas')); el.remove(); $('#scene').focus(); return true; }

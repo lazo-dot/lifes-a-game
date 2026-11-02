@@ -4,7 +4,9 @@
  * v8a: Mit Hof-Karte (sprites/hof-karte.json) zeichnet die Szene Sprite-Sheets (Style-Guide Stil B):
  *   Boden → Schatten (eine Farbe, 30 %, nachts aus) → base nach Fußpunkt-y → Tönung je Tageszeit (multiplizieren) → glow (addieren).
  *   Fehlt die Karte, gilt der bisherige Zeichencode; fehlt ein einzelnes Sheet, zeichnet der bisherige Code nur dieses Objekt.
- * Die Szene rechnet immer in 256 × 160 und wird auf die Anzeige-Canvas nur ganzzahlig vergrößert (1×, 2×, 3×).
+ * Die Szene rechnet in Höhe 160 und wird auf die Anzeige-Canvas nur ganzzahlig vergrößert (1×, 2×, 3×).
+ * v8a.1: Der Kern (256 × 160, alle Spielobjekte) steht mittig; ist eine Anzeige breiter, zeigt sie seitlich mehr Welt
+ * (Randzonen der Karte, nur Natur). Ohne Karte bleibt es bei 256 px Breite.
  */
 (function (root) {
   'use strict';
@@ -48,6 +50,8 @@
     const frameC = mk(), g = frameC.getContext('2d'); g.imageSmoothingEnabled = false;
     const base = mk(), glow = mk(), shc = mk(), views = new Map();
     let mode = 'legacy', M = null, lay = LEGACY;
+    let FW = W, OX = 0;                                  // Breite der gezeichneten Welt, Versatz des 256er-Kerns darin
+    const core = (c, on) => c.setTransform(1, 0, 0, 1, on ? OX : 0, 0);
     let env = null, envKey = '', lights = [], parts = [], shadows = [], smoke = [], frame = 0, flash = 0, nextBolt = 0, animals = [], glints = [];
     const walker = { i: 0, x: 90, y: 60, pause: 0, flip: false };
     function setMode() {
@@ -139,10 +143,12 @@
     function drawGround(c, e) {
       const B = M.boden, r = L.rng(M.seed), gr = PAL.gras.map(x => seasonal(e, x)), wg = e.season === 'Winter' ? PAL.weg.map(x => mix(x, '#f2f4f8', .5)) : PAL.weg;
       const wa = e.season === 'Winter' ? PAL.wasser.map(x => mix(x, '#c8d8e8', .55)) : PAL.wasser, er = PAL.erde;
-      rect(c, 0, 0, W, H, gr[2]);
+      const x0 = -OX, x1 = FW - OX;                      // ganze sichtbare Welt in Kern-Koordinaten
+      rect(c, x0, 0, FW, H, gr[2]);
       // große, weiche Grasflächen in anderen Tönen
-      for (const [cx, cy, rx, ry, idx] of B.flecken) { c.fillStyle = gr[idx]; for (let y = Math.max(0, cy - ry); y < Math.min(H, cy + ry); y++) for (let x = Math.max(0, cx - rx); x < Math.min(W, cx + rx); x++) { const v = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2; if (v < .75 || (v < 1 && (x + y) % 2 === 0)) c.fillRect(x, y, 1, 1); } }
-      for (let i = 0; i < W * H / 10; i++) rect(c, Math.floor(r() * W), Math.floor(r() * H), 1, 1, gr[r() < .5 ? 1 : 3]);
+      for (const [cx, cy, rx, ry, idx] of B.flecken) { c.fillStyle = gr[idx]; for (let y = Math.max(0, cy - ry); y < Math.min(H, cy + ry); y++) for (let x = Math.max(x0, cx - rx); x < Math.min(x1, cx + rx); x++) { const v = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2; if (v < .75 || (v < 1 && (x + y) % 2 === 0)) c.fillRect(x, y, 1, 1); } }
+      // Grasrauschen in festen 256er-Streifen, damit es bei jeder Breite gleich aussieht
+      for (let sx = Math.floor(x0 / W) * W; sx < x1; sx += W) { const rs = L.rng(M.seed + sx); for (let i = 0; i < W * H / 10; i++) rect(c, sx + Math.floor(rs() * W), Math.floor(rs() * H), 1, 1, gr[rs() < .5 ? 1 : 3]); }
       // Wege mit unregelmäßigem Rand
       for (const [x0, y0, w, h] of B.wege) {
         rect(c, x0, y0, w, h, wg[2]);
@@ -172,7 +178,7 @@
       const S = deps.state(), D = deps.D(), c = base.getContext('2d'), gc = glow.getContext('2d'), sc = shc.getContext('2d');
       const night = e.phase === 'night', lit = night || e.phase === 'evening' || e.weather === 'gewitter', ident = x => x;
       lights = []; const smokeAt = [], items = [], occ = [];
-      [c, gc, sc].forEach(x => { x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.clearRect(0, 0, W, H); });
+      [c, gc, sc].forEach(x => { core(x, false); x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; x.clearRect(0, 0, FW, H); core(x, true); });
       drawGround(c, e);
       // Fähigkeitsgebäude: Ausbaustufe aus dem Skill-Level
       S.skills.forEach((s, i) => {
@@ -231,11 +237,12 @@
       // Schatten: alle Schatten-Ebenen in eine Fläche, dann einheitlich in einer Farbe mit 30 % (nachts aus)
       if (!night) {
         items.forEach(it => { if (it.sh) SH.draw(sc, it.sh, 'shadow', it.tag, it.fx, it.fy); });
-        sc.globalCompositeOperation = 'source-in'; rect(sc, 0, 0, W, H, SHADOW.color); sc.globalCompositeOperation = 'source-over';
-        c.globalAlpha = SHADOW.alpha; c.drawImage(shc, 0, 0); c.globalAlpha = 1;
+        core(sc, false); core(c, false); sc.globalCompositeOperation = 'source-in'; rect(sc, 0, 0, FW, H, SHADOW.color); sc.globalCompositeOperation = 'source-over';
+        c.globalAlpha = SHADOW.alpha; c.drawImage(shc, 0, 0); c.globalAlpha = 1; core(c, true);
       }
       items.forEach(it => { if (it.sh) SH.draw(c, it.sh, 'base', it.tag, it.fx, it.fy); else it.draw(c); });
       items.forEach(it => { if (it.glow) SH.draw(gc, it.sh, 'glow', it.tag, it.fx, it.fy); });
+      [c, gc, sc].forEach(x => core(x, false));
       smoke.length = 0; e.smokeAt = smokeAt;
     }
     const makeAnimals = () => deps.state().chest.placed.filter(p => L.ITEMS[p.itemId].animal).map((p, i) => p.itemId === 'duck' ? { t: 'duck', y: (20 + i * 37) % 120, v: .25, p: i * 2.1 } : { t: 'chicken', x: lay.chick[0] + 6 + i * 5, y: lay.chick[1] + 4 + i * 9, dx: .4, dy: .2 });
@@ -243,23 +250,23 @@
     const duckPos = a => { if (mode !== 'sprites') return [riverX(a.y) - 2, Math.round(a.y)]; const T = M.boden.teich; return [Math.round(T.cx - 3 + Math.cos(a.p) * (T.rx - 12)), Math.round(T.cy - 2 + Math.sin(a.p) * (T.ry - 8))]; };
     function initDynamics(e) {
       parts = []; const rr = Math.random, n = { sonnig: 0, heiter: 2, bewoelkt: 5, regen: 6, gewitter: 7 }[e.weather], wet = e.weather === 'regen' || e.weather === 'gewitter';
-      shadows = [...Array(n)].map(() => ({ x: rr() * W, y: rr() * H, r: 14 + rr() * 16, v: .12 + rr() * .12 }));
-      if (wet) { const snow = e.season === 'Winter'; for (let i = 0; i < (snow ? 80 : 130); i++) parts.push({ t: snow ? 'snow' : 'rain', x: rr() * W, y: rr() * H, v: snow ? .35 + rr() * .35 : 3 + rr() * 2, life: 0 }); }
-      else if (e.season === 'Winter') for (let i = 0; i < 30; i++) parts.push({ t: 'snow', x: rr() * W, y: rr() * H, v: .2 + rr() * .2 });
-      if (e.phase === 'night' && !wet && e.season !== 'Winter') for (let i = 0; i < 14; i++) parts.push({ t: 'fly', x: rr() * W, y: rr() * H, p: rr() * 6.28 });
-      if (!wet && (e.season === 'Herbst' || e.season === 'Frühling')) for (let i = 0; i < 8; i++) parts.push({ t: 'leaf', x: rr() * W, y: rr() * H, p: rr() * 6.28, c: e.season === 'Herbst' ? pick(rr, SEASONPAL.Herbst.tree) : SEASONPAL.Frühling.blossom });
+      shadows = [...Array(n)].map(() => ({ x: rr() * FW, y: rr() * H, r: 14 + rr() * 16, v: .12 + rr() * .12 }));
+      if (wet) { const snow = e.season === 'Winter'; for (let i = 0; i < (snow ? 80 : 130); i++) parts.push({ t: snow ? 'snow' : 'rain', x: rr() * FW, y: rr() * H, v: snow ? .35 + rr() * .35 : 3 + rr() * 2, life: 0 }); }
+      else if (e.season === 'Winter') for (let i = 0; i < 30; i++) parts.push({ t: 'snow', x: rr() * FW, y: rr() * H, v: .2 + rr() * .2 });
+      if (e.phase === 'night' && !wet && e.season !== 'Winter') for (let i = 0; i < 14; i++) parts.push({ t: 'fly', x: rr() * FW, y: rr() * H, p: rr() * 6.28 });
+      if (!wet && (e.season === 'Herbst' || e.season === 'Frühling')) for (let i = 0; i < 8; i++) parts.push({ t: 'leaf', x: rr() * FW, y: rr() * H, p: rr() * 6.28, c: e.season === 'Herbst' ? pick(rr, SEASONPAL.Herbst.tree) : SEASONPAL.Frühling.blossom });
       animals = makeAnimals();
       deps.state().chest.placed.filter(p => p.itemId === 'beehive').forEach(p => { const [x, y] = lay.deko[p.slot] || [0, 0]; for (let i = 0; i < 3; i++) parts.push({ t: 'bee', cx: x + 3, cy: y + 2, p: rr() * 6.28 }); });
       nextBolt = frame + 60 + Math.floor(rr() * 90); flash = 0;
     }
     function tick() {
       frame++;
-      shadows.forEach(s => { s.x += s.v; s.y += s.v * .3; if (s.x - s.r > W) { s.x = -s.r; s.y = Math.random() * H; } });
+      shadows.forEach(s => { s.x += s.v; s.y += s.v * .3; if (s.x - s.r > FW) { s.x = -s.r; s.y = Math.random() * H; } });
       for (const p of parts) {
-        if (p.t === 'rain') { if (p.life > 0) { if (--p.life === 0) { p.y = -Math.random() * 20; p.x = Math.random() * (W + 20); } } else { p.y += p.v; p.x -= p.v * .2; if (p.y > H || Math.random() < .012) p.life = 3; } }
-        else if (p.t === 'snow') { p.y += p.v; p.x += Math.sin((frame + p.x) * .04) * .3; if (p.y > H) { p.y = -2; p.x = Math.random() * W; } }
-        else if (p.t === 'fly') { p.p += .07; p.x = (p.x + Math.cos(p.p * .7) * .4 + W) % W; p.y = (p.y + Math.sin(p.p) * .3 + H) % H; }
-        else if (p.t === 'leaf') { p.p += .07; p.x += .4 + Math.sin(p.p) * .5; p.y += .25; if (p.x > W || p.y > H) { p.x = -4; p.y = Math.random() * H; } }
+        if (p.t === 'rain') { if (p.life > 0) { if (--p.life === 0) { p.y = -Math.random() * 20; p.x = Math.random() * (FW + 20); } } else { p.y += p.v; p.x -= p.v * .2; if (p.y > H || Math.random() < .012) p.life = 3; } }
+        else if (p.t === 'snow') { p.y += p.v; p.x += Math.sin((frame + p.x) * .04) * .3; if (p.y > H) { p.y = -2; p.x = Math.random() * FW; } }
+        else if (p.t === 'fly') { p.p += .07; p.x = (p.x + Math.cos(p.p * .7) * .4 + FW) % FW; p.y = (p.y + Math.sin(p.p) * .3 + H) % H; }
+        else if (p.t === 'leaf') { p.p += .07; p.x += .4 + Math.sin(p.p) * .5; p.y += .25; if (p.x > FW || p.y > H) { p.x = -4; p.y = Math.random() * H; } }
         else if (p.t === 'bee') p.p += .18;
       }
       if (env.smokeAt && frame % 6 === 0) env.smokeAt.forEach(([x, y]) => smoke.push({ x, y, l: 0 }));
@@ -276,7 +283,8 @@
     }
     function draw() {
       const S = deps.state(), D = deps.D(), e = env, night = e.phase === 'night';
-      g.globalCompositeOperation = 'source-over'; g.drawImage(base, 0, 0);
+      core(g, false); g.globalCompositeOperation = 'source-over'; g.drawImage(base, 0, 0);
+      core(g, true);                                     // ab hier Kern-Koordinaten: Wasser, Tiere, Figur, Rauch
       const wl = night ? 'rgba(170,190,255,.35)' : 'rgba(220,240,255,.5)';
       if (mode === 'sprites') { const T = M.boden.teich; for (let k = 0; k < 7; k++) { const a = k * 0.9 + (deps.reduce ? 0 : frame * .01), r2 = .35 + (k % 3) * .2; rect(g, Math.round(T.cx + Math.cos(a) * T.rx * r2) - 1, Math.round(T.cy + Math.sin(a) * T.ry * r2), 3, 1, wl); } }
       else for (let k = 0; k < 26; k++) { const y = (k * 13 + Math.floor(frame * .6)) % H, x = riverX(y) - 7 + ((k * 7) % 12); rect(g, x, y, 3, 1, wl); }
@@ -293,34 +301,46 @@
       g.drawImage(SP.sprite(walker.pause === 0 && step ? 'farmerB' : 'farmerA', null, walker.flip), Math.round(walker.x) - 4, Math.round(walker.y) - 7);
       animals.forEach(a => { if (a.t === 'chicken') { g.fillStyle = 'rgba(10,20,30,.25)'; g.fillRect(Math.round(a.x), Math.round(a.y) + 4, 5, 1); g.drawImage(SP.sprite('chicken', null, a.dx < 0), Math.round(a.x), Math.round(a.y)); } });
       for (const p of parts) if (p.t === 'bee') rect(g, Math.round(p.cx + Math.cos(p.p) * 6), Math.round(p.cy + Math.sin(p.p * 1.3) * 4), 1, 1, '#ffd84a');
+      core(g, false);                                    // Wolken, Partikel und Tönung über die ganze Breite
       if (shadows.length) { g.fillStyle = e.weather === 'gewitter' ? 'rgba(8,12,24,.16)' : 'rgba(10,20,30,.12)'; shadows.forEach(s => oval(g, Math.round(s.x), Math.round(s.y), Math.round(s.r), Math.round(s.r * .6))); }
       for (const p of parts) {
         if (p.t === 'rain') { if (p.life > 0) rect(g, Math.round(p.x) - 1, Math.round(p.y), 3, 1, 'rgba(220,235,255,.55)'); else rect(g, Math.round(p.x), Math.round(p.y), 1, 3, 'rgba(190,215,255,.5)'); }
         else if (p.t === 'snow') rect(g, Math.round(p.x), Math.round(p.y), p.v > .45 ? 2 : 1, p.v > .45 ? 2 : 1, '#ffffff');
         else if (p.t === 'leaf') rect(g, Math.round(p.x), Math.round(p.y), 2, 1, p.c);
       }
-      if (mode === 'sprites') { if (TINT[e.phase]) { g.globalCompositeOperation = 'multiply'; g.fillStyle = TINT[e.phase]; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over'; } }
-      else { const grade = { night: 'rgba(14,18,56,.42)', evening: 'rgba(120,50,90,.14)', morning: 'rgba(255,170,120,.07)', day: null }[e.phase]; if (grade) { g.fillStyle = grade; g.fillRect(0, 0, W, H); } }
-      const wx = { bewoelkt: 'rgba(50,60,80,.08)', regen: 'rgba(30,40,70,.18)', gewitter: 'rgba(16,18,40,.28)' }[e.weather]; if (wx) { g.fillStyle = wx; g.fillRect(0, 0, W, H); }
+      if (mode === 'sprites') { if (TINT[e.phase]) { g.globalCompositeOperation = 'multiply'; g.fillStyle = TINT[e.phase]; g.fillRect(0, 0, FW, H); g.globalCompositeOperation = 'source-over'; } }
+      else { const grade = { night: 'rgba(14,18,56,.42)', evening: 'rgba(120,50,90,.14)', morning: 'rgba(255,170,120,.07)', day: null }[e.phase]; if (grade) { g.fillStyle = grade; g.fillRect(0, 0, FW, H); } }
+      const wx = { bewoelkt: 'rgba(50,60,80,.08)', regen: 'rgba(30,40,70,.18)', gewitter: 'rgba(16,18,40,.28)' }[e.weather]; if (wx) { g.fillStyle = wx; g.fillRect(0, 0, FW, H); }
       g.globalCompositeOperation = 'lighter';
       if (mode === 'sprites') g.drawImage(glow, 0, 0);
-      if (e.phase === 'day' && (e.weather === 'sonnig' || e.weather === 'heiter')) { g.fillStyle = `rgba(255,240,200,${.04 + .015 * Math.sin(frame * .05)})`; g.fillRect(0, 0, W, H); }
+      if (e.phase === 'day' && (e.weather === 'sonnig' || e.weather === 'heiter')) { g.fillStyle = `rgba(255,240,200,${.04 + .015 * Math.sin(frame * .05)})`; g.fillRect(0, 0, FW, H); }
+      core(g, true);
       const fl = deps.reduce ? 0 : Math.floor(frame / 5) % 2; lights.forEach(([x, y, r]) => { g.fillStyle = 'rgba(255,180,80,.07)'; disc(g, x, y, r + fl); g.fillStyle = 'rgba(255,200,110,.09)'; disc(g, x, y, Math.max(2, r >> 1)); });
+      core(g, false);
       for (const p of parts) if (p.t === 'fly' && Math.sin(p.p * 1.7) > -.2) { g.fillStyle = 'rgba(200,255,140,.2)'; disc(g, Math.round(p.x), Math.round(p.y), 2); rect(g, Math.round(p.x), Math.round(p.y), 1, 1, 'rgba(230,255,170,.9)'); }
+      core(g, true);
       glints.forEach(gl => { const a = gl.l / 30; g.fillStyle = `rgba(255,236,150,${.5 * a})`; disc(g, gl.x, gl.y, 12 - Math.round(gl.l / 4)); });
       g.globalCompositeOperation = 'source-over';
       if (deps.sleeps()) { const zx = lay.z[0], zy = lay.z[1] - ((frame >> 2) % 10); g.fillStyle = 'rgba(240,240,255,.8)'; [[0, 0], [1, 0], [2, 0], [1, 1], [0, 2], [1, 2], [2, 2]].forEach(([a, b]) => g.fillRect(zx + a, zy + b, 1, 1)); }
-      if (flash > 0) { g.fillStyle = `rgba(230,235,255,${flash * .5})`; g.fillRect(0, 0, W, H); }
+      core(g, false);
+      if (flash > 0) { g.fillStyle = `rgba(230,235,255,${flash * .5})`; g.fillRect(0, 0, FW, H); }
       present();
     }
     /** Überträgt das Bild ganzzahlig vergrößert und ohne Glätten auf alle sichtbaren Canvas. */
-    function present() { views.forEach((k, cv) => { const x = cv.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(frameC, 0, 0, cv.width, cv.height); }); }
-    /** Canvas als Ansicht anmelden: CSS-Größe = 256·k × 160·k, Auflösung = CSS-Größe × devicePixelRatio. */
-    function view(cv, k) {
-      const dpr = root.devicePixelRatio || 1; k = Math.max(1, Math.round(k));
-      cv.style.width = W * k + 'px'; cv.style.height = H * k + 'px'; cv.width = Math.round(W * k * dpr); cv.height = Math.round(H * k * dpr);
-      views.set(cv, k); if (env) present();
+    function present() {
+      views.forEach((v, cv) => { const x = cv.getContext('2d'), w = viewW(v); x.imageSmoothingEnabled = false; x.drawImage(frameC, Math.floor((FW - w) / 2), 0, w, H, 0, 0, cv.width, cv.height); });
     }
+    const viewW = v => (mode === 'sprites' ? Math.max(W, v.w) : W);
+    /** Größen anwenden: CSS-Größe = Breite·k × 160·k, Auflösung = CSS-Größe × devicePixelRatio; die Welt ist so breit wie die breiteste Ansicht. */
+    function applyViews() {
+      const dpr = root.devicePixelRatio || 1;
+      views.forEach((v, cv) => { const w = viewW(v); cv.style.width = w * v.k + 'px'; cv.style.height = H * v.k + 'px'; cv.width = Math.round(w * v.k * dpr); cv.height = Math.round(H * v.k * dpr); });
+      let fw = W; views.forEach(v => { fw = Math.max(fw, viewW(v)); });
+      if (fw !== FW) { FW = fw; OX = Math.floor((FW - W) / 2); [frameC, base, glow, shc].forEach(c => { c.width = FW; }); g.imageSmoothingEnabled = false; if (env) update(true); }
+      if (env) present();
+    }
+    /** Canvas als Ansicht anmelden: Faktor k (ganzzahlig) und gewünschte logische Breite w (mindestens 256, ohne Karte genau 256). */
+    function view(cv, k, w) { views.set(cv, { k: Math.max(1, Math.round(k)), w: Math.floor(w || W) }); applyViews(); }
     function update(force) {
       const e = computeEnv();
       if (force || e.key !== envKey) { const big = force || !env || env.weather !== e.weather || env.phase !== e.phase || env.season !== e.season; env = e; envKey = e.key; buildBase(e); if (big) initDynamics(e); else animals = makeAnimals(); deps.onMood(e.weather); }
@@ -331,10 +351,10 @@
     return {
       /** Startet nach dem Laden der Sprite-Sheets (assets: Promise); ohne Sheets oder bei Fehler mit dem bisherigen Zeichencode. */
       start(assets) {
-        const go = () => { setMode(); update(true); if (deps.reduce) draw(); else if (!running) { running = true; requestAnimationFrame(loop); } };
+        const go = () => { setMode(); applyViews(); update(true); if (deps.reduce) draw(); else if (!running) { running = true; requestAnimationFrame(loop); } };
         Promise.resolve(assets).catch(() => null).then(go);
       },
-      view, unview(cv) { views.delete(cv); },
+      view, unview(cv) { views.delete(cv); applyViews(); },
       mode: () => mode,
       refresh(force) { update(force); if (deps.reduce) draw(); },
       /** Kurzes Leuchten über einem Beet, z. B. bei einer Ernte. */
