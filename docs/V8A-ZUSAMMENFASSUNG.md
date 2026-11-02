@@ -17,6 +17,10 @@ Aufräumen: Werkstatt, Bücherturm und `art/platzhalter-v3.zip` waren schon mit 
 
 Stand v8a (vor der Nacharbeit). Die aktuellen Werte und Screenshots stehen unter „Nacharbeit v8a.1“. Alle 8 Aufgaben aus `docs/ux-testleitfaden-v6.md` lassen sich weiter lösen (Skript wie in v7, Uhr auf 12 Uhr).
 
+## Veröffentlichung 8.0.0
+
+Nach Freigabe durch Lars als Version 8.0.0 nach `main` gemergt und über GitHub Pages veröffentlicht; Selbsttest und Usability-Test laufen ab jetzt auf v8a. Testleitfaden (Stand v8a) mit dem Test-Hof geprüft: Aufgaben 1–7, neue Aufgabe 8 „Gebäude ändern“ (Fähigkeit „Geist“ auf Scheune, Gebäude auf dem Hof sichtbar gewechselt) und (9) Logbuch lösbar, erster Haken bei 478 pt. Hinweis: Der Test-Hof hat drei Fähigkeiten (Körper → Mühle, Geist → Archiv, Alltag → Schmiede), der Testleitfaden nennt zwei.
+
 ## Nacharbeit v8a.1 (Darstellung)
 
 1. **Kompakte Szene ohne Seitenstreifen:** Faktor bleibt ganzzahlig; die logische Breite ist `floor(verfügbare Breite / Faktor)` (mindestens 256), die Höhe 160. Der Kern (256 × 160 mit allen Gebäuden, Beeten, Teich) steht mittig, die Ränder füllt die Karte mit Natur (Randzonen Waldrand, Wegsaum, Wiese; gleicher Seed, keine Spielobjekte). Gilt für kompakte Ansicht, Großansicht und Desktop.
