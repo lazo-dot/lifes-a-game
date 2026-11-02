@@ -4,7 +4,7 @@ Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. G
 
 ## Quellen der Wahrheit
 
-- `docs/habit-tracker-entwicklungsleitfaden.md` – **verbindlich** für Mechaniken, Formeln, Datenmodell und Prinzipien (aktuell v1.6).
+- `docs/habit-tracker-entwicklungsleitfaden.md` – **verbindlich** für Mechaniken, Formeln, Datenmodell und Prinzipien (aktuell v1.8).
 - `docs/pixel-styleguide-stil-b.md` – **Grundlage für v8a** (Raster, Lesbarkeit, Licht-Ebenen, Lieferformat, Asset-Liste).
 - `docs/ux-heuristische-evaluation-v6.md` – Grundlage für v7 (Funde U1–U18 mit Empfehlungen).
 - `docs/ux-testleitfaden-v6.md` – der Usability-Test, der nach v7 läuft; Aufgaben dort müssen weiter funktionieren.
