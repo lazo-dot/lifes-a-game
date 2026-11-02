@@ -16,6 +16,11 @@ Grundlage: `docs/pixel-styleguide-stil-b.md`, Palette `art/palette-stil-b.json`.
 | `pflanzen/` | 4 Sorten: Beere, Blume, Kürbis, Bäumchen | 16 × 16 | `keim`, `setzling`, `jungpflanze`, `bluete`, `ausgewachsen`, `gemeistert` |
 | `natur/natur-klein` | 17 Kleinteile für Zwischenbereiche: Büsche, Farn, hohes Gras, Wildblumen (3 Farben), Lavendel, Pilze, Schilf, Seerose, Steine, Baumstumpf, Stamm, Trittstein, Klee | 16 × 16 | Name je Frame |
 | `natur/natur-baeume` | 4 Bäume: Eiche, Tanne, Birke, Weide | 32 × 32 | Name je Frame |
+| `deko/deko` | 37 Truhengegenstände (Garten, Hof, Selten, Saisonal); Tag = ID aus `ITEMS` in `src/logic.js` (die 12 bisherigen IDs bleiben) | 16 × 24 | ID je Frame |
+| `deko/tiere` | 5 Tiere: Huhn, Ente, Katze, Hase, Igel, je 2 Frames Leerlauf | 16 × 16 | ID je Tier (from–to) |
+| `deko/deko-katalog.json` | Name, Gruppe, selten, Jahreszeit je Gegenstand | – | – |
+| `figuren/wohnhaus` | Wohnhaus mit Dachgaube, Fenster leuchten abends | 48 × 48 | `wohnhaus` |
+| `figuren/bauer` | Bauer, 4 Richtungen × 4 Frames Gehen | 16 × 24 | `unten`, `oben`, `links`, `rechts` (from–to) |
 
 Jedes Objekt besteht aus `name.png` (Sheet) und `name.json` (Aseprite-Format „Export Sprite Sheet“, Array, Layers getrennt):
 - **Zeilen = Ebenen:** `base`, `glow` (abends addieren), `shadow` (eine Farbe, mit ca. 30 % Deckkraft zeichnen, siehe `meta.layers[].opacity`)
@@ -27,7 +32,7 @@ Jedes Objekt besteht aus `name.png` (Sheet) und `name.json` (Aseprite-Format „
 
 ```bash
 cd art/platzhalter
-python3 gebaeude.py && python3 pflanzen.py && python3 natur.py   # Sheets + JSON
+python3 gebaeude.py && python3 pflanzen.py && python3 natur.py && python3 deko.py && python3 figuren.py   # Sheets + JSON
 python3 hof.py                               # Vorschauen (Hof, Silhouetten)
 ```
 
@@ -38,6 +43,8 @@ Benötigt Python 3 mit Pillow. `pix.py` ist der Zeichenkern: Er setzt Lichtkante
 - `vorschau-gebaeude-tag.png` / `-abend.png`: alle Gebäude und Stufen (3×)
 - `vorschau-pflanzen-tag.png` / `-abend.png`: alle Pflanzen im Beet (6×)
 - `vorschau-natur-klein.png`, `vorschau-natur-baeume.png`: Flora und Bäume
+- `vorschau-deko-tag.png` / `-abend.png`, `vorschau-tiere.png` (`python3 vorschau_deko.py`): Truhengegenstände und Tiere
+- `vorschau-figuren.png`: Wohnhaus (Tag/Abend) und Bauer
 - `vorschau-hof-tag.png` / `-abend.png`: Hofausschnitt 256 × 160 (3×) mit gestalteten Zwischenbereichen (Waldrand, Wegsäume, Wiese, Teichufer, Ruheecke)
 - `vorschau-hof-1zu1.png`: derselbe Hof in Originalgröße, so groß wie auf dem iPhone bei 1 px = 1 pt
 - `vorschau-silhouetten.png`: Silhouetten-Test (Style-Guide 3.2)
@@ -49,4 +56,5 @@ Benötigt Python 3 mit Pillow. `pix.py` ist der Zeichenkern: Er setzt Lichtkante
 - Früchte und Blüten haben feste Standardfarben. Das Einfärben in der Fähigkeitsfarbe übernimmt die App.
 - Keim und Setzling sehen bei allen Sorten ähnlich aus (gewollt, früh im Wachstum).
 - Stufe 3 und Stufe 4 der Gebäude unterscheiden sich vor allem durch Fahne, Licht und Deko. Der Artist sollte Stufe 4 in der Form stärker absetzen (Anbau, Turm, zweites Stockwerk).
-- Keine Animationen (Mühlenflügel, Rauch, Wasser). Die kommen mit den echten Grafiken.
+- Keine Animationen bei Gebäuden (Mühlenflügel, Rauch, Wasser). Tiere haben 2 Frames Leerlauf, der Bauer 4 Frames Gehen.
+- Truhengegenstände sind 16 × 24 groß (auch niedrige), damit alle im selben Raster liegen; der Fußpunkt ist unten Mitte.

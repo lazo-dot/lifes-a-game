@@ -1,0 +1,348 @@
+{
+ "hinweis": "Platzhalter-Katalog für ITEMS in src/logic.js. Seltene Funde: Anteil 20 % bleibt, Jahreszeit: nur in dieser Jahreszeit findbar, danach behalten.",
+ "deko": [
+  {
+   "id": "flowers",
+   "name": "Blumenbeet",
+   "gruppe": "garten",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "pot",
+   "name": "Blumentopf",
+   "gruppe": "garten",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "watering_can",
+   "name": "Gießkanne",
+   "gruppe": "garten",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "arch",
+   "name": "Rosenbogen",
+   "gruppe": "garten",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "herb_box",
+   "name": "Kräuterkiste",
+   "gruppe": "garten",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "sunflower",
+   "name": "Sonnenblume",
+   "gruppe": "garten",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "birdbath",
+   "name": "Vogeltränke",
+   "gruppe": "garten",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "bench",
+   "name": "Holzbank",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "lantern",
+   "name": "Laterne",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "sign",
+   "name": "Wegweiser",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "barrel",
+   "name": "Fass",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "hay",
+   "name": "Heuballen",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "fence",
+   "name": "Zaun",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "wheelbarrow",
+   "name": "Schubkarre",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "woodpile",
+   "name": "Holzstapel",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "mailbox",
+   "name": "Briefkasten",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "wagon_wheel",
+   "name": "Wagenrad",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "milk_can",
+   "name": "Milchkanne",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "crate_planter",
+   "name": "Blumenkisten",
+   "gruppe": "garten",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "farm_bell",
+   "name": "Hofglocke",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "ladder",
+   "name": "Holzleiter",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "rust_rooster",
+   "name": "Rost-Hahn",
+   "gruppe": "garten",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "egg_basket",
+   "name": "Eierkorb",
+   "gruppe": "hof",
+   "selten": false,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "scarecrow",
+   "name": "Vogelscheuche",
+   "gruppe": "selten",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "beehive",
+   "name": "Bienenstock",
+   "gruppe": "selten",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "well",
+   "name": "Brunnen",
+   "gruppe": "selten",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "sundial",
+   "name": "Sonnenuhr",
+   "gruppe": "selten",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "telescope",
+   "name": "Fernrohr",
+   "gruppe": "selten",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "weathervane",
+   "name": "Wetterhahn",
+   "gruppe": "selten",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "deko"
+  },
+  {
+   "id": "birdhouse",
+   "name": "Vogelhaus",
+   "gruppe": "saison",
+   "selten": false,
+   "jahreszeit": "fruehling",
+   "sheet": "deko"
+  },
+  {
+   "id": "tulip_basket",
+   "name": "Tulpenkorb",
+   "gruppe": "saison",
+   "selten": false,
+   "jahreszeit": "fruehling",
+   "sheet": "deko"
+  },
+  {
+   "id": "parasol",
+   "name": "Sonnenschirm",
+   "gruppe": "saison",
+   "selten": false,
+   "jahreszeit": "sommer",
+   "sheet": "deko"
+  },
+  {
+   "id": "hammock",
+   "name": "Hängematte",
+   "gruppe": "saison",
+   "selten": true,
+   "jahreszeit": "sommer",
+   "sheet": "deko"
+  },
+  {
+   "id": "pumpkin_lantern",
+   "name": "Kürbislaterne",
+   "gruppe": "saison",
+   "selten": false,
+   "jahreszeit": "herbst",
+   "sheet": "deko"
+  },
+  {
+   "id": "leaf_pile",
+   "name": "Laubhaufen",
+   "gruppe": "saison",
+   "selten": false,
+   "jahreszeit": "herbst",
+   "sheet": "deko"
+  },
+  {
+   "id": "snowman",
+   "name": "Schneemann",
+   "gruppe": "saison",
+   "selten": true,
+   "jahreszeit": "winter",
+   "sheet": "deko"
+  },
+  {
+   "id": "feeder",
+   "name": "Futterhaus",
+   "gruppe": "saison",
+   "selten": false,
+   "jahreszeit": "winter",
+   "sheet": "deko"
+  }
+ ],
+ "tiere": [
+  {
+   "id": "chicken",
+   "name": "Huhn",
+   "gruppe": "tiere",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "tiere",
+   "animal": true
+  },
+  {
+   "id": "duck",
+   "name": "Ente",
+   "gruppe": "tiere",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "tiere",
+   "animal": true
+  },
+  {
+   "id": "cat",
+   "name": "Katze",
+   "gruppe": "tiere",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "tiere",
+   "animal": true
+  },
+  {
+   "id": "rabbit",
+   "name": "Hase",
+   "gruppe": "tiere",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "tiere",
+   "animal": true
+  },
+  {
+   "id": "hedgehog",
+   "name": "Igel",
+   "gruppe": "tiere",
+   "selten": true,
+   "jahreszeit": null,
+   "sheet": "tiere",
+   "animal": true
+  }
+ ]
+}

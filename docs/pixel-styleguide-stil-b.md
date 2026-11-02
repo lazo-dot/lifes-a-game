@@ -125,20 +125,22 @@ Gebäudetyp wird beim Anlegen bzw. Umbenennen einer Fähigkeit gewählt, mit Vor
 - **Zusätzlich:** Variante „gemeistert“ (goldener Schimmer als Leucht-Ebene) und eine optionale Zwischenstufe „Knospe“ (Simulations-Kandidat).
 - **Saisonal:** im Winter dieselben Sprites mit Schnee-Auflage als eigener Ebene. Keine eigenen Winter-Pflanzen.
 
-### Paket 3 · Truhengegenstände (mittel, ca. 45–60 h)
+### Paket 3 · Truhengegenstände (mittel, ca. 50–65 h)
 
-**Ziel: 36 Gegenstände**, davon 20 % selten (7–8). Die 12 bestehenden werden im neuen Stil neu gezeichnet.
+**42 Gegenstände** (37 Deko + 5 Tiere), davon 13 selten. Die Fundchance bleibt unverändert: 12 % je Erledigung, davon 20 % selten – mehr Gegenstände bedeuten seltener Doppelfunde, nicht mehr Funde. Die 12 bestehenden werden im neuen Stil neu gezeichnet. Platzhalter: `art/platzhalter/deko/` (Stand 02.11.2026, inklusive Ideen von Lars zu rustikalen Hofgeräten).
 
 | Gruppe | Gegenstände | selten |
 |---|---|---|
-| Garten (8) | Blumenbeet ✓, Blumentopf ✓, Gießkanne, Sonnenblumen, Kräuterkiste, Rankbogen, Steinpfad, Vogeltränke | Brunnen ✓ |
-| Wege & Hof (8) | Holzbank ✓, Laterne ✓, Fass ✓, Wegweiser ✓, Heuballen ✓, Zaunstück, Briefkasten, Schubkarre | Vogelscheuche ✓ |
-| Tiere (6) | Huhn ✓, Ente ✓, Katze, Hase | Bienenstock ✓, Pfau |
-| Frühling (3) | Tulpenreihe, Vogelhaus | Kirschbaum |
-| Sommer (3) | Sonnenschirm, Hängematte | Teich-Seerosen |
-| Herbst (3) | Kürbisstapel, Laubhaufen | Erntekrone |
-| Winter (3) | Schneemann, Schlitten | Lichterbaum |
-| Besonderes (2) | – | Sternwarte-Fernrohr, Windspiel |
+| Garten (9) | Blumenbeet ✓, Blumentopf ✓, Gießkanne, Rosenbogen, Kräuterkiste, Sonnenblume, Vogeltränke, Blumenkisten, Rost-Hahn (Gartenstecker) | – |
+| Hof (15) | Holzbank ✓, Laterne ✓, Wegweiser ✓, Fass ✓, Heuballen ✓, Zaun, Schubkarre, Holzstapel, Briefkasten, Wagenrad mit Blumen, Milchkanne mit Gräsern, Hofglocke, Holzleiter, Eierkorb | – |
+| Selten (6) | – | Vogelscheuche ✓, Bienenstock ✓, Brunnen ✓, Sonnenuhr, Fernrohr, Wetterhahn |
+| Tiere (5) | – | Huhn ✓, Ente ✓, Katze, Hase, Igel (je 2–4 Frames Leerlauf) |
+| Frühling (2) | Vogelhaus, Tulpenkorb | – |
+| Sommer (2) | Sonnenschirm | Hängematte |
+| Herbst (2) | Kürbislaterne, Laubhaufen | – |
+| Winter (2) | Futterhaus | Schneemann |
+
+Nicht aufgenommen: Innenraum-Deko (Barhocker, Textilien, Wandreliefs), weil der Hof nur Außenbereiche zeigt; Schilder mit Werbeaufdrucken (fremde Marken).
 
 ✓ = gibt es schon (neu zeichnen). Saisonale Gegenstände lassen sich nur in ihrer Jahreszeit **finden**, bleiben danach aber dauerhaft in der Truhe. Es gibt kein Verpassen und keinen Countdown.
 
@@ -177,12 +179,12 @@ Gebäudetyp wird beim Anlegen bzw. Umbenennen einer Fähigkeit gewählt, mit Vor
 - **Wolkenschatten:** als große, weich gerasterte Form
 - **Farbwerte:** die Tönungsfarben je Tageszeit, als Zahlen in einer Datei
 
-**Summe:** ca. 185–245 h. Das liegt im Rahmen der Schätzung für Stil B.
+**Summe:** ca. 190–250 h. Das liegt im Rahmen der Schätzung für Stil B.
 
 **Vorschlag für die Staffelung:**
 - **v8a:** Pakete 1, 2 und die Technik dazu (Sprite-Sheets, ganzzahlige Skalierung, Gebäudewahl). Hier entsteht der größte sichtbare Gewinn.
-- **v8b:** Paket 3 mit Sammelalbum und Saisonlogik, dazu die Farbthemen der Oberfläche.
-- **v9:** Pakete 4 bis 6.
+- **v8b:** Paket 3 mit Sammelalbum und Saisonlogik, Wohnhaus und Bauer (aus Paket 5), dazu die Farbthemen der Oberfläche.
+- **v9:** Pakete 4 bis 6 (Landschaft, übrige Figuren, Licht und Wetter, Animationen).
 
 Bis neue Grafiken da sind, nutzt die App die bisherigen Zeichnungen weiter. Das Sprite-System fällt ohne Datei auf den alten Code zurück.
 
