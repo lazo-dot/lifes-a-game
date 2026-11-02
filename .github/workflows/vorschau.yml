@@ -1,0 +1,18 @@
+# Vorschau anstoßen (8.2.1): Bei jedem Push auf einen Branch außer main laufen die Tests.
+# Ist das grün, startet „Pages“ (workflow_run) im Kontext von main und veröffentlicht den Branch unter …/preview/.
+# So bleibt die Umgebung github-pages auf main beschränkt.
+name: Vorschau
+on:
+  push:
+    branches-ignore: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm test

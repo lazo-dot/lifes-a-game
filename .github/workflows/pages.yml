@@ -1,9 +1,15 @@
-# Baut dist/ und veröffentlicht es auf GitHub Pages (HTTPS). Läuft bei jedem Push auf main.
+# Baut dist/ und veröffentlicht es auf GitHub Pages (HTTPS).
+#   /           → main
+#   /preview/   → Vorschau: der zuletzt gepushte andere Branch (nach dem Workflow „Vorschau“), sonst der jüngste Branch mit Vorschau-Unterstützung
+# Läuft bei jedem Push auf main und nach jedem erfolgreichen Lauf von „Vorschau“ (immer im Kontext von main, wegen der Umgebung github-pages).
 # Einmalig im Repository: Settings → Pages → Source: „GitHub Actions“.
 name: Pages
 on:
   push:
     branches: [main]
+  workflow_run:
+    workflows: [Vorschau]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,20 +20,44 @@ concurrency:
   cancel-in-progress: true
 jobs:
   deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: npm test
-      - run: npm run build
+      - name: main bauen (/)
+        run: |
+          git checkout -q origin/main
+          npm test
+          npm run build
+          mkdir -p site && cp -R dist/. site/
+      - name: Vorschau bauen (/preview/)
+        env:
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          B="$RUN_BRANCH"
+          if [ -z "$B" ] || [ "$B" = "main" ]; then
+            B=$(git for-each-ref --sort=-committerdate --format='%(refname:lstrip=3)' refs/remotes/origin | grep -vx -e main -e HEAD | while read b; do
+              git show "origin/$b:tools/build.js" 2>/dev/null | grep -q PREVIEW_BRANCH && { echo "$b"; break; }; done)
+          fi
+          if [ -z "$B" ]; then echo "Keine Vorschau."; exit 0; fi
+          git checkout -q "origin/$B"
+          if ! grep -q PREVIEW_BRANCH tools/build.js; then echo "Branch $B kann noch keine Vorschau bauen."; exit 0; fi
+          if npm test; then
+            PREVIEW_BRANCH="$B" npm run build && mkdir -p site/preview && cp -R dist/. site/preview/ && echo "Vorschau: $B"
+          else
+            echo "Tests auf $B rot – keine Vorschau."
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4

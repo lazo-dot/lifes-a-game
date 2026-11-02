@@ -550,3 +550,5 @@ html.noscroll,html.noscroll body{overflow:hidden}
   .row.hrow,.row.trow{padding:6px 8px}
 }
 .screen h3{margin:0;font-family:var(--f-display);font-weight:600}
+/* 8.2.1: Band nur in der Vorschau (…/preview/) */
+.preview-band{position:sticky;top:0;z-index:89;margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 8px;padding:4px 12px;background:#5a3a96;color:#fff;font-family:var(--f-display);font-size:.8125rem;letter-spacing:.04em;text-align:center}

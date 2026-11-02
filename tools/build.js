@@ -3,6 +3,8 @@
  * Kein Bundler, keine Abhängigkeiten: dist/ ist dieselbe App aus klassischen Skripten, nur zusammengestellt.
  *   node tools/build.js           → dist/
  *   node tools/build.js --bundle  → zusätzlich dist-bundle/lifes-a-game.html (eine Datei, z. B. für die Artifact-Vorschau)
+ *   PREVIEW_BRANCH=<name> node tools/build.js → Vorschau-Build für …/preview/ (Cache „preview-lag-…“, Manifest „Vorschau“, Band mit Branch und Version)
+ * Schreibt immer dist/js/env.js (self.LAG_ENV = { version, branch, preview }).
  */
 'use strict';
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
@@ -18,6 +20,8 @@ const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
 function build() {
   syncSprites();                                          // v8a: Aseprite-Exporte → public/sprites/ (nur bei Änderung)
   fs.rmSync(DIST, { recursive: true, force: true });
+  const branch = (process.env.PREVIEW_BRANCH || '').trim(), preview = !!branch;
+  const envJs = `/* erzeugt von tools/build.js */\nself.LAG_ENV = ${JSON.stringify({ version: pkg.version, branch: branch || null, preview })};\n`;
   const files = [];                                       // [Zielpfad relativ zu dist, Quelle]
   for (const f of walk(path.join(ROOT, 'public'))) files.push([path.relative(path.join(ROOT, 'public'), f), f]);
   for (const f of walk(path.join(ROOT, 'src'))) if (f.endsWith('.js')) files.push([path.join('js', path.relative(path.join(ROOT, 'src'), f)), f]);
@@ -26,15 +30,20 @@ function build() {
     const out = path.join(DIST, rel); fs.mkdirSync(path.dirname(out), { recursive: true }); fs.copyFileSync(src, out);
     hash.update(rel); hash.update(fs.readFileSync(src));
   }
+  fs.writeFileSync(path.join(DIST, 'js', 'env.js'), envJs); hash.update(envJs); files.push([path.join('js', 'env.js'), null]);
+  if (preview) {                                          // installierte Vorschau gut vom echten Hof unterscheidbar
+    const mf = path.join(DIST, 'manifest.webmanifest'), m = JSON.parse(fs.readFileSync(mf, 'utf8'));
+    m.name = `${m.name} (Vorschau)`; m.short_name = 'Vorschau'; fs.writeFileSync(mf, JSON.stringify(m, null, 1) + '\n');
+  }
   // Nur was die App braucht, wird vorab gecacht (keine Lizenztexte).
   const assets = ['./', ...files.map(([rel]) => rel.split(path.sep).join('/')).filter(r => r !== 'sw.js' && !r.endsWith('.txt'))];
-  const version = `lag-${pkg.version}-${hash.digest('hex').slice(0, 8)}`;
+  const version = `${preview ? 'preview-' : ''}lag-${pkg.version}-${hash.digest('hex').slice(0, 8)}`;
   const swPath = path.join(DIST, 'sw.js');
   fs.writeFileSync(swPath, fs.readFileSync(swPath, 'utf8').replace('__VERSION__', version).replace('__ASSETS__', JSON.stringify(assets)));
   const idx = path.join(DIST, 'index.html');              // U10: Versionsanzeige aus package.json
   fs.writeFileSync(idx, fs.readFileSync(idx, 'utf8').replace('__APP_VERSION__', pkg.version));
   fs.writeFileSync(path.join(DIST, 'version.txt'), version + '\n');
-  return { version, count: files.length };
+  return { version, count: files.length, branch };
 }
 
 /** Eine einzelne HTML-Datei mit eingebettetem CSS und JS. Ohne Manifest, daher registriert sie keinen Service Worker. */
@@ -51,7 +60,7 @@ function bundle() {
 }
 
 if (require.main === module) {
-  const r = build(); console.log(`dist/ gebaut · ${r.count} Dateien · ${r.version}`);
+  const r = build(); console.log(`dist/ gebaut · ${r.count} Dateien · ${r.version}${r.branch ? ' · Vorschau für ' + r.branch : ''}`);
   if (process.argv.includes('--bundle')) console.log(`dist-bundle/lifes-a-game.html · ${bundle()} KB`);
 }
 module.exports = { build };

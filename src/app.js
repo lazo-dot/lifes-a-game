@@ -21,7 +21,8 @@
   // H1: offline-fähig und installierbar. Nur mit Manifest (nicht im Einzeldatei-Bundle) und sicherem Kontext (HTTPS oder localhost).
   const hasManifest = !!document.querySelector('link[rel="manifest"]');
   if (hasManifest && 'serviceWorker' in navigator && root.isSecureContext) {
-    const hadController = !!navigator.serviceWorker.controller;
+    // 8.2.1: Nur der eigene Service Worker zählt. Beim ersten Besuch der Vorschau (…/preview/) steuert noch der von main die Seite, das ist kein Update.
+    const ctl = navigator.serviceWorker.controller, hadController = !!ctl && ctl.scriptURL === new URL('sw.js', root.location.href).href;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       // Neue Version ist installiert. Nicht ungefragt neu laden, sonst ginge z. B. ein angefangener Logbuch-Text verloren.
       if (hadController) root.LAGUI.notify('<span><b>Neue Version bereit.</b> Lade neu, um sie zu nutzen.</span>', { label: 'Neu laden', fn: () => root.location.reload() });

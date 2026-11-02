@@ -61,7 +61,7 @@
   /* ---------- v8c: Info-Blatt und Erklärungen hinter „?“ ---------- */
   const timeText = s => { if (!s) return ''; const [a, b] = s.split(':').map(Number); return b ? `${a}:${String(b).padStart(2, '0')} Uhr` : `${a} Uhr`; };
   const qBtn = id => { const x = HX.explain(id); return `<button type="button" class="q" data-act="explain" data-x="${id}" aria-label="Erklärung: ${esc(x.title)}">?</button>`; };
-  const SEEN = 'lag:erklaert';
+  const SEEN = Store.prefix + 'lag:erklaert';   // 8.2.1: Vorschau mit eigenem Präfix
   const seen = () => { try { return new Set(JSON.parse(localStorage.getItem(SEEN) || '[]')); } catch (e) { return new Set(); } };
   function markSeen(ids) { const s0 = seen(); ids.forEach(i => s0.add(i)); try { localStorage.setItem(SEEN, JSON.stringify([...s0])); } catch (e) { /* nur Bedienhilfe */ } }
   /** Beim ersten Besuch steht eine Erklärung einmal offen unter der Überschrift; gemerkt nur auf diesem Gerät (Bedienhilfe, keine Eingabe). */
@@ -341,7 +341,7 @@
     const wd = [['Mo', 0], ['Mi', 2], ['Fr', 4]].map(([l, r]) => `<span class="wd" style="grid-row:${r + 2}">${l}</span>`).join('');
     const cells = g.cells.map(c => { if (c.v === 'none') return ''; const tip = typeof c.v === 'number' ? `${c.v === 0 ? 'nichts' : c.v === 4 ? '5 oder mehr' : c.v === 3 ? '3–4' : c.v} erledigt` : label[c.v];
       const info = tip ? `${fmt(c.k, { weekday: 'long', day: 'numeric', month: 'long' })}: ${tip}${c.late ? ', nachgetragen' : ''}` : '';
-      return `<i class="v-${c.v}${c.late ? ' late' : ''}${c.k === t ? ' v-today' : ''}" style="grid-column:${c.col + 2};grid-row:${c.row + 2}"${info ? ` title="${info}" data-info="${info}"` : ''}></i>`; }).join('');
+      return `<i class="cal-cell v-${c.v}${c.late ? ' late' : ''}${c.k === t ? ' v-today' : ''}" style="grid-column:${c.col + 2};grid-row:${c.row + 2}"${info ? ` title="${info}" data-info="${info}"` : ''}></i>`; }).join('');
     let stat;
     if (hid) { const days = Object.entries(D.H[hid].days).filter(([k]) => k.startsWith(year)); const done = days.filter(([, v]) => v === 'done').length, tiny = days.filter(([, v]) => v === 'tiny').length, rep = days.filter(([, v]) => v === 'repaired' || v === 'watered').length;
       stat = `${done + tiny} erledigt in ${year}${tiny ? `, davon ${tiny} als Mini-Version` : ''}${rep ? ` · ${rep} gerettet` : ''}`; }
@@ -814,7 +814,7 @@
     const box = $('.scene'), cs = getComputedStyle(box), w = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     const k = SH ? SH.sceneScale(w) : 1; scene.view($('#scene'), k, SH ? SH.sceneWidth(w, k) : 256);
   }
-  const SWIPED = 'lag:umsehen-gewischt';
+  const SWIPED = Store.prefix + 'lag:umsehen-gewischt';
   const swiped = () => { try { return localStorage.getItem(SWIPED) === '1'; } catch (e) { return false; } };
   /** Großansicht: größter ganzzahliger Faktor, bei dem die Höhe passt; breiter als der Bildschirm → waagerecht verschiebbar, startet mittig. */
   function openBig() {
@@ -842,9 +842,16 @@
     $('#gearBtn').innerHTML = img('gear', 4, '');
   }
 
+  /** 8.2.1: Band „Vorschau · Branch · Version“, nur in der Vorschau unter …/preview/. */
+  function previewBand() {
+    if (!Store.prefix || $('#previewBand')) return; const env = root.LAG_ENV || {};
+    const b = document.createElement('div'); b.id = 'previewBand'; b.className = 'preview-band'; b.setAttribute('role', 'note');
+    b.textContent = `Vorschau · ${env.branch || 'Branch'} · ${env.version || VERSION}`; document.body.prepend(b);
+  }
+
   /* ---------- Start ---------- */
   function boot(state, assets) {
-    S = state || L.emptyState(today()); L.migrateV8a(S); applyLook();
+    S = state || L.emptyState(today()); L.migrateV8a(S); applyLook(); previewBand();
     sheets = root.LAGSheet.createSheets(document, { reduce, raf: f => requestAnimationFrame(() => requestAnimationFrame(f)) });
     au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
     derive();
