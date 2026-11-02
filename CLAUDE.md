@@ -1,6 +1,6 @@
 # Life's a Game – Hinweise für Claude Code
 
-Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v8b (8.1.0) auf `main` (installierbare PWA, GitHub Pages; Hof in Stil B mit Platzhalter-Grafiken, Truhe mit Sammelalbum, sieben Farbthemen). **Selbsttest und Usability-Test laufen auf main.** In Arbeit: v8c „Ruhiger Bildschirm“ (8.2.0) auf Branch `v8c`.
+Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v8c (8.2.0) auf `main` (installierbare PWA, GitHub Pages; Hof in Stil B mit Platzhalter-Grafiken, Truhe mit Sammelalbum, sieben Farbthemen, ruhiger Bildschirm mit Info-Blatt und Einstellungen). **Selbsttest und Usability-Test laufen auf main.**
 
 ## Quellen der Wahrheit
 
@@ -31,7 +31,7 @@ Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game�
 - Gespeichert werden nur Eingaben; das Speicherschema bleibt `4`. v8a ergänzt nur `skill.buildingType` und `habit.plantType` (`LAG.migrateV8a`), v8b nur das optionale `theme`, v8c nur das optionale `accent`. Bestehende Truhen, platzierte Gegenstände und Exporte bleiben gültig.
 - Klassische Skripte, Kopier-Build nach `dist/`, kein Bundler. `npm test` grün vor jedem Commit.
 
-## Arbeitsliste v8c – Ruhiger Bildschirm (Version 8.2.0, Branch `v8c`)
+## Arbeitsliste v8c – Ruhiger Bildschirm (Version 8.2.0, auf main)
 
 Grundlage: `docs/ux-verschlankung-v8c.md` (Regeln 1–8, Tabelle Abschnitt 5, Ziele Abschnitt 6). Keine Änderung an Spielregeln, Speicherschema oder Daten.
 
