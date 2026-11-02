@@ -3,7 +3,7 @@
  */
 (function (root) {
   'use strict';
-  const L = root.LAG, SP = root.LAGSprites, SH = root.LAGSheets, Store = root.LAGStore, img = SP.img, esc = SP.esc;
+  const L = root.LAG, SP = root.LAGSprites, SH = root.LAGSheets, Store = root.LAGStore, HX = root.LAGHilfe, img = SP.img, esc = SP.esc;
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const reduce = !!(root.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const today = () => L.dkey(new Date()), hour = () => new Date().getHours();
@@ -20,9 +20,9 @@
     { title: 'Jemandem schreiben', anchor: 'der Mittagspause', tiny: 'Eine kurze Nachricht schicken', time: '12:30', skill: 2 }
   ];
 
-  let S = null, D = null, realState = null, scene = null, au = null, preview = null;
+  let S = null, D = null, realState = null, scene = null, au = null, preview = null, sheets = null;
   const U = { npcIdx: 0, selWeather: null, editingJournal: false, draft: '', promptShift: 0, renaming: null, editHabit: null, wipeArmed: false, showExport: false,
-    importPending: null, calHabit: '', calYear: null, lastTodoSkill: null, obStep: null, ci: null, undo: null };
+    importPending: null, calHabit: '', calYear: null, lastTodoSkill: null, obStep: null, ci: null, undo: null, ciLater: false };
 
   // v8a: Gebäude je Fähigkeit und Pflanzensorten (Namen immer als Text, nicht nur Bild)
   const BNAME = { muehle: 'Mühle', archiv: 'Archiv', gewaechshaus: 'Gewächshaus', schmiede: 'Schmiede', gemeinschaftshaus: 'Gemeinschafts&shy;haus', musikpavillon: 'Musik&shy;pavillon', backhaus: 'Backhaus', kontor: 'Kontor', scheune: 'Scheune' };
@@ -57,6 +57,21 @@
   const pct = (x, d = 0) => (x * 100).toLocaleString('de-DE', { maximumFractionDigits: d }) + ' %';
   const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = () => navigator.standalone === true || (root.matchMedia && matchMedia('(display-mode: standalone)').matches);
+
+  /* ---------- v8c: Info-Blatt und Erklärungen hinter „?“ ---------- */
+  const timeText = s => { if (!s) return ''; const [a, b] = s.split(':').map(Number); return b ? `${a}:${String(b).padStart(2, '0')} Uhr` : `${a} Uhr`; };
+  const qBtn = id => { const x = HX.explain(id); return `<button type="button" class="q" data-act="explain" data-x="${id}" aria-label="Erklärung: ${esc(x.title)}">?</button>`; };
+  const SEEN = 'lag:erklaert';
+  const seen = () => { try { return new Set(JSON.parse(localStorage.getItem(SEEN) || '[]')); } catch (e) { return new Set(); } };
+  function markSeen(ids) { const s0 = seen(); ids.forEach(i => s0.add(i)); try { localStorage.setItem(SEEN, JSON.stringify([...s0])); } catch (e) { /* nur Bedienhilfe */ } }
+  /** Beim ersten Besuch steht eine Erklärung einmal offen unter der Überschrift; gemerkt nur auf diesem Gerät (Bedienhilfe, keine Eingabe). */
+  const onceBox = id => seen().has(id) ? '' : `<div class="once" data-once="${id}"><p>${esc(HX.explain(id).text)}</p><button class="btn ghost sm" type="button" data-act="once-ok" data-x="${id}">Verstanden</button></div>`;
+  /** Überschrift mit „?“ (Ebene 1) und beim ersten Besuch der offenen Erklärung. */
+  const head = (tag, title, id, cls = '') => `<div class="hd2${cls ? ' ' + cls : ''}"><${tag}>${title}</${tag}>${qBtn(id)}</div>${onceBox(id)}`;
+  function openSheet(title, html, trigger, o = {}) { return sheets.open(Object.assign({ title, html, trigger }, o)); }
+  const closeSheet = () => sheets && sheets.close();
+  /** Abzeichen: Symbol und Zahl, die Bedeutung steht als Text für Screenreader daneben. */
+  const badge = (icon, txt, sr, cls = '') => `<span class="bdg${cls ? ' ' + cls : ''}">${icon}<span aria-hidden="true">${txt}</span><span class="vh">${sr}</span></span>`;
 
   /* ---------- Speichern ---------- */
   let saveT = 0;
@@ -152,7 +167,7 @@
     h.logs[t] = status; status === 'tiny' ? au.sfx.tiny() : au.sfx.check(); if (S.chest.placed.some(p => p.itemId === 'chicken')) au.sfx.cluck();
     derive(); const Hn = D.H[h.id], sk = skillById(h.skillId), units = L.unitsToNext(D.levels[sk.id], h.effort);
     const gained = Math.max(0, L.xpFor(h.effort, status) - (prev ? L.xpFor(h.effort, prev) : 0));
-    const info = `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${L.xpFor(h.effort, status)} XP</b> · ${esc(h.title)}: ${Hn.weekly ? Hn.weekCnt + ' von ' + Hn.N + ' diese Woche' : Hn.month + '× diesen Monat'}${status === 'tiny' ? ' · Mini zählt voll für die Stärke' : ''} · noch ${units}× bis ${esc(sk.name)} Stufe ${D.levels[sk.id].l + 1}</span>`;
+    const info = `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${L.xpFor(h.effort, status)} XP</b> · ${esc(h.title)}: ${Hn.weekly ? Hn.weekCnt + ' von ' + Hn.N + ' diese Woche' : Hn.month + '× diesen Monat'}${status === 'tiny' ? ` · Mini „${esc(h.tinyVersion)}“ zählt voll für die Stärke` : ''} · noch ${units}× bis ${esc(sk.name)} Stufe ${D.levels[sk.id].l + 1}</span>`;
     if (!prev && L.dropAllowed(h, t, t)) { h.rolled = t; rollDrop(pt); }
     afterAction(before, h.skillId, pt, gained, info); refresh();
     const row = document.querySelector(`[data-hid="${h.id}"]`); if (row) row.classList.add('pop');
@@ -162,7 +177,6 @@
   function logLateUI(h, k, status, pt) {
     const t = today(), before = snapshot(), was = h.logs[k], undo = L.isLate(h, k) && was === status, frees = !undo && L.freesRainDay(h, k, t);
     if (!L.logLate(h, k, status, t)) { au.sfx.err(); return; }
-    U.repairAsk = null;
     if (undo) { au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); return; }
     status === 'tiny' ? au.sfx.tiny() : au.sfx.check();
     derive(); const sk = skillById(h.skillId), x = Math.max(0, L.xpFor(h.effort, status) - L.xpFor(h.effort, was));
@@ -173,19 +187,30 @@
     const n = x.late ? 'nachgetragen' : v === 'watered' ? 'von einem Regentag gerettet' : v === 'repaired' ? 'mit einer Extra-Runde gerettet' : '';
     return n ? `<div class="meta"><span>${n}</span></div>` : ''; };
   const dayName = k => { const n = L.daysBetween(k, today()); return n === 1 ? 'gestern' : n === 2 ? 'vorgestern' : fmt(k); };
-  function lateHTML() {
+  /** v8c: offene Tage zum Nachtragen, eine Zeile je Tag; Auswahl im Info-Blatt. */
+  function lateRows() {
     const t = today(), rows = [];
     active().forEach(h => L.lateDays(h, t).forEach(x => { if (x.status !== 'done' && x.status !== 'tiny' || x.late) rows.push([h, x]); }));
-    if (!rows.length) return '';
-    rows.sort((a, b) => a[1].k.localeCompare(b[1].k) || a[0].title.localeCompare(b[0].title));
-    return `<h3>Gestern und vorgestern</h3><p class="hint">Vergessen einzutragen? Hier lässt sich das nachholen. Nachgetragenes zählt voll, nur Funde gibt es dafür keine. Hat ein Regentag den Tag gerettet, bekommst du ihn durch das Nachtragen zurück.</p>
-      <div class="list">${rows.map(([h, x]) => { const lbl = dayName(x.k);
-        return `<div class="row late-row"><span class="late-day">${lbl[0].toUpperCase() + lbl.slice(1)}</span><div><div class="row-title">${esc(h.title)}</div>${lateNote(h, x)}</div>
-          <div class="side">${['done', 'tiny'].map(st => { const on = x.late && x.status === st;
-            return `<button class="btn sm${st === 'tiny' ? ' alt' : ''}" type="button" data-act="late" data-id="${h.id}" data-k="${x.k}" data-st="${st}" aria-pressed="${on}" aria-label="${on ? 'Nachtrag zurücknehmen' : 'Nachtragen'}: ${esc(h.title)}, ${lbl}, ${st === 'tiny' ? 'Mini-Version' : 'erledigt'}">${on ? '✓ ' : ''}${st === 'tiny' ? 'Mini' : 'Erledigt'}</button>`; }).join('')}</div></div>`; }).join('')}</div>`;
+    active().forEach(h => { const d = D.H[h.id]; if (d.canRepair && d.repairKey && !rows.some(([y, x]) => y === h && x.k === d.repairKey)) rows.push([h, { k: d.repairKey, repairOnly: true }]); });
+    return rows.sort((a, b) => a[1].k.localeCompare(b[1].k) || a[0].title.localeCompare(b[0].title));
+  }
+  const lateState = (h, x) => { if (x.repairOnly) return 'ausgefallen'; const v = D.H[h.id].days[x.k]; return x.late ? 'nachgetragen' : v === 'watered' ? 'mit Regentag gerettet' : v === 'repaired' ? 'mit Extra-Runde gerettet' : 'offen'; };
+  function lateHTML() {
+    const rows = lateRows(); if (!rows.length) return '';
+    return `<div class="late">${rows.map(([h, x]) => { const lbl = dayName(x.k), st = lateState(h, x);
+      return `<div class="late1"><span><b>${lbl[0].toUpperCase() + lbl.slice(1)} ${st}:</b> ${esc(h.title)}</span><button class="btn sm${x.late ? ' alt' : ''}" type="button" data-act="late-open" data-id="${h.id}" data-k="${x.k}">${x.late ? 'Ändern' : x.repairOnly ? 'Extra-Runde' : 'Eintragen'}</button></div>`; }).join('')}
+      <p class="ctx">Nachtragen zählt voll · <button type="button" class="lnk" data-act="explain" data-x="nachtragen">mehr</button></p></div>`;
+  }
+  /** Info-Blatt zu einem offenen Tag: Erledigt, Mini (antippen nimmt einen Nachtrag zurück) und, wenn möglich, die Extra-Runde. */
+  function lateSheet(h, k, trigger) {
+    const d = D.H[h.id], x = L.lateDays(h, today()).find(y => y.k === k) || { k, status: null }, lbl = dayName(k), can = L.canLogLate(h, k, today());
+    const btns = can ? ['done', 'tiny'].map(st => { const on = x.late && x.status === st;
+      return `<button class="btn${st === 'tiny' ? ' alt' : ''}" type="button" data-act="late" data-id="${h.id}" data-k="${k}" data-st="${st}" aria-pressed="${on}">${on ? '✓ ' : ''}${st === 'tiny' ? 'Mini: ' + esc(h.tinyVersion) : 'Erledigt'}</button>`; }).join('') : '';
+    const rep2 = d.canRepair && d.repairKey === k ? `<p>Ist ${lbl} wirklich ausgefallen? Mach heute eine Runde extra, dann bleibt deine Serie bestehen.</p><div class="row-btns"><button class="btn alt" type="button" data-act="repair" data-id="${h.id}">Extra-Runde erledigt</button></div>` : '';
+    openSheet(`${lbl[0].toUpperCase() + lbl.slice(1)}: ${h.title}`, `<p class="ctx">${x.late ? 'Nachgetragen. Nochmal antippen nimmt den Nachtrag zurück.' : 'Doch erledigt? Nachgetragenes zählt voll, bringt aber keinen Fund.'}</p>${btns ? `<div class="row-btns">${btns}</div>` : ''}${rep2}`, trigger, { refocus: '#p-today .late button, #p-today .hd2 h2' });
   }
 
-  /* ---------- Gewohnheits-Formular (Onboarding, Neu, Bearbeiten) ---------- */
+  /* ---------- Gewohnheits-Formular  /* ---------- Gewohnheits-Formular (Onboarding, Neu, Bearbeiten) ---------- */
   function skillOptions(sel) { return S.skills.map(s => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${esc(s.name)}</option>`).join('') + (S.skills.length < L.C.MAX_SKILLS ? '<option value="__new">+ Neue Fähigkeit …</option>' : ''); }
   function habitForm(p, h) {
     const f = h ? h.frequency : { kind: 'daily' }, days = f.kind === 'weekdays' ? f.days : [1, 2, 3, 4, 5], n = f.kind === 'weekly' ? f.timesPerWeek : 3, eff = h ? h.effort : 2, plant = (h && h.plantType) || L.suggestPlant(S.habits.length);
@@ -231,11 +256,11 @@
     err.hidden = true;
     if (i.skillId === '__new') { const id = 's' + uid(), icon = SP.ICONS[S.skills.length % SP.ICONS.length]; S.skills.push({ id, name: i.newSkill, icon, st: S.skills.length, buildingType: L.suggestBuilding(icon) }); i.skillId = id; }
     if (kind === 'edit') {
-      const h = S.habits.find(x => x.id === U.editHabit); L.applyEdit(h, i, t); U.editHabit = null; au.sfx.place();
+      const h = S.habits.find(x => x.id === U.editHabit); L.applyEdit(h, i, t); U.editHabit = null; au.sfx.place(); closeSheet();
       toast(`<span><b>Gespeichert.</b> „${esc(h.title)}“ ist aktualisiert.</span>`);
     } else {
       const h = L.newHabit(i, t, uid()); S.habits.push(h); au.sfx.place();
-      if (kind === 'new') toast(`${img('p1', 3, '')}<span><b>Gepflanzt!</b> Auf deinem Hof wächst jetzt ein neues Beet.</span>`);
+      if (kind === 'new') { closeSheet(); toast(`${img('p1', 3, '')}<span><b>Gepflanzt!</b> Auf deinem Hof wächst jetzt ein neues Beet.</span>`); }
     }
     derive(); save(); if (kind === 'ob') showOnboarding('habits'); refresh(); scene.refresh();
   }
@@ -321,13 +346,13 @@
     if (hid) { const days = Object.entries(D.H[hid].days).filter(([k]) => k.startsWith(year)); const done = days.filter(([, v]) => v === 'done').length, tiny = days.filter(([, v]) => v === 'tiny').length, rep = days.filter(([, v]) => v === 'repaired' || v === 'watered').length;
       stat = `${done + tiny} erledigt in ${year}${tiny ? `, davon ${tiny} als Mini-Version` : ''}${rep ? ` · ${rep} gerettet` : ''}`; }
     else { const n = g.cells.filter(c => typeof c.v === 'number' && c.v > 0).length; stat = `${n} ${n === 1 ? 'Tag' : 'Tage'} in ${year} mit mindestens einer Erledigung`; }
-    const legend = hid ? LEGEND.map(([v, l, d]) => `<span><i class="v-${v}"></i><b>${l}</b> ${d}</span>`).join('')
+    const legend = hid ? LEGEND.map(([v, l]) => `<span><i class="v-${v}"></i>${l.replace(/:$/, '').replace(' (abgeschrägte Ecke)', '')}</span>`).join('')
       : `<span>wenig</span>${[0, 1, 2, 3, 4].map(v => `<i class="v-${v}"></i>`).join('')}<span>viel</span>`;
     return `<div class="harvest"><div class="ctl"><select class="in" id="calHabit" aria-label="Kalender für">${[['', 'Alle Gewohnheiten'], ...S.habits.map(h => [h.id, h.title + (h.archivedAt ? ' (pausiert)' : '')])].map(([v, l]) => `<option value="${v}" ${v === hid ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
       <button class="btn ghost" type="button" data-act="cal-prev" ${+year <= firstYear ? 'disabled' : ''} aria-label="Vorheriges Jahr">‹</button><span>${year}</span><button class="btn ghost" type="button" data-act="cal-next" ${year >= t.slice(0, 4) ? 'disabled' : ''} aria-label="Nächstes Jahr">›</button></div>
       <div class="cal-scroll"><div class="cal-grid" style="--cols:${g.cols}" role="img" aria-label="Erntekalender ${year}: ${esc(stat)}">${months}${wd}${cells}</div></div>
       <div class="cal-info" id="calInfo" aria-live="polite">Tippe auf einen Tag, um Datum und Status zu sehen.</div>
-      <div class="hint">${esc(stat)}</div><div class="cal-legend${hid ? ' full' : ''}">${legend}</div></div>`;
+      <div class="ctx">${esc(stat)}</div><div class="cal-legend">${legend}</div></div>`;
   }
 
   /* ---------- Darstellung (H4) ---------- */
@@ -338,35 +363,25 @@
     const de = document.documentElement; de.style.setProperty('--ts', S.textScale || 1);
     const th = L.themeFor(S.theme, today()); if (th !== 'standard') de.dataset.theme = th; else delete de.dataset.theme;
     const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = getComputedStyle(de).getPropertyValue('--bg-a').trim() || '#0d1719';
+    if (S.accent && S.accent !== 'thema') de.dataset.accent = S.accent; else delete de.dataset.accent;
     if (S.readableFont) de.dataset.font = 'lesbar'; else delete de.dataset.font;
     if (S.palette === 'cb') de.dataset.palette = 'cb'; else delete de.dataset.palette;
   }
-  function settingsHTML() {
-    return `<h3>Darstellung</h3><div class="look"><div class="ctl" role="group" aria-label="Schriftgröße"><span class="lab">Schrift</span>${SCALES.map(([v, l]) => `<button type="button" class="chip" data-act="scale" data-v="${v}" aria-pressed="${(S.textScale || 1) === v}">${l}</button>`).join('')}</div>
-      <div class="ctl thm" role="group" aria-label="Farbthema"><span class="lab">Thema</span>${THEMES.map(([v, l]) => { const shown = L.themeFor(v || 'standard', today()), now = v === 'jahreszeit' ? ` (jetzt ${THEMES.find(x => (x[0] || 'standard') === shown)[1]})` : '';
-        return `<button type="button" class="chip tchip" data-act="theme" data-v="${v}" aria-pressed="${(S.theme || '') === v}"><span class="tpv" data-theme="${shown}" aria-hidden="true"><i></i><i></i><i></i></span>${l}${now}</button>`; }).join('')}</div>
-      <div class="ctl" role="group" aria-label="Farben"><span class="lab">Farben</span><button type="button" class="chip" data-act="palette" data-v="" aria-pressed="${S.palette !== 'cb'}">Standard</button><button type="button" class="chip" data-act="palette" data-v="cb" aria-pressed="${S.palette === 'cb'}">Gut unterscheidbar</button></div>
-      <div class="ctl" role="group" aria-label="Schriftart"><span class="lab">Schriftart</span><button type="button" class="chip" data-act="font" data-v="" aria-pressed="${!S.readableFont}">Pixel</button><button type="button" class="chip" data-act="font" data-v="1" aria-pressed="${!!S.readableFont}">Lesbare Schrift</button></div>
-      <p class="hint">„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. Das Thema ändert nur die Farben der Oberfläche, nicht den Hof; „Passend zur Jahreszeit“ wechselt mit der Jahreszeit. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind, und lässt sich mit jedem Thema kombinieren. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p>
-      ${SH && SH.placeholder() ? '<p class="hint"><b>Vorläufige Grafiken:</b> Gebäude, Pflanzen, Natur, Deko, Tiere, Wohnhaus und Bauer auf dem Hof sind Platzhalter. Sie werden vor dem Start durch handgezeichnete Grafiken ersetzt.</p>' : ''}</div>`;
-  }
-
   /* ---------- Beta-Metriken (H5) ---------- */
   function metricsHTML() {
     if (S.demo) return '';
     const m = L.betaMetrics(S, today()), c = m.cohorts, frac = (a, b) => b ? `${a} von ${b}` : '–';
-    return `<h3>Selbsttest · Beta-Zahlen</h3><div class="data"><p class="hint">Diese Zahlen bleiben auf dem Gerät. Sie helfen dir und uns, wenn du sie freiwillig weitergibst, zu prüfen, ob der Hof beim Dranbleiben hilft.</p>
+    return `<div class="hd2"><h3>Beta-Zahlen</h3>${qBtn('beta')}</div><div class="data">
       <div class="tiles"><div class="tile"><strong>${frac(c.d30.held, c.d30.eligible)}</strong><span>nach 30 Tagen gehalten</span></div><div class="tile"><strong>${frac(c.d66.held, c.d66.eligible)}</strong><span>nach 66 Tagen gehalten</span></div>
       <div class="tile"><strong>${frac(c.d66.mastered, c.d66.eligible)}</strong><span>nach 66 Tagen gemeistert</span></div><div class="tile"><strong>${m.tiny.completions ? pct(m.tiny.share) : '–'}</strong><span>Mini-Versionen</span></div>
       <div class="tile"><strong>${m.breaks.breaks ? frac(m.breaks.returnedWithin7, m.breaks.breaks) : '–'}</strong><span>nach einer Pause binnen 7 Tagen weitergemacht</span></div><div class="tile"><strong>${pct(m.checkins.share)}</strong><span>Tage mit Check-in</span></div></div>
-      <p class="hint">„Gehalten“ heißt: in den 14 Tagen bis dahin mindestens die Hälfte der geplanten Termine geschafft.</p>
       <div class="row-btns"><button class="btn alt" type="button" data-act="metrics-save">Als Datei sichern</button><button class="btn ghost" type="button" data-act="metrics-copy">Kopieren</button></div></div>`;
   }
   function metricsJSON() { return JSON.stringify({ app: "Life's a Game", version: 5, metrics: L.betaMetrics(S, today()) }, null, 2); }
 
   /* ---------- Bereiche ---------- */
   const R = {
-    cal() { const d = new Date(), w = weather(); $('#cal').innerHTML = `${img(w, 3, WNAME[w])}<span><b>${d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' })}</b> · ${L.seasonOf(d.getMonth())} · ${d.toLocaleDateString('de-DE', { weekday: 'long' })} · ${WNAME[w]}</span>`; },
+    cal() { const d = new Date(), w = weather(), short = o => d.toLocaleDateString('de-DE', o).replace('.', ''); $('#cal').innerHTML = `${img(w, 2, '')}<span>${short({ weekday: 'short' })} ${d.getDate()}. ${short({ month: 'short' })} · ${L.seasonOf(d.getMonth())} · ${WNAME[w].toLowerCase()}</span>`; },
     hud() {
       const c = D.char; $('#lvlNum').textContent = c.l; $('#xpText').textContent = c.into + ' / ' + c.need + ' XP'; $('#xpBar').style.width = Math.round(c.into / c.need * 100) + '%';
       const w = $('#xpBarWrap'); w.setAttribute('aria-valuenow', c.into); w.setAttribute('aria-valuemin', 0); w.setAttribute('aria-valuemax', c.need);
@@ -374,9 +389,7 @@
       $('#nearText').textContent = best ? `Noch ${best.u}× „${best.h.title}“ bis ${best.s.name} Stufe ${D.levels[best.s.id].l + 1}` : '';
       const open = active().filter(h => D.H[h.id].due && !D.H[h.id].doneToday).length + S.todos.filter(t => !t.doneAt && (!t.dueDate || t.dueDate <= today())).length;
       $('#nToday').textContent = open || ''; $('#nToday').hidden = !open;
-      $('#footNote').textContent = S.demo ? 'Demo-Hof · nichts wird gespeichert' : 'Speichert nur auf diesem Gerät · Sicherung unter Fortschritt';
-      $('#soundBtn').textContent = 'Effekte: ' + (S.sound ? 'an' : 'aus'); $('#soundBtn').setAttribute('aria-pressed', S.sound);
-      $('#musicBtn').textContent = 'Musik: ' + (S.music ? 'an' : 'aus'); $('#musicBtn').setAttribute('aria-pressed', S.music);
+      const on = !!(S.sound || S.music), sb = $('#sndBtn'); sb.innerHTML = img(on ? 'speaker' : 'mute', 3, ''); sb.setAttribute('aria-pressed', on); sb.setAttribute('aria-label', on ? 'Ton ausschalten' : 'Ton einschalten');
       R.chestBadge();
     },
     chestBadge() { const n = Object.values(S.chest.items).reduce((a, b) => a + b, 0); $('#nChest').textContent = n || ''; $('#nChest').hidden = !n; },
@@ -386,50 +399,35 @@
         const l = D.levels[s.id], st = styleOf(s), sty = `--c:${st.c};--hi:${st.hi};--dk:${st.dk}`;
         if (U.renaming === s.id) return `<div class="skill" style="${sty}"><button class="iconbtn" type="button" data-act="icon" data-sid="${s.id}" title="Symbol wechseln">${img(s.icon, 3, 'Symbol wechseln')}</button><input class="in" id="renameIn" value="${esc(s.name)}" maxlength="20" aria-label="Name der Fähigkeit"><button class="btn sm ren" type="button" data-act="renok">OK</button>
           <div class="bpick" role="group" aria-label="Gebäude für ${esc(s.name)}"><span class="lab">Gebäude auf dem Hof</span>${L.BUILDINGS.map(b => `<button type="button" class="chip bchip" data-act="btype" data-sid="${s.id}" data-v="${b}" aria-pressed="${s.buildingType === b}">${sheetImg('gebaeude-' + b, 'stufe-4', 1)}<span>${BNAME[b]}</span></button>`).join('')}</div></div>`;
-        return `<div class="skill" style="${sty}">${img(s.icon, 3, '')}<div class="stat-line"><span>${esc(s.name)} <span class="lv">Stufe ${l.l} · ${BNAME[s.buildingType] || ''}</span></span><span>${l.into}/${l.need}</span></div><button class="iconbtn ren" type="button" data-act="ren" data-sid="${s.id}" aria-label="${esc(s.name)} umbenennen">Ändern</button><div class="bar sm sk"><i style="width:${Math.round(l.into / l.need * 100)}%"></i></div></div>`;
+        return `<div class="skill" style="${sty}">${img(s.icon, 3, '')}<button type="button" class="sopen" data-act="ssheet" data-sid="${s.id}"><span class="stat-line"><span>${esc(s.name)} <span class="lv">Stufe ${l.l} · ${BNAME[s.buildingType] || ''}</span></span><span>${l.into}/${l.need}</span></span><span class="vh">, Verlauf anzeigen</span></button><button class="iconbtn ren" type="button" data-act="ren" data-sid="${s.id}" aria-label="${esc(s.name)} umbenennen">Ändern</button><div class="bar sm sk"><i style="width:${Math.round(l.into / l.need * 100)}%"></i></div></div>`;
       }).join('') + (S.skills.length < L.C.MAX_SKILLS ? `<div><button class="btn ghost" type="button" data-act="addskill">+ Neue Fähigkeit</button></div>` : '');
       const ri = $('#renameIn'); if (ri) { ri.focus(); ri.select(); }
     },
     today() {
-      const t = today(), ym = t.slice(0, 7), minutes = s => { if (!s) return 9999; const [a, b] = s.split(':').map(Number); return a * 60 + b; };
+      const t = today(), minutes = s => { if (!s) return 9999; const [a, b] = s.split(':').map(Number); return a * 60 + b; };
       const due = active().filter(h => D.H[h.id].due).sort((a, b) => (!!D.H[a.id].doneToday - !!D.H[b.id].doneToday) || (minutes(a.anchorTime) - minutes(b.anchorTime)));
-      const free = active().filter(h => !D.H[h.id].due);
-      let h = `<h2>Heute</h2><p class="sub">Hake ab, was du geschafft hast. An schlechten Tagen zählt die Mini-Version voll.</p>`;
-      h += '<h3>Gewohnheiten</h3><div class="list">' + (due.length ? due.map(habitRow).join('') : `<div class="empty">${active().length ? 'Heute steht keine Gewohnheit an.' : 'Noch keine Gewohnheit. Unter „Gewohnheiten“ kannst du eine pflanzen.'}</div>`) + '</div>';
+      const free = active().filter(h => !D.H[h.id].due), doneN = due.filter(h => D.H[h.id].doneToday).length;
+      let h = head('h2', `Heute <span class="cnt">· ${doneN} von ${due.length}</span>`, 'heute');
+      h += '<div class="list">' + (due.length ? due.map(x => habitRow(x)).join('') : `<div class="empty">${active().length ? 'Heute steht keine Gewohnheit an.' : 'Noch keine Gewohnheit. Unter „Gewohnheiten“ kannst du eine pflanzen.'}</div>`) + '</div>';
       h += lateHTML();
-      // U1: Hinweise stehen unter der Liste, damit der erste Haken ohne Scrollen sichtbar bleibt.
-      if (!S.demo && isIOS() && !standalone() && !S.installHintSeen) h += `<div class="banner info"><span class="sp"><b>Als App installieren:</b> Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach läuft dein Hof auch offline.</span><button class="btn sm" type="button" data-act="install-ok">Verstanden</button></div>`;
-      const c = L.canAddHabit(S, t);
-      if (c.ok && active().length >= L.C.START_HABITS && !S.unlockSeen && !S.demo) h += `<div class="banner"><span class="sp">Eine Woche geschafft! Wenn du magst, kannst du jetzt weitere Gewohnheiten pflanzen.</span><button class="btn sm" type="button" data-act="unlock-go">Gewohnheit pflanzen</button><button class="btn ghost" type="button" data-act="unlock-no">Später</button></div>`;
-      if (new Date().getDate() <= 3 && S.freshSeen !== ym && S.startedAt < ym + '-01') h += `<div class="banner"><span class="sp">Ein neuer Monat beginnt, ein guter Moment für einen frischen Start. Möchtest du eine Gewohnheit anpassen oder neu anfangen?</span><button class="btn sm" type="button" data-act="fresh-go">Gewohnheiten ansehen</button><button class="btn ghost" type="button" data-act="fresh-no">Später</button></div>`;
-      if (!S.checkins[t] && hour() >= 5) h += `<div class="row-btns"><button class="btn ghost" type="button" data-act="ci-open">Check-in für heute öffnen</button></div>`;
-      if (free.length) h += `<h3>Heute frei</h3><div class="list">${free.map(x => { const d = D.H[x.id]; return `<div class="row off"><span></span><div><div class="row-title">${esc(x.title)}</div><div class="meta"><span>${d.weekly ? `Wochenziel erreicht: ${d.weekCnt} von ${d.N}` : 'Heute nicht geplant · ' + freqText(x.frequency)}</span></div></div><span></span></div>`; }).join('')}</div>`;
-      h += `<h3>To-dos</h3><form class="add" id="todoForm"><input class="in" id="tTitle" placeholder="Neue Aufgabe, z. B. Steuerunterlagen sortieren" maxlength="90" aria-label="Aufgabe">
-        <select class="in" id="tEff" aria-label="Aufwand"><option value="1">Leicht · 10 XP</option><option value="2" selected>Mittel · 20 XP</option><option value="3">Schwer · 30 XP</option></select>
-        <select class="in" id="tSkill" aria-label="Fähigkeit">${S.skills.map(s => `<option value="${s.id}" ${s.id === U.lastTodoSkill ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
-        <label class="due"><span>Geplant für (optional)</span><input class="in" type="date" id="tDue"></label><button class="btn" type="submit">Hinzufügen</button></form>`;
+      if (free.length) h += `<div class="free"><span class="ctx">Heute frei:</span>${free.map(x => { const d = D.H[x.id]; return `<button type="button" class="chip" data-act="hsheet" data-id="${x.id}">${esc(x.title)}<span class="vh">, ${d.weekly ? `Wochenziel erreicht: ${d.weekCnt} von ${d.N}` : 'heute nicht geplant · ' + freqText(x.frequency)}</span></button>`; }).join('')}</div>`;
       const open = S.todos.filter(x => !x.doneAt).sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999')), doneT = S.todos.filter(x => x.doneAt === t);
-      const trow = x => { const s = skillById(x.skillId); const plan = x.dueDate ? (x.dueDate === t ? 'Für heute geplant' : 'Geplant für ' + fmt(x.dueDate)) : '';
-        return `<div class="row${x.doneAt ? ' done' : ''}" data-tid="${x.id}"><button class="chk" type="button" data-act="todo" aria-pressed="${!!x.doneAt}" aria-label="${x.doneAt ? 'Als offen markieren' : 'Erledigen'}: ${esc(x.title)}"></button>
-          <div>${plan && !x.doneAt ? `<div class="planned">${plan}</div>` : ''}<div class="row-title">${esc(x.title)}</div><div class="meta"><span>${img(s.icon, 2, '')}${esc(s.name)}</span><span>+${10 * x.effort} XP</span></div></div><div class="side"><button class="del" type="button" data-act="deltodo" aria-label="Aufgabe löschen">×</button></div></div>`; };
-      h += `<div class="list">${open.length ? open.map(trow).join('') : '<div class="empty">Keine offenen To-dos.</div>'}${doneT.map(trow).join('')}</div>`;
+      h += `<div class="hd2"><h3>To-dos <span class="cnt">· ${open.length}</span></h3>${qBtn('todo')}</div>`;
+      h += `<div class="list">${open.map(todoRow).join('')}${doneT.map(todoRow).join('')}</div><div class="row-btns"><button class="btn alt" type="button" id="todoAdd" data-act="todo-new">+ To-do</button></div>`;
       $('#todayBody').innerHTML = h;
     },
     habits() {
       const t = today(), c = L.canAddHabit(S, t), act = active(), paused = S.habits.filter(h => h.archivedAt);
-      let h = `<h2>Gewohnheiten</h2><p class="sub">Jede Gewohnheit hängt an einer Routine, die du schon hast. Auf dem Hof wird daraus ein Beet, das mit der Gewohnheitsstärke wächst. Erinnerungen bringt im Prototyp Wilma zur Ankerzeit.</p>`;
-      if (U.editHabit === null) {
-        if (c.ok) h += `<h3>Neue Gewohnheit</h3><div class="ideas">${IDEAS.map((x, i) => `<button type="button" class="chip idea" data-act="idea" data-i="${i}">${esc(x.title)}</button>`).join('')}</div>${habitForm('new', null)}`;
-        else h += `<div class="say">${portrait()}<div><div class="who">Wilma</div><p>Drei Beete sind für den Anfang genug. Ab ${fmt(c.unlockOn, { weekday: 'long', day: 'numeric', month: 'long' })} kannst du weitere pflanzen. Bis dahin: Lass die ersten richtig Wurzeln schlagen.</p></div></div>`;
-      }
-      h += act.length ? `<h3>Aktiv · ${act.length}</h3><div class="list">${act.map(habitCard).join('')}</div>` : '';
-      if (paused.length) h += `<h3>Pausiert · ${paused.length}</h3><p class="hint">Pausierte Gewohnheiten zählen nicht als verpasst und behalten ihre Stärke.</p><div class="list">${paused.map(habitCard).join('')}</div>`;
+      let h = head('h2', 'Gewohnheiten', 'gewohnheiten');
+      if (c.ok) h += `<div class="row-btns"><button class="btn" type="button" id="hNew" data-act="hnew">+ Gewohnheit</button></div><div class="ideas" aria-label="Vorlagen">${IDEAS.map((x, i) => `<button type="button" class="chip idea" data-act="idea-new" data-i="${i}">${esc(x.title)}</button>`).join('')}</div>`;
+      else h += `<p class="ctx">Drei Beete sind für den Anfang genug. Ab ${fmt(c.unlockOn, { weekday: 'long', day: 'numeric', month: 'long' })} kannst du weitere pflanzen. Bis dahin: Lass die ersten richtig Wurzeln schlagen.</p>`;
+      h += act.length ? `<h3>Aktiv · ${act.length}</h3><div class="list">${act.map(x => habitRow(x, { check: false })).join('')}</div>` : '';
+      if (paused.length) h += `<h3>Pausiert · ${paused.length}</h3><div class="list">${paused.map(x => habitRow(x, { check: false })).join('')}</div>`;
       $('#p-habits').innerHTML = h;
-      if (U.editHabit) { const f = $('[data-form="edit"]'); if (f) f.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }
     },
     journal() {
       const t = today(), cur = L.journalOn(S, t);
-      let h = `<h2>Logbuch</h2><p class="sub">Ein Eintrag pro Tag schließt den Tag ab. Es gibt nur ein paar XP dafür, das Schreiben selbst ist der Gewinn. Wähl das Wetter deines Tages, Hof und Musik passen sich an.</p>`;
+      let h = head('h2', 'Logbuch', 'logbuch');
       if (cur && !U.editingJournal) h += `<div class="closed">${img('gem', 2, '')} Tag abgeschlossen. Auf deinem Hof bricht der Abend an.</div><div class="entry"><header>${img(cur.weather, 3, '')} Heute · ${WNAME[cur.weather]}</header><p>${esc(cur.text)}</p><div><button class="btn alt" type="button" data-act="editj">Bearbeiten</button></div></div>`;
       else {
         const pr = PROMPTS[(new Date().getDate() + U.promptShift) % PROMPTS.length], w = U.selWeather || weather();
@@ -451,109 +449,150 @@
       const t = today(), ym = t.slice(0, 7), mName = new Date().toLocaleDateString('de-DE', { month: 'long' });
       let done = 0, tiny = 0, grown = 0; S.habits.forEach(x => { const d = D.H[x.id]; done += d.month; tiny += d.monthTiny; if (d.stage > d.stageMonthStart) grown++; });
       const grads = S.habits.filter(x => D.H[x.id].graduated), jm = S.journal.filter(j => j.date.startsWith(ym)).length;
-      let h = `<h2>Fortschritt</h2><p class="sub">Du vergleichst dich hier nur mit dir selbst. Gezählt wird, was du wirklich getan hast.</p>
-        <h3>Erntekalender</h3>${calendarHTML()}
-        <h3>Monatsrückblick ${mName}</h3><div class="tiles"><div class="tile"><strong>${done}</strong><span>erledigte Termine</span></div><div class="tile"><strong>${tiny}</strong><span>davon Mini-Versionen</span></div><div class="tile"><strong>${grown}</strong><span>Pflanzen gewachsen</span></div><div class="tile"><strong>${grads.length}</strong><span>gemeistert</span></div><div class="tile"><strong>${jm}</strong><span>Logbuch-Einträge</span></div></div>
-        <h3>Verlauf der Fähigkeiten · letzte 30 Tage</h3><div class="list">`;
-      const keys = [...Array(30)].map((_, i) => L.addDays(t, i - 29));
-      S.skills.forEach(s => { const st = styleOf(s), b = D.byDay[s.id]; let acc = 0; const vals = keys.map(k => acc += b[k] || 0), max = Math.max(1, acc);
-        const line = vals.map((v, i) => (i / 29 * 200).toFixed(1) + ',' + (36 - v / max * 32).toFixed(1)).join(' ');
-        h += `<div class="spark">${img(s.icon, 3, '')}<svg viewBox="0 0 200 40" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)}: ${acc} XP in 30 Tagen"><line x1="0" y1="38" x2="200" y2="38" stroke="#3a5450" stroke-width="1" vector-effect="non-scaling-stroke"/><polygon points="0,38 ${line} 200,38" fill="${st.c}" opacity=".18"/><polyline points="${line}" fill="none" stroke="${st.c}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="r">${esc(s.name)}<br>+${acc} XP</div></div>`; });
-      h += `</div><h3>Ruhmeshalle</h3>` + (grads.length ? `<div class="hall">${grads.map(g => `<div>${img('gem', 3, '')}<span>${esc(g.title)} · gemeistert am ${fmt(D.H[g.id].gradDate, { day: 'numeric', month: 'long' })}</span></div>`).join('')}</div>` : '<div class="empty">Noch keine gemeisterte Gewohnheit. Hält eine Gewohnheit 30 Tage ohne Erinnerung, landet sie hier.</div>');
-      h += settingsHTML() + metricsHTML();
-      h += `<h3>Deine Daten</h3><div class="data">${S.demo ? '<p class="hint">Im Demo-Hof sind Sicherung und Löschen ausgeschaltet.</p>' : `
-        <p class="hint">Alles bleibt auf diesem Gerät. Eine Sicherung ist eine Textdatei mit allen Daten, mit der du deinen Hof später wiederherstellen kannst.</p>
-        <div class="row-btns"><button class="btn alt" type="button" data-act="export">${U.showExport ? 'Sicherung ausblenden' : 'Sicherung erstellen'}</button><button class="btn alt" type="button" data-act="import-open">Sicherung importieren</button><button class="btn ghost" type="button" data-act="wipe">${U.wipeArmed ? 'Wirklich alles löschen? Nochmal tippen' : 'Alles löschen'}</button></div>
-        ${U.showExport ? `<textarea class="in" id="exportTxt" readonly aria-label="Sicherung">${esc(JSON.stringify(S))}</textarea><div class="row-btns"><button class="btn sm" type="button" data-act="copy">In die Zwischenablage kopieren</button></div>` : ''}
-        <input type="file" id="importFile" accept="application/json,.json" hidden>
-        <details><summary class="hint" style="cursor:pointer">Oder Sicherungstext einfügen</summary><div style="display:grid;gap:8px;margin-top:8px"><textarea class="in" id="importTxt" aria-label="Sicherungstext"></textarea><div><button class="btn sm" type="button" data-act="import-paste">Prüfen</button></div></div></details>
-        <div class="err" id="importErr" hidden></div>
-        ${U.importPending ? `<div class="banner info"><span class="sp">Die Sicherung enthält ${U.importPending.habits.length} Gewohnheiten, ${U.importPending.todos.length} To-dos und ${U.importPending.journal.length} Logbuch-Einträge. Sie ersetzt die Daten auf diesem Gerät.</span><button class="btn sm" type="button" data-act="import-apply">Wiederherstellen</button><button class="btn ghost" type="button" data-act="import-cancel">Abbrechen</button></div>` : ''}
-        ${isIOS() && !standalone() ? '<p class="hint">Tipp: In Safari über „Teilen“ → „Zum Home-Bildschirm“ wird der Hof zur App, die offline läuft.</p>' : ''}`}</div>`;
+      let h = head('h2', 'Fortschritt', 'fortschritt');
+      h += `<div class="hd2"><h3>Erntekalender</h3>${qBtn('kalender')}</div>${calendarHTML()}
+        <h3>Monatsrückblick ${mName}</h3><div class="badges month">${[['gem', done, 'erledigt', 'erledigte Termine'], ['boot', tiny, 'Mini', 'davon Mini-Versionen'], ['p2', grown, 'gewachsen', 'Pflanzen gewachsen'], ['flower', grads.length, 'gemeistert', 'gemeistert'], ['book', jm, 'Logbuch', 'Logbuch-Einträge']].map(([ic, n, w, sr]) => `<span class="bdg">${img(ic, 2, '')}<b>${n}</b> <span aria-hidden="true">${w}</span><span class="vh">${sr}</span></span>`).join('')}</div>`;
+      h += `<div class="hd2"><h3>Gemeistert</h3>${qBtn('gemeistert')}</div>` + (grads.length ? `<div class="hall">${grads.map(g => `<div>${img('gem', 3, '')}<span>${esc(g.title)} · gemeistert am ${fmt(D.H[g.id].gradDate, { day: 'numeric', month: 'long' })}</span></div>`).join('')}</div>` : '<p class="ctx">Noch keine gemeisterte Gewohnheit.</p>');
       $('#progressBody').innerHTML = h;
       const sc = $('#p-progress .cal-scroll'); if (sc) sc.scrollLeft = (U.calYear || t.slice(0, 4)) === t.slice(0, 4) ? sc.scrollWidth : 0;
     },
     chest() {
       const cap = L.slotsFor(D.char.l), used = S.chest.placed.filter(p => !L.ITEMS[p.itemId].animal).length, sleep = L.farmSleeps(hour());
-      let h = `<h2>Truhe</h2><p class="sub">Bei jeder Erledigung kann etwas für deinen Hof auftauchen, und jede neue Wachstumsstufe bringt eine Ernte. Funde lassen sich weder kaufen noch erzwingen.</p>`;
+      let h = head('h2', 'Truhe', 'truhe');
       if (sleep) h += `<div class="sleep">Die Farm schläft. Ab 6 Uhr kannst du wieder dekorieren. Abhaken geht natürlich jederzeit.</div>`;
       h += `<h3>Funde · ${used} von ${cap} Plätzen belegt</h3>`;
       const inv = Object.entries(S.chest.items).filter(([, n]) => n > 0);
       h += inv.length ? `<div class="inv">${inv.map(([k, n]) => { const it = L.ITEMS[k], full = !it.animal && used >= cap; return `<div class="item${it.rare ? ' r' : ''}"><div class="pv">${itemImg(k, 2)}</div><h4>${it.name}<span class="badge ${it.rare ? 'rare' : 'com'}">${it.rare ? 'selten' : 'häufig'}</span></h4><div class="cnt">${n}× in der Truhe</div><button class="btn sm" type="button" data-act="place" data-type="${k}" ${sleep || full ? 'disabled' : ''}>${full ? 'Kein Platz frei' : 'Aufstellen'}</button></div>`; }).join('')}</div>`
         : '<div class="empty">Die Truhe ist leer. Erledige Gewohnheiten und To-dos, manchmal taucht dabei etwas auf.</div>';
-      h += '<h3>Auf dem Hof</h3>' + (S.chest.placed.length ? `<div class="inv">${S.chest.placed.map((p, i) => `<div class="item${L.ITEMS[p.itemId].rare ? ' r' : ''}"><div class="pv">${itemImg(p.itemId, 2)}</div><h4>${L.ITEMS[p.itemId].name}</h4><div class="cnt">${L.ITEMS[p.itemId].animal ? 'Läuft frei herum' : 'Platz ' + (p.slot + 1)}</div><button class="btn sm alt" type="button" data-act="stash" data-i="${i}" ${sleep ? 'disabled' : ''}>Einlagern</button></div>`).join('')}</div>` : '<div class="empty">Noch nichts aufgestellt.</div>');
-      h += `<p class="hint">Mit jedem Level wird ein weiterer Deko-Platz frei (Level ${D.char.l}: ${cap} Plätze).</p>`;
+      h += '<h3>Auf dem Hof</h3>' + (S.chest.placed.length ? `<div class="inv">${S.chest.placed.map((p, i) => `<div class="item${L.ITEMS[p.itemId].rare ? ' r' : ''}"><div class="pv">${itemImg(p.itemId, 2)}</div><h4>${L.ITEMS[p.itemId].name}</h4><div class="cnt">${L.ITEMS[p.itemId].animal ? 'Läuft frei herum' : 'Platz ' + (p.slot + 1)}</div><button class="btn sm alt" type="button" data-act="stash" data-i="${i}" ${sleep ? 'disabled' : ''}>Einlagern</button></div>`).join('')}</div>` : '<p class="ctx">Noch nichts aufgestellt.</p>');
       h += albumHTML();
-      const o = L.dropOdds(today()), names = ks => ks.map(k => L.ITEMS[k].name).join(', ');
-      h += `<details class="odds"${U.oddsOpen ? ' open' : ''}><summary>Wie Funde entstehen</summary><div class="odds-body">
-        <p>Funde sind Zufall, aber offen: Es gibt nichts zu kaufen, keine versteckten Quoten und keine Pechsträhnen-Ausgleiche.</p>
-        <dl class="kv"><dt>Bei jeder Erledigung</dt><dd>${pct(o.any)} Chance auf einen Fund, einmal pro Gewohnheit und Tag bzw. einmal pro To-do</dd>
-        <dt>Davon selten</dt><dd>${pct(o.rareShare)} der Funde, also ${pct(o.rare, 1)} pro Erledigung. Häufig: ${pct(o.common, 1)}</dd>
-        <dt>Ernte</dt><dd>Jede neu erreichte Wachstumsstufe bringt sicher einen Fund (${pct(o.harvestRare)} davon selten), einmal pro Stufe</dd>
-        <dt>Gemeistert</dt><dd>Sicher ein seltener Fund</dd>
-        <dt>Welcher Fund</dt><dd>Jeder gerade findbare Gegenstand der Art (häufig oder selten) ist gleich wahrscheinlich</dd>
-        <dt>Jetzt findbar, häufig</dt><dd>${esc(names(o.commonItems))}</dd><dt>Jetzt findbar, selten</dt><dd>${esc(names(o.rareItems))}</dd></dl>
-        <p class="hint">Jetzt ist ${L.SEASON_NAME[o.season]}. Gegenstände einer Jahreszeit sind nur in ihr findbar und bleiben danach dauerhaft in der Truhe. Mehr Gegenstände bedeuten nicht mehr Funde, die Chance bleibt gleich.</p>
-        <p class="hint">Im Mittel bringen etwa 8 Erledigungen einen Fund und etwa 42 einen seltenen. Logbuch-Einträge geben XP, aber keine Funde.</p></div></details>`;
+      h += `<div class="row-btns"><button class="btn ghost" type="button" id="oddsBtn" data-act="odds">Wie funktionieren Funde?</button></div>`;
       $('#p-chest').innerHTML = h;
     },
-    npc() { $('#npcFace').innerHTML = portrait(); const l = nudges(); $('#npcText').textContent = l[U.npcIdx % l.length]; }
+    npc() {
+      const x = hint(); U.hint = x; $('#npcFace').innerHTML = img('wilma', 3, ''); $('#npcText').textContent = x.text;
+      const a = { late: () => `<button class="btn sm" type="button" data-act="late-open" data-id="${x.item.id}" data-k="${x.item.k}">Eintragen</button>`,
+        checkin: () => `<button class="btn sm" type="button" data-act="ci-open">Check-in</button><button class="btn ghost" type="button" data-act="ci-later">Später</button>`,
+        milestone: () => x.item.acts || '', spruch: () => x.more ? `<button class="btn ghost" type="button" data-act="npc-next" aria-label="Nächster Hinweis von Wilma">Mehr</button>` : '' }[x.kind]();
+      $('#npcAct').innerHTML = a; $('#npcAct').hidden = !a;
+    },
+    /** v8c: Einstellungen als eigener Bildschirm (Zahnrad in der Kopfzeile). */
+    settings() {
+      const b = $('#settingsBody'); if (!b) return;
+      const onoff = (act, v, on) => `<button type="button" class="chip" data-act="${act}" data-v="1" aria-pressed="${!!v === true}">An</button><button type="button" class="chip" data-act="${act}" data-v="" aria-pressed="${!v}">Aus</button>`;
+      let h = `<div class="hd2"><h3>Darstellung</h3>${qBtn('darstellung')}</div><div class="look">
+        <div class="ctl thm" role="group" aria-label="Farbthema"><span class="lab">Thema</span>${THEMES.map(([v, l]) => { const shown = L.themeFor(v || 'standard', today()), now = v === 'jahreszeit' ? ` (jetzt ${THEMES.find(x => (x[0] || 'standard') === shown)[1]})` : '';
+          return `<button type="button" class="chip tchip" data-act="theme" data-v="${v}" aria-pressed="${(S.theme || '') === v}"><span class="tpv" data-theme="${shown}" aria-hidden="true"><i></i><i></i><i></i></span>${l}${now}</button>`; }).join('')}</div>
+        <div class="ctl" role="group" aria-label="Akzentfarbe"><span class="lab">Akzent ${qBtn('akzent')}</span>${HX.ACCENTS.map(([v, l]) => `<button type="button" class="chip achip" data-act="accent" data-v="${v}" aria-pressed="${(S.accent || 'thema') === v}"><span class="apv" ${v === 'thema' ? '' : `data-accent="${v}"`} aria-hidden="true">Aa</span>${l}</button>`).join('')}</div>
+        <div class="ctl" role="group" aria-label="Schriftgröße"><span class="lab">Schrift</span>${SCALES.map(([v, l]) => `<button type="button" class="chip" data-act="scale" data-v="${v}" aria-pressed="${(S.textScale || 1) === v}">${l}</button>`).join('')}</div>
+        <div class="ctl" role="group" aria-label="Schriftart"><span class="lab">Schriftart</span><button type="button" class="chip" data-act="font" data-v="" aria-pressed="${!S.readableFont}">Pixel</button><button type="button" class="chip" data-act="font" data-v="1" aria-pressed="${!!S.readableFont}">Lesbare Schrift</button></div>
+        <div class="ctl" role="group" aria-label="Farben"><span class="lab">Farben</span><button type="button" class="chip" data-act="palette" data-v="" aria-pressed="${S.palette !== 'cb'}">Standard</button><button type="button" class="chip" data-act="palette" data-v="cb" aria-pressed="${S.palette === 'cb'}">Gut unterscheidbar</button></div></div>
+        <h3>Ton</h3><div class="look"><div class="ctl" role="group" aria-label="Musik"><span class="lab">Musik</span>${onoff('music', S.music)}</div><div class="ctl" role="group" aria-label="Effekte"><span class="lab">Effekte</span>${onoff('sound', S.sound)}</div></div>`;
+      h += `<div class="hd2"><h3>Daten & Sicherung</h3>${qBtn('daten')}</div><div class="data">${S.demo ? '<p class="ctx">Demo-Hof · nichts wird gespeichert. Im Demo-Hof sind Sicherung und Löschen ausgeschaltet.</p>' : `
+        <p class="ctx">Speichert nur auf diesem Gerät.</p>
+        <div class="row-btns"><button class="btn alt" type="button" data-act="export">${U.showExport ? 'Sicherung ausblenden' : 'Sicherung erstellen'}</button><button class="btn alt" type="button" data-act="import-open">Sicherung importieren</button><button class="btn ghost" type="button" data-act="wipe">${U.wipeArmed ? 'Wirklich alles löschen? Nochmal tippen' : 'Alles löschen'}</button></div>
+        ${U.showExport ? `<textarea class="in" id="exportTxt" readonly aria-label="Sicherung">${esc(JSON.stringify(S))}</textarea><div class="row-btns"><button class="btn sm" type="button" data-act="copy">In die Zwischenablage kopieren</button></div>` : ''}
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+        <details><summary class="ctx">Oder Sicherungstext einfügen</summary><div style="display:grid;gap:8px;margin-top:8px"><textarea class="in" id="importTxt" aria-label="Sicherungstext"></textarea><div><button class="btn sm" type="button" data-act="import-paste">Prüfen</button></div></div></details>
+        <div class="err" id="importErr" hidden></div>
+        ${U.importPending ? `<div class="banner info"><span class="sp">Die Sicherung enthält ${U.importPending.habits.length} Gewohnheiten, ${U.importPending.todos.length} To-dos und ${U.importPending.journal.length} Logbuch-Einträge. Sie ersetzt die Daten auf diesem Gerät.</span><button class="btn sm" type="button" data-act="import-apply">Wiederherstellen</button><button class="btn ghost" type="button" data-act="import-cancel">Abbrechen</button></div>` : ''}`}</div>`;
+      h += metricsHTML();
+      h += `<h3>Über die App</h3><div class="data"><p>Life's a Game · Prototyp v${esc(VERSION)}</p><p class="ctx">Speichert nur auf diesem Gerät. Keine Anfragen an andere Dienste.</p>
+        ${SH && SH.placeholder() ? '<p class="ctx"><b>Vorläufige Grafiken:</b> Gebäude, Pflanzen, Natur, Deko, Tiere, Wohnhaus und Bauer auf dem Hof sind Platzhalter. Sie werden vor dem Start durch handgezeichnete Grafiken ersetzt.</p>' : ''}
+        ${isIOS() && !standalone() ? '<p class="ctx">Tipp: In Safari über „Teilen“ → „Zum Home-Bildschirm“ wird der Hof zur App, die offline läuft.</p>' : ''}</div>`;
+      b.innerHTML = h;
+    }
   };
-  /** v8b Sammelalbum: alle Gegenstände nach Gruppen, gefundene mit Bild, offene als Silhouette. Ohne Fortschrittsprozente, ohne Fristen. */
+  /** v8b Sammelalbum: Gruppen eingeklappt mit „x von y“, die erste offen (v8c). Gefundene mit Bild, offene als Silhouette. Ohne Prozente, ohne Fristen. */
   function albumHTML() {
-    return `<h3>Sammelalbum</h3><div class="album">${L.album(S.chest).map(g => `<section class="alb-g" aria-label="${g.name}: ${g.found} von ${g.total} gefunden"><h4>${g.name} <span>${g.found} von ${g.total} gefunden</span></h4><div class="alb">${g.items.map(({ id, found }) => {
+    if (!U.albumOpen) U.albumOpen = new Set(['garten']);
+    return `<h3>Sammelalbum</h3><div class="album">${L.album(S.chest).map(g => `<details class="alb-g" data-g="${g.id}"${U.albumOpen.has(g.id) ? ' open' : ''}><summary><span>${g.name}</span><span class="ctx">${g.found} von ${g.total} gefunden</span></summary><div class="alb">${g.items.map(({ id, found }) => {
       const it = L.ITEMS[id], when = it.season ? `Findbar im ${L.SEASON_NAME[it.season]}` : '', n = S.chest.items[id] || 0, out = S.chest.placed.filter(p => p.itemId === id).length;
       const info = found ? `${it.name} · ${it.rare ? 'selten' : 'häufig'}${it.season ? ' · ' + L.SEASON_NAME[it.season] : ''}. ${n ? n + '× in der Truhe' : ''}${n && out ? ', ' : ''}${out ? out + '× auf dem Hof' : ''}.` : `${it.name}: noch nicht gefunden.${when ? ' ' + when + '.' : ''}`;
-      return `<button type="button" class="alb-i${found ? '' : ' open'}" data-act="info" data-info="${esc(info)}" aria-label="${esc(it.name)}, ${found ? 'gefunden' : 'noch nicht gefunden'}${when ? ', ' + when : ''}"><span class="pv">${itemImg(id, 2, !found)}</span><span class="nm">${esc(it.name)}</span>${!found && when ? `<span class="wh">${when}</span>` : ''}</button>`; }).join('')}</div></section>`).join('')}</div>`;
+      return `<button type="button" class="alb-i${found ? '' : ' open'}" data-act="info" data-info="${esc(info)}" aria-label="${esc(it.name)}, ${found ? 'gefunden' : 'noch nicht gefunden'}${when ? ', ' + when : ''}"><span class="pv">${itemImg(id, 2, !found)}</span><span class="nm">${esc(it.name)}</span>${!found && when ? `<span class="wh">${when}</span>` : ''}</button>`; }).join('')}</div></details>`).join('')}</div>`;
+  }
+  /** „Wie funktionieren Funde?“: Fundchancen, Regeln und Jahreszeit (die Liste der findbaren Gegenstände zeigt das Album). */
+  function oddsSheet(trigger) {
+    const o = L.dropOdds(today());
+    openSheet('Wie funktionieren Funde?', `<dl class="kv"><dt>Je Erledigung</dt><dd>${pct(o.any)} Chance, einmal pro Gewohnheit und Tag bzw. pro To-do</dd><dt>Davon selten</dt><dd>${pct(o.rareShare)}, also ${pct(o.rare, 1)} je Erledigung</dd><dt>Ernte</dt><dd>Jede neue Wachstumsstufe bringt sicher einen Fund</dd><dt>Gemeistert</dt><dd>Sicher ein seltener Fund</dd><dt>Jahreszeit</dt><dd>Jetzt ${L.SEASON_NAME[o.season]}. Saisonale Funde nur dann, sie bleiben danach</dd></dl>
+      <p class="ctx">Nichts zu kaufen, keine versteckten Quoten. Im Mittel bringen 8 Erledigungen einen Fund, 42 einen seltenen. Logbuch-Einträge bringen keine Funde.</p>`, trigger, { refocus: '#oddsBtn' });
+  }
+  /** Fähigkeit antippen: Stufe, Gebäude und Verlauf der letzten 30 Tage. */
+  function skillSheet(s, trigger) {
+    const l = D.levels[s.id], st = styleOf(s), b = D.byDay[s.id], keys = [...Array(30)].map((_, i) => L.addDays(today(), i - 29)); let acc = 0;
+    const vals = keys.map(k => acc += b[k] || 0), max = Math.max(1, acc), line = vals.map((v, i) => (i / 29 * 200).toFixed(1) + ',' + (36 - v / max * 32).toFixed(1)).join(' ');
+    openSheet(s.name, `<dl class="kv"><dt>Stufe</dt><dd>${l.l} · ${l.into} von ${l.need} XP bis Stufe ${l.l + 1}</dd><dt>Gebäude</dt><dd>${BNAME[s.buildingType] || ''}</dd><dt>Letzte 30 Tage</dt><dd>+${acc} XP</dd></dl>
+      <div class="spark">${img(s.icon, 3, '')}<svg viewBox="0 0 200 40" preserveAspectRatio="none" role="img" aria-label="${esc(s.name)}: ${acc} XP in 30 Tagen"><line x1="0" y1="38" x2="200" y2="38" stroke="currentColor" stroke-opacity=".4" stroke-width="1" vector-effect="non-scaling-stroke"/><polygon points="0,38 ${line} 200,38" fill="${st.c}" opacity=".18"/><polyline points="${line}" fill="none" stroke="${st.c}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="r">Verlauf der Fähigkeit</div></div>
+      <div class="row-btns"><button class="btn" type="button" data-act="ren" data-sid="${s.id}">Ändern</button></div>`, trigger, { refocus: `[data-sid="${s.id}"]` });
   }
   /** U17: Regentage als Knopf, Antippen erklärt sie (kein Tooltip nötig). */
-  const tokInfo = d => `Regentage: ${d.tokens} von 2. Ein Regentag rettet automatisch einen verpassten Tag deiner Serie. Für je 7 erledigte Termine bekommst du einen, höchstens zwei.`;
-  const tokBtn = (d, text) => `<button type="button" class="tok" data-act="info" data-info="${esc(tokInfo(d))}" aria-label="Regentage: ${d.tokens} von 2. Erklärung anzeigen">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}${text ? `<span>${d.tokens} ${d.tokens === 1 ? 'Regentag' : 'Regentage'}</span>` : ''}</button>`;
-  function habitRow(h) {
-    const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), done = d.doneToday === 'done', tiny = d.doneToday === 'tiny';
-    return `<div class="row${done || tiny ? ' done' : ''}" data-hid="${h.id}">
-      <button class="chk${tiny ? ' tiny' : ''}" type="button" data-act="hdone" data-id="${h.id}" aria-pressed="${done || tiny}" aria-label="${done || tiny ? 'Rückgängig' : 'Erledigt'}: ${esc(h.title)}"></button>
-      <div><div class="plan">Nach ${esc(h.anchor)}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) : ''}</div><div class="row-title">${esc(h.title)}</div>
-      <div class="meta"><span>${img('p' + d.stage, 2, '', { F: st.c, f: st.dk })}${L.STAGES[d.stage][1]} · ${Math.round(d.s * 100)} %</span><span>${img(sk.icon, 2, '')}${esc(sk.name)} +${10 * h.effort}</span>
-      <span>${d.weekly ? `${d.weekCnt} von ${d.N} diese Woche` : `${d.month}× diesen Monat`}</span>
-      ${h.streakEnabled && d.streak ? `<span>${img('flame', 2, '')}${d.streak}${d.weekly ? (d.streak === 1 ? ' Woche' : ' Wochen') : ''} in Folge</span>` : ''}${h.streakEnabled && !d.weekly ? tokBtn(d, true) : ''}</div>
-      <div class="tinytxt">Mini: ${esc(h.tinyVersion)}</div>
-      ${d.canRepair ? repairHTML(h, d) : ''}</div>
-      <div class="side habit-side"><button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" aria-label="${tiny ? 'Rückgängig' : 'Mini-Version erledigt'}: ${esc(h.tinyVersion)}"><b>Mini</b><span>${esc(h.tinyVersion)}</span></button></div></div>`;
+  const tokBtn = d => `<button type="button" class="tok" data-act="explain" data-x="regentage" aria-label="Regentage: ${d.tokens} von 2. Erklärung anzeigen">${[0, 1].map(i => `<i class="${i < d.tokens ? '' : 'e'}"></i>`).join('')}<span>${d.tokens} ${d.tokens === 1 ? 'Regentag' : 'Regentage'} bereit</span></button>`;
+  /** v8c: Abzeichen einer Gewohnheit: Pflanze mit Stärke, Serie nur wenn aktiv. */
+  function habitBadges(h, d, st) {
+    const pct = Math.round(d.s * 100);
+    let b = badge(img('p' + d.stage, 2, '', { F: st.c, f: st.dk }), pct + ' %', `${L.STAGES[d.stage][1]}, Stärke ${pct} %`);
+    if (h.streakEnabled && d.streak) b += badge(img('flame', 2, ''), d.streak, `${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : ''} in Folge`);
+    if (d.graduated) b += badge(img('gem', 2, ''), '', 'Gemeistert', 'gold');
+    if (h.archivedAt) b += `<span class="bdg">Pausiert</span>`;
+    return b;
   }
-  function repairHTML(h, d) {
-    const k = d.repairKey, day = dayName(k), Day = day[0].toUpperCase() + day.slice(1);
-    if (U.repairAsk !== h.id + k && L.canLogLate(h, k, today())) return `<div class="repair"><span>${Day} ist nichts eingetragen. Doch erledigt?</span>
-      <button class="btn sm" type="button" data-act="late" data-id="${h.id}" data-k="${k}" data-st="done">Nachtragen</button><button class="btn sm alt" type="button" data-act="late" data-id="${h.id}" data-k="${k}" data-st="tiny">Mini nachtragen</button>
-      <button class="btn ghost" type="button" data-act="repair-ask" data-id="${h.id}" data-k="${k}">Nein, ist ausgefallen</button></div>`;
-    return `<div class="repair">${Day} ist ausgefallen. Mach heute eine Runde extra, dann bleibt deine Serie bestehen. <button class="btn sm" type="button" data-act="repair" data-id="${h.id}">Extra-Runde erledigt</button></div>`;
+  /** Kontextzeile: zuerst Uhrzeit bzw. Wochenstand, dann der Anker (wird bei Platzmangel am Ende gekürzt; vollständig im Info-Blatt). */
+  const habitCtx = (h, d) => d.weekly ? `${d.weekCnt} von ${d.N} diese Woche · nach ${esc(h.anchor)}` : `${h.anchorTime ? timeText(h.anchorTime) + ' · ' : ''}nach ${esc(h.anchor)}`;
+  /** v8c Regel 2: kompakte Karte, höchstens zwei Textzeilen und eine Reihe Abzeichen. Antippen (außer Haken und Mini) öffnet das Info-Blatt. */
+  function habitRow(h, opt = {}) {
+    const d = D.H[h.id], st = styleOf(skillById(h.skillId)), done = d.doneToday === 'done', tiny = d.doneToday === 'tiny', check = opt.check !== false;
+    return `<div class="row hrow${done || tiny ? ' done' : ''}${check ? '' : ' nochk'}" data-hid="${h.id}">
+      ${check ? `<button class="chk${tiny ? ' tiny' : ''}" type="button" data-act="hdone" data-id="${h.id}" aria-pressed="${done || tiny}" aria-label="${done || tiny ? 'Rückgängig' : 'Erledigt'}: ${esc(h.title)}"></button>` : ''}
+      <button class="hopen" type="button" data-act="hsheet" data-id="${h.id}"><span class="row-title">${esc(h.title)}</span><span class="ctx">${check ? habitCtx(h, d) : `nach ${esc(h.anchor)} · ${freqText(h.frequency)}`}</span><span class="badges">${habitBadges(h, d, st)}</span><span class="vh">, Details öffnen</span></button>
+      ${check ? `<button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" aria-label="${tiny ? 'Rückgängig' : 'Mini-Version erledigt'}: ${esc(h.tinyVersion)}">Mini</button>` : ''}</div>`;
   }
-  function habitCard(h) {
-    if (U.editHabit === h.id) return `<div class="hcard"><div class="hd"><div class="row-title">„${esc(h.title)}“ bearbeiten</div></div>${habitForm('edit', h)}</div>`;
-    const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), stageName = L.STAGES[d.stage][1], pct = Math.round(d.s * 100);
-    return `<div class="hcard${d.graduated ? ' grad' : ''}${h.archivedAt ? ' paused' : ''}">
-      <div class="hd">${img('p' + d.stage, 5, stageName, { F: st.c, f: st.dk })}<div class="row-title">${esc(h.title)}</div>${d.graduated ? '<span class="badge gold">Gemeistert</span>' : ''}${h.archivedAt ? '<span class="badge com">Pausiert</span>' : ''}</div>
-      <div class="plan">${esc(planText(h))}${h.anchorTime ? ' · ca. ' + esc(h.anchorTime) + ' Uhr' : ''}</div>
-      <dl class="kv"><dt>Rhythmus</dt><dd>${freqText(h.frequency)} · Aufwand ${h.effort} (${10 * h.effort} XP)</dd><dt>Mini-Version</dt><dd>${esc(h.tinyVersion)}</dd><dt>Fähigkeit</dt><dd>${esc(sk.name)}</dd>
-      <dt>Stärke</dt><dd>${pct} % · ${stageName} · ${d.age > 66 ? `Tag ${d.age} · die üblichen 66 Tage sind geschafft` : `Tag ${d.age} von etwa 66`}</dd>${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : (d.streak === 1 ? 'Termin' : 'Termine')}${d.weekly ? '' : ` · Regentage ${tokBtn(d)}`}</dd>` : ''}<dt>Gesamt</dt><dd>${d.year}× dieses Jahr</dd>
+  /** Info-Blatt einer Gewohnheit: alle übrigen Angaben und die Aktionen Bearbeiten, Kalender, Pausieren. */
+  function habitSheet(h, trigger) {
+    const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), pct = Math.round(d.s * 100), stage = L.STAGES[d.stage][1];
+    const html = `<dl class="kv"><dt>Anker</dt><dd>nach ${esc(h.anchor)}${h.anchorTime ? ', ca. ' + timeText(h.anchorTime) : ''} · ${freqText(h.frequency)}</dd>
+      <dt>Pflanze</dt><dd>${stage} · Stärke ${pct} % · ${d.age > 66 ? `Tag ${d.age}, die üblichen 66 Tage sind geschafft` : `Tag ${d.age} von etwa 66`}${d.graduated ? ' · <b>Gemeistert</b>' : ''}</dd>
+      ${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : ''} in Folge${d.weekly ? '' : ' ' + tokBtn(d)}</dd>` : ''}
+      <dt>Fähigkeit</dt><dd>${img(sk.icon, 2, '')} ${esc(sk.name)} · +${10 * h.effort} XP je Erledigung</dd>
+      <dt>Gezählt</dt><dd>${d.weekly ? `${d.weekCnt} von ${d.N} diese Woche` : `${d.month}× diesen Monat`} · ${d.year}× dieses Jahr</dd>
+      <dt>Mini</dt><dd>${esc(h.tinyVersion)}</dd>
       <dt>Wilma erinnert</dt><dd>${h.remindersEnabled ? 'an' : h.remOffAt ? `aus seit ${L.daysBetween(h.remOffAt, today())} Tagen${!d.graduated ? ' (30 für „Gemeistert“)' : ''}` : 'aus'}</dd></dl>
       <div class="bar sm sk" style="--c:${st.c};--hi:${st.hi};--dk:${st.dk}" role="progressbar" aria-label="Gewohnheitsstärke" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
       ${d.suggestOff ? `<div class="suggest">Läuft fast von allein: ${d.weekly ? 'Wochenziel zwei Wochen nacheinander erreicht' : `${d.held14} der letzten ${d.of14} Termine geschafft`}. Erinnerung abschalten? Hältst du die Gewohnheit danach 30 Tage lang an mindestens 70 % der Termine, gilt sie als gemeistert. <button class="btn sm" type="button" data-act="remoff" data-id="${h.id}">Abschalten</button></div>` : ''}
-      <div class="row-btns">${h.archivedAt ? `<button class="btn sm" type="button" data-act="resume" data-id="${h.id}">Fortsetzen</button>` : `<button class="btn sm alt" type="button" data-act="edit" data-id="${h.id}">Bearbeiten</button><button class="btn sm alt" type="button" data-act="pause" data-id="${h.id}">Pausieren</button>`}<button class="btn ghost" type="button" data-act="delhabit" data-id="${h.id}">Löschen</button></div></div>`;
+      <div class="row-btns">${h.archivedAt ? `<button class="btn" type="button" data-act="resume" data-id="${h.id}">Fortsetzen</button>` : `<button class="btn" type="button" data-act="edit" data-id="${h.id}">Bearbeiten</button><button class="btn" type="button" data-act="hcal" data-id="${h.id}">Kalender</button><button class="btn" type="button" data-act="pause" data-id="${h.id}">Pausieren</button>`}<button class="btn ghost" type="button" data-act="delhabit" data-id="${h.id}">Löschen</button></div>`;
+    openSheet(h.title, html, trigger, { refocus: `[data-hid="${h.id}"] .hopen` });
   }
-  function refresh(...parts) { if (!S) return; if (!parts.length) parts = ['cal', 'hud', 'legend', 'skills', 'today', 'habits', 'journal', 'progress', 'chest', 'npc']; parts.forEach(p => R[p]()); }
+  /** v8c: To-do kompakt; Antippen zeigt Fähigkeit, XP und Datum. */
+  function todoRow(x) {
+    const t = today(), plan = x.dueDate && !x.doneAt ? (x.dueDate === t ? 'heute geplant' : fmt(x.dueDate)) : '';
+    return `<div class="row trow${x.doneAt ? ' done' : ''}" data-tid="${x.id}"><button class="chk" type="button" data-act="todo" aria-pressed="${!!x.doneAt}" aria-label="${x.doneAt ? 'Als offen markieren' : 'Erledigen'}: ${esc(x.title)}"></button>
+      <button class="hopen" type="button" data-act="tsheet"><span class="row-title">${esc(x.title)}</span>${plan ? `<span class="ctx">${plan}</span>` : ''}<span class="vh">, Details öffnen</span></button><button class="del" type="button" data-act="deltodo" aria-label="Aufgabe löschen: ${esc(x.title)}">×</button></div>`;
+  }
+  function todoSheet(x, trigger) {
+    const sk = skillById(x.skillId);
+    openSheet(x.title, `<dl class="kv"><dt>Fähigkeit</dt><dd>${img(sk.icon, 2, '')} ${esc(sk.name)}</dd><dt>Aufwand</dt><dd>${['Leicht', 'Mittel', 'Schwer'][x.effort - 1]} · +${10 * x.effort} XP</dd><dt>Geplant</dt><dd>${x.dueDate ? (x.dueDate === today() ? 'Für heute geplant' : 'Geplant für ' + fmt(x.dueDate)) : 'ohne Datum'}</dd>${x.doneAt ? `<dt>Erledigt</dt><dd>${fmt(x.doneAt)}</dd>` : ''}</dl>`, trigger, { refocus: '#todoAdd' });
+  }
+  /** „+ To-do“: nur der Titel ist Pflicht, Aufwand, Fähigkeit und Datum liegen unter „Mehr“. */
+  function todoNewSheet(trigger) {
+    openSheet('Neues To-do', `<form class="add todo-form" id="todoForm"><label for="tTitle" class="ctx">Was ist zu tun?</label><input class="in" id="tTitle" placeholder="z. B. Steuerunterlagen sortieren" maxlength="90">
+      <details class="more"><summary>Mehr: Aufwand, Fähigkeit, Datum</summary><div class="todo-more">
+        <select class="in" id="tEff" aria-label="Aufwand"><option value="1">Leicht · 10 XP</option><option value="2" selected>Mittel · 20 XP</option><option value="3">Schwer · 30 XP</option></select>
+        <select class="in" id="tSkill" aria-label="Fähigkeit">${S.skills.map(s => `<option value="${s.id}" ${s.id === U.lastTodoSkill ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+        <label class="due"><span>Geplant für (optional)</span><input class="in" type="date" id="tDue"></label></div></details>
+      <div class="row-btns"><button class="btn" type="submit">Hinzufügen</button></div><p class="ctx">${esc(HX.explain('todo').text)}</p></form>`, trigger, { refocus: '#todoAdd' });
+    const ti = $('#tTitle'); if (ti) ti.focus();
+  }
+  function refresh(...parts) { if (!S) return; if (!parts.length) parts = ['cal', 'hud', 'legend', 'skills', 'today', 'habits', 'journal', 'progress', 'chest', 'npc', 'settings']; parts.forEach(p => R[p]()); }
 
-  function nudges() {
+  /** Wilmas Sprüche (Hof, Wetter, Tageszeit); Meilensteine und Nachträge haben Vorrang (LAGHilfe.pickHint). */
+  function sayings() {
     const t = today(), now = new Date(), hr = now.getHours(), mins = hr * 60 + now.getMinutes(), list = [], w = weather();
     if (L.farmSleeps(hr)) return ['Die Farm schläft. Gute Nacht, morgen geht es weiter.'];
     if (!active().length) return ['Noch ist es ruhig hier. Unter „Gewohnheiten“ kannst du dein erstes Beet pflanzen.'];
     const open = active().filter(h => D.H[h.id].due && !D.H[h.id].doneToday);
     open.forEach(h => { if (h.anchorTime && h.remindersEnabled) { const [a, b] = h.anchorTime.split(':').map(Number); if (Math.abs(a * 60 + b - mins) <= 75) list.push(planText(h) + '.'); } });
-    S.habits.forEach(h => { const d = D.H[h.id]; if (d.graduated && L.daysBetween(d.gradDate, t) < 7) list.push(`Glückwunsch! „${h.title}“ ist gemeistert. Das klappt jetzt ganz ohne Erinnerung.`); });
     const wk = L.weekStart(t);
     active().forEach(h => { const d = D.H[h.id]; if (d.weekly) { if (d.weekCnt >= d.N) list.push(`Wochenziel geschafft: ${h.title}, ${d.weekCnt} von ${d.N}.`); } else { const c = Object.keys(h.logs).filter(k => L.weekStart(k) === wk && (h.logs[k] === 'done' || h.logs[k] === 'tiny')).length; if (c >= 4) list.push(`Du hast diese Woche schon ${c}× „${h.title}“ geschafft!`); } });
     if (hr >= 18 && open.length) list.push(`Langer Tag? Die Mini-Version zählt auch: ${open[0].tinyVersion}.`);
-    active().forEach(h => { if (D.H[h.id].suggestOff) list.push(`„${h.title}“ läuft fast von allein. Magst du die Erinnerung abschalten?`); });
     const near = active().map(h => [h, skillById(h.skillId), L.unitsToNext(D.levels[skillById(h.skillId).id], h.effort)]).sort((a, b) => a[2] - b[2])[0];
     if (near && near[2] <= 2) list.push(`Noch ${near[2]}× „${near[0].title}“, dann wächst dein ${near[1].name}-Gebäude.`);
     if (w === 'regen' || w === 'gewitter') list.push('Bei dem Wetter bleibt man gern drinnen. Eine kleine Aufgabe am Schreibtisch geht immer.');
@@ -562,20 +601,47 @@
     if (!list.length) list.push(open.length ? `Guten ${hr < 11 ? 'Morgen' : 'Tag'}! Was davon passt als Erstes zu deinem Tag?` : 'Alles erledigt für heute. Dein Hof sieht prächtig aus.');
     return list;
   }
+  /** Meilensteine (früher eigene Kästen): erste Woche geschafft, neuer Monat, Gemeistert, Erinnerung abschalten, App installieren. */
+  function milestones() {
+    const t = today(), ym = t.slice(0, 7), m = [], c = L.canAddHabit(S, t);
+    if (S.demo) return m;
+    if (c.ok && active().length >= L.C.START_HABITS && !S.unlockSeen) m.push({ id: 'unlock', text: 'Eine Woche geschafft! Magst du noch etwas pflanzen?', acts: '<button class="btn sm" type="button" data-act="unlock-go">Pflanzen</button><button class="btn ghost" type="button" data-act="unlock-no">Später</button>' });
+    if (new Date().getDate() <= 3 && S.freshSeen !== ym && S.startedAt < ym + '-01') m.push({ id: 'fresh', text: 'Ein neuer Monat beginnt, ein guter Moment für einen frischen Start. Möchtest du eine Gewohnheit anpassen oder neu anfangen?', acts: '<button class="btn sm" type="button" data-act="fresh-go">Ansehen</button><button class="btn ghost" type="button" data-act="fresh-no">Später</button>' });
+    S.habits.forEach(h => { const d = D.H[h.id]; if (d.graduated && L.daysBetween(d.gradDate, t) < 7) m.push({ id: 'grad', text: `Glückwunsch! „${h.title}“ ist gemeistert. Das klappt jetzt ganz ohne Erinnerung.` }); });
+    active().forEach(h => { if (D.H[h.id].suggestOff) m.push({ id: 'remoff', text: `„${h.title}“ läuft fast von allein. Magst du die Erinnerung abschalten?`, acts: `<button class="btn sm" type="button" data-act="hsheet" data-id="${h.id}">Ansehen</button>` }); });
+    if (isIOS() && !standalone() && !S.installHintSeen) m.push({ id: 'install', text: 'Als App installieren: Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach läuft dein Hof auch offline.', acts: '<button class="btn sm" type="button" data-act="install-ok">Verstanden</button>' });
+    return m;
+  }
+  function hint() {
+    const t = today(), sleep = L.farmSleeps(hour());
+    const late = sleep ? [] : lateRows().filter(([h, x]) => !x.late && !x.repairOnly && lateState(h, x) === 'offen').map(([h, x]) => ({ id: h.id, k: x.k, title: h.title, day: dayName(x.k) }));
+    return HX.pickHint({ late, checkin: !sleep && !S.demo && !S.checkins[t] && hour() >= 5 && !U.ciLater, milestones: sleep ? [] : milestones(), sayings: sayings(), idx: U.npcIdx });
+  }
 
-  /* ---------- Import ---------- */
+  /* ---------- Einstellungen (v8c, eigener Bildschirm) ---------- */
+  const VERSION = (document.querySelector('meta[name="lag-version"]') || {}).content || '';
+  function openSettings() {
+    if ($('#settings')) return; closeSheet(); closeInfo();
+    const el = document.createElement('section'); el.id = 'settings'; el.className = 'screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'setT');
+    el.innerHTML = `<div class="screen-in"><div class="screen-hd"><h2 id="setT" tabindex="-1">Einstellungen</h2><button class="btn" type="button" data-act="settings-close">Fertig</button></div><div id="settingsBody"></div></div>`;
+    document.body.append(el); document.documentElement.classList.add('noscroll'); R.settings(); $('#setT').focus(); au.sfx.page();
+  }
+  function closeSettings() { const el = $('#settings'); if (!el) return false; el.remove(); document.documentElement.classList.remove('noscroll'); U.showExport = false; U.wipeArmed = false; const g = $('#gearBtn'); if (g) g.focus(); return true; }
+
+  /* ---------- Import  /* ---------- Import ---------- */
   function handleImportText(txt, onboarding) {
     const err = $('#importErr'); let obj = null; try { obj = JSON.parse(txt); } catch (e) { obj = undefined; }
     const r = obj === undefined ? { ok: false, error: 'Das ist keine gültige Sicherung (kein lesbarer Text).' } : L.importState(obj, today());
     if (!r.ok) { if (err) { err.hidden = false; err.textContent = r.error; } au.sfx.err(); return; }
     if (onboarding) { applyImport(r.state); return; }
-    U.importPending = r.state; R.progress();
+    U.importPending = r.state; R.settings();
   }
-  function applyImport(state) { state.onboarded = true; L.migrateV8a(state); S = state; applyLook(); U.importPending = null; derive(); flush(); overlay(''); refresh(); scene.refresh(true); toast('<span><b>Wiederhergestellt.</b> Dein Hof ist wieder da.</span>'); }
+  function applyImport(state) { state.onboarded = true; L.migrateV8a(state); S = state; applyLook(); U.importPending = null; derive(); flush(); overlay(''); closeSettings(); refresh(); scene.refresh(true); toast('<span><b>Wiederhergestellt.</b> Dein Hof ist wieder da.</span>'); }
 
   /* ---------- Ereignisse ---------- */
   const tabs = () => $$('.tab');
   function selectTab(b, focus) {
+    markSeen($$('.panel:not([hidden]) [data-once]').map(x => x.dataset.once));
     tabs().forEach(x => { const on = x === b; x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1; }); $$('.panel').forEach(p => p.hidden = p.id !== 'p-' + b.dataset.tab); if (focus) b.focus();
     if (b.dataset.tab !== 'journal' && preview) { preview = null; scene.refresh(); R.cal(); }
     if (b.dataset.tab === 'progress') R.progress();
@@ -589,29 +655,29 @@
 
   function bind() {
     tabs().forEach((b, i) => { b.addEventListener('click', () => selectTab(b)); b.addEventListener('keydown', e => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); const all = tabs(); selectTab(all[(i + d + all.length) % all.length], true); } }); });
-    $('#npc').addEventListener('click', () => { U.npcIdx++; au.sfx.page(); R.npc(); });
-    $('#soundBtn').addEventListener('click', () => { S.sound = !S.sound; save(); R.hud(); if (S.sound) au.sfx.tick(); });
-    $('#musicBtn').addEventListener('click', () => { S.music = !S.music; save(); R.hud(); if (S.music) au.Music.start(weather()); else au.Music.stop(); });
+    $('#gearBtn').addEventListener('click', openSettings);
+    $('#sndBtn').addEventListener('click', () => { const on = !(S.sound || S.music); S.sound = on; if (!on) { S.music = false; au.Music.stop(); } save(); R.hud(); R.settings(); if (on) au.sfx.tick(); });
     document.addEventListener('pointerdown', function once() { if (S && S.music && !au.Music.playing) au.Music.start(weather()); document.removeEventListener('pointerdown', once); });
 
     document.addEventListener('input', e => { const el = e.target; if (el.id === 'jText') U.draft = el.value; const f = el.closest && el.closest('[data-form]'); if (f && (el.dataset.f === 'title' || el.dataset.f === 'anchor')) updatePreview(f); });
     $('#scene').addEventListener('click', openBig);
     $('#scene').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBig(); } });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeInfo(); closeBig(); } if (e.target.id === 'renameIn') { if (e.key === 'Enter') { e.preventDefault(); commitRename(); } if (e.key === 'Escape') { U.renaming = null; R.skills(); } } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { if ($('#infopop')) closeInfo(); else if (sheets.isOpen()) closeSheet(); else if (!closeBig()) closeSettings(); } if (e.target.id === 'renameIn') { if (e.key === 'Enter') { e.preventDefault(); commitRename(); } if (e.key === 'Escape') { U.renaming = null; R.skills(); } } });
     document.addEventListener('change', e => {
       const el = e.target;
       if (el.dataset.f === 'skill') { const f = el.closest('[data-form]'), ns = f.querySelector('[data-f=newskill]'); ns.hidden = el.value !== '__new'; if (!ns.hidden) ns.focus(); }
       if (el.id === 'calHabit') { U.calHabit = el.value; R.progress(); }
       if (el.id === 'importFile' && el.files[0]) { const r = new FileReader(); r.onload = () => handleImportText(String(r.result), U.obStep === 'welcome' && !S.onboarded); r.readAsText(el.files[0]); el.value = ''; }
     });
-    document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('odds')) U.oddsOpen = e.target.open; }, true);
+    document.addEventListener('toggle', e => { const g = e.target.dataset && e.target.dataset.g; if (g && U.albumOpen) { if (e.target.open) U.albumOpen.add(g); else U.albumOpen.delete(g); } }, true);
     document.addEventListener('submit', e => {
       const f = e.target; e.preventDefault();
       if (f.dataset.form) { submitForm(f); return; }
       if (f.id === 'todoForm') {
         const t = $('#tTitle').value.trim(); if (!t) { au.sfx.err(); $('#tTitle').focus(); return; }
         U.lastTodoSkill = $('#tSkill').value; const due = $('#tDue').value || undefined;
-        S.todos.unshift({ id: uid(), title: t, effort: +$('#tEff').value, skillId: U.lastTodoSkill, dueDate: due }); au.sfx.tick(); save(); refresh('today', 'hud'); $('#tTitle').focus(); return;
+        S.todos.unshift({ id: uid(), title: t, effort: +$('#tEff').value, skillId: U.lastTodoSkill, dueDate: due }); au.sfx.tick(); save(); refresh('today', 'hud', 'npc'); closeSheet();
+        toast(`<span><b>Notiert.</b> „${esc(t)}“ steht in deinen To-dos.</span>`); return;
       }
       if (f.id === 'ciTodoForm') {
         const t = $('#ciTodo').value.trim(); if (!t) return; const id = uid(); S.todos.unshift({ id, title: t, effort: 1, skillId: S.skills[0].id });
@@ -638,23 +704,39 @@
         case 'hdone': { const h = habit(); logHabit(h, h.logs[t] === 'tiny' ? 'tiny' : 'done', pt); scene.refresh(); break; }
         case 'htiny': logHabit(habit(), 'tiny', pt); scene.refresh(); break;
         case 'info': showInfo(el); break;
-        case 'late': logLateUI(habit(), el.dataset.k, el.dataset.st, pt); break;
-        case 'repair-ask': U.repairAsk = el.dataset.id + el.dataset.k; au.sfx.tick(); R.today(); break;
-        case 'repair': { const h = habit(), d = D.H[h.id]; if (d.repairKey) { h.logs[d.repairKey] = 'repaired'; au.sfx.tiny(); toast(`${img('flame', 3, '')}<span><b>Serie gerettet.</b> Die Extra-Runde zählt für den verpassten Tag.</span>`); derive(); save(); refresh(); } break; }
+        case 'explain': { const x = HX.explain(el.dataset.x); if (x) { openSheet(x.title, `<p>${esc(x.text)}</p>`, el); markSeen([x.id]); } break; }
+        case 'once-ok': markSeen([el.dataset.x]); el.closest('[data-once]').remove(); break;
+        case 'hsheet': habitSheet(habit(), el); break;
+        case 'hcal': U.calHabit = el.dataset.id; closeSheet(); selectTab($('#t-progress')); { const hv = $('#p-progress .harvest'); if (hv) hv.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' }); } break;
+        case 'tsheet': todoSheet(S.todos.find(y => y.id === el.closest('[data-tid]').dataset.tid), el); break;
+        case 'todo-new': todoNewSheet(el); break;
+        case 'hnew': U.editHabit = null; openSheet('Neue Gewohnheit', `<div class="ideas" aria-label="Vorlagen">${IDEAS.map((x, i) => `<button type="button" class="chip idea" data-act="idea" data-i="${i}">${esc(x.title)}</button>`).join('')}</div>${habitForm('new', null)}`, el, { refocus: '#hNew' }); break;
+        case 'idea-new': { openSheet('Neue Gewohnheit', habitForm('new', null), el, { refocus: '#hNew' }); const f = $('.sheet [data-form="new"]'); if (f) fillIdea(f, IDEAS[+el.dataset.i]); au.sfx.tick(); break; }
+        case 'late-open': lateSheet(habit(), el.dataset.k, el); break;
+        case 'ssheet': skillSheet(S.skills.find(x => x.id === el.dataset.sid), el); break;
+        case 'odds': oddsSheet(el); break;
+        case 'npc-next': U.npcIdx++; au.sfx.page(); R.npc(); break;
+        case 'ci-later': U.ciLater = true; au.sfx.soft(); R.npc(); break;
+        case 'settings-close': closeSettings(); break;
+        case 'accent': S.accent = el.dataset.v === 'thema' ? undefined : el.dataset.v; applyLook(); save(); R.settings(); au.sfx.tick(); break;
+        case 'music': S.music = !!el.dataset.v; save(); R.settings(); R.hud(); if (S.music) au.Music.start(weather()); else au.Music.stop(); break;
+        case 'sound': S.sound = !!el.dataset.v; save(); R.settings(); R.hud(); if (S.sound) au.sfx.tick(); break;
+        case 'late': logLateUI(habit(), el.dataset.k, el.dataset.st, pt); closeSheet(); break;
+        case 'repair': { const h = habit(), d = D.H[h.id]; if (d.repairKey) { h.logs[d.repairKey] = 'repaired'; au.sfx.tiny(); toast(`${img('flame', 3, '')}<span><b>Serie gerettet.</b> Die Extra-Runde zählt für den verpassten Tag.</span>`); derive(); save(); refresh(); } closeSheet(); break; }
         case 'todo': { const row = el.closest('[data-tid]'), x = S.todos.find(y => y.id === row.dataset.tid), before = snapshot();
           if (x.doneAt) { delete x.doneAt; au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); break; }
           x.doneAt = t; au.sfx.check(); if (!x.rolled) { x.rolled = true; rollDrop(pt); } derive(); const sk = skillById(x.skillId);
           afterAction(before, x.skillId, pt, 10 * x.effort, `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${10 * x.effort} XP</b> · ${esc(x.title)} erledigt</span>`); refresh(); scene.refresh(); break; }
         case 'deltodo': { const row = el.closest('[data-tid]'), i = S.todos.findIndex(y => y.id === row.dataset.tid), x = S.todos.splice(i, 1)[0]; au.sfx.soft(); derive(); save(); refresh();
           toast(`<span><b>Gelöscht.</b> „${esc(x.title)}“</span>`, { label: 'Rückgängig', fn: () => { S.todos.splice(i, 0, x); derive(); save(); refresh(); } }); break; }
-        case 'idea': { const f = el.closest('.frame, .panel').querySelector('[data-form="ob"], [data-form="new"]'); if (f) { fillIdea(f, IDEAS[+el.dataset.i]); au.sfx.tick(); } break; }
-        case 'edit': U.editHabit = el.dataset.id; R.habits(); break;
-        case 'edit-cancel': U.editHabit = null; R.habits(); break;
-        case 'pause': { const h = habit(); L.pause(h, t); au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); toast(`<span><b>Pausiert.</b> „${esc(h.title)}“ ruht, bis du sie fortsetzt.</span>`); break; }
-        case 'resume': { const h = habit(); L.resume(h, t); au.sfx.place(); derive(); save(); refresh(); scene.refresh(); toast(`<span><b>Weiter geht's.</b> „${esc(h.title)}“ ist wieder aktiv.</span>`); break; }
-        case 'delhabit': deleteHabit(habit()); break;
-        case 'remoff': { const h = habit(); h.remindersEnabled = false; h.remOffAt = t; au.sfx.place(); toast(`${img('gem', 3, '')}<span><b>Erinnerung aus.</b> Hältst du „${esc(h.title)}“ jetzt 30 Tage, ist sie gemeistert.</span>`); derive(); save(); refresh(); break; }
-        case 'ren': U.renaming = el.dataset.sid; R.skills(); break;
+        case 'idea': { const f = el.closest('.sheet, .frame, .panel').querySelector('[data-form="ob"], [data-form="new"]'); if (f) { fillIdea(f, IDEAS[+el.dataset.i]); au.sfx.tick(); } break; }
+        case 'edit': { const h = habit(); U.editHabit = h.id; openSheet(`„${h.title}“ bearbeiten`, habitForm('edit', h), el, { refocus: `[data-hid="${h.id}"] .hopen`, onClose: () => { U.editHabit = null; } }); break; }
+        case 'edit-cancel': closeSheet(); break;
+        case 'pause': { const h = habit(); L.pause(h, t); au.sfx.soft(); derive(); save(); refresh(); scene.refresh(); toast(`<span><b>Pausiert.</b> „${esc(h.title)}“ ruht, bis du sie fortsetzt.</span>`); closeSheet(); break; }
+        case 'resume': { const h = habit(); L.resume(h, t); au.sfx.place(); derive(); save(); refresh(); scene.refresh(); toast(`<span><b>Weiter geht's.</b> „${esc(h.title)}“ ist wieder aktiv.</span>`); closeSheet(); break; }
+        case 'delhabit': deleteHabit(habit()); closeSheet(); break;
+        case 'remoff': { const h = habit(); h.remindersEnabled = false; h.remOffAt = t; au.sfx.place(); toast(`${img('gem', 3, '')}<span><b>Erinnerung aus.</b> Hältst du „${esc(h.title)}“ jetzt 30 Tage, ist sie gemeistert.</span>`); derive(); save(); refresh(); closeSheet(); break; }
+        case 'ren': closeSheet(); U.renaming = el.dataset.sid; R.skills(); break;
         case 'renok': commitRename(); break;
         case 'btype': { const s = S.skills.find(x => x.id === el.dataset.sid), v = ($('#renameIn') || {}).value; s.buildingType = el.dataset.v; R.skills(); if (v != null) $('#renameIn').value = v; au.sfx.tick(); save(); scene.refresh(); break; }
         case 'icon': { const s = S.skills.find(x => x.id === el.dataset.sid), v = ($('#renameIn') || {}).value, was = L.suggestBuilding(s.icon); s.icon = SP.ICONS[(SP.ICONS.indexOf(s.icon) + 1) % SP.ICONS.length];
@@ -671,30 +753,30 @@
           refresh(); scene.refresh(); break; }
         case 'cal-prev': U.calYear = String(+(U.calYear || t.slice(0, 4)) - 1); R.progress(); break;
         case 'cal-next': U.calYear = String(+(U.calYear || t.slice(0, 4)) + 1); R.progress(); break;
-        case 'export': U.showExport = !U.showExport; R.progress(); break;
+        case 'export': U.showExport = !U.showExport; R.settings(); break;
         case 'copy': { const ta = $('#exportTxt'); try { navigator.clipboard.writeText(ta.value).then(() => toast('<span><b>Kopiert.</b> Speichere den Text zum Beispiel in einer Notiz oder Datei.</span>'), () => { ta.select(); toast('<span>Der Text ist markiert. Kopiere ihn mit Cmd+C.</span>'); }); } catch (err) { ta.select(); } break; }
         case 'import-open': { const f = $('#importFile'); if (f) f.click(); break; }
         case 'import-paste': handleImportText(($('#importTxt') || {}).value || '', false); break;
         case 'import-apply': applyImport(U.importPending); break;
-        case 'import-cancel': U.importPending = null; R.progress(); break;
-        case 'wipe': if (U.wipeArmed) { U.wipeArmed = false; U.showExport = false; Store.clear(); S = L.emptyState(t); applyLook(); derive(); refresh(); scene.refresh(true); showOnboarding('welcome'); }
-          else { U.wipeArmed = true; R.progress(); setTimeout(() => { if (U.wipeArmed) { U.wipeArmed = false; R.progress(); } }, 4000); } break;
+        case 'import-cancel': U.importPending = null; R.settings(); break;
+        case 'wipe': if (U.wipeArmed) { U.wipeArmed = false; U.showExport = false; Store.clear(); S = L.emptyState(t); closeSettings(); applyLook(); derive(); refresh(); scene.refresh(true); showOnboarding('welcome'); }
+          else { U.wipeArmed = true; R.settings(); setTimeout(() => { if (U.wipeArmed) { U.wipeArmed = false; R.settings(); } }, 4000); } break;
         case 'place': { if (L.farmSleeps(hour()) || !S.chest.items[el.dataset.type]) break; const type = el.dataset.type;
           if (L.ITEMS[type].animal) S.chest.placed.push({ itemId: type }); else { const used = new Set(S.chest.placed.map(p => p.slot)), cap = L.slotsFor(D.char.l); let slot = -1; for (let i = 0; i < cap; i++) if (!used.has(i)) { slot = i; break; } if (slot < 0) { au.sfx.err(); break; } S.chest.placed.push({ itemId: type, slot }); }
           if (!--S.chest.items[type]) delete S.chest.items[type]; au.sfx.place(); save(); refresh('chest', 'hud'); scene.refresh(); break; }
         case 'stash': { if (L.farmSleeps(hour())) break; const p = S.chest.placed.splice(+el.dataset.i, 1)[0]; S.chest.items[p.itemId] = (S.chest.items[p.itemId] || 0) + 1; au.sfx.tick(); save(); refresh('chest', 'hud'); scene.refresh(); break; }
-        case 'fresh-go': S.freshSeen = t.slice(0, 7); save(); selectTab($('#t-habits')); R.today(); break;
-        case 'fresh-no': S.freshSeen = t.slice(0, 7); save(); R.today(); break;
-        case 'unlock-go': S.unlockSeen = true; save(); selectTab($('#t-habits')); R.today(); break;
-        case 'unlock-no': S.unlockSeen = true; save(); R.today(); break;
-        case 'scale': S.textScale = +el.dataset.v; applyLook(); save(); R.progress(); au.sfx.tick(); break;
-        case 'font': S.readableFont = !!el.dataset.v || undefined; applyLook(); save(); R.progress(); au.sfx.tick(); break;
-        case 'theme': S.theme = el.dataset.v || undefined; applyLook(); save(); R.progress(); au.sfx.tick(); break;
-        case 'palette': S.palette = el.dataset.v || undefined; applyLook(); save(); R.progress(); scene.refresh(true); au.sfx.tick(); break;
+        case 'fresh-go': S.freshSeen = t.slice(0, 7); save(); selectTab($('#t-habits')); R.today(); R.npc(); break;
+        case 'fresh-no': S.freshSeen = t.slice(0, 7); save(); R.today(); R.npc(); break;
+        case 'unlock-go': S.unlockSeen = true; save(); selectTab($('#t-habits')); R.today(); R.npc(); break;
+        case 'unlock-no': S.unlockSeen = true; save(); R.today(); R.npc(); break;
+        case 'scale': S.textScale = +el.dataset.v; applyLook(); save(); R.settings(); au.sfx.tick(); break;
+        case 'font': S.readableFont = !!el.dataset.v || undefined; applyLook(); save(); R.settings(); au.sfx.tick(); break;
+        case 'theme': S.theme = el.dataset.v || undefined; applyLook(); save(); R.settings(); au.sfx.tick(); break;
+        case 'palette': S.palette = el.dataset.v || undefined; applyLook(); save(); R.settings(); scene.refresh(true); au.sfx.tick(); break;
         case 'metrics-save': { const a = document.createElement('a'), url = URL.createObjectURL(new Blob([metricsJSON()], { type: 'application/json' }));
           a.href = url; a.download = `lifes-a-game-beta-${t}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); break; }
         case 'metrics-copy': { const txt = metricsJSON(); try { navigator.clipboard.writeText(txt).then(() => toast('<span><b>Kopiert.</b> Die Beta-Zahlen liegen in der Zwischenablage.</span>'), () => toast('<span>Kopieren hat nicht geklappt. Nutze „Als Datei sichern“.</span>')); } catch (err) { toast('<span>Kopieren hat nicht geklappt. Nutze „Als Datei sichern“.</span>'); } break; }
-        case 'install-ok': S.installHintSeen = true; save(); R.today(); break;
+        case 'install-ok': S.installHintSeen = true; save(); R.today(); R.npc(); break;
         // Onboarding
         case 'ob-start': showOnboarding('habits'); break;
         case 'ob-back': showOnboarding('welcome'); break;
@@ -723,7 +805,7 @@
   function layout() {
     const narrow = !!(narrowMQ && narrowMQ.matches), scene = $('.scene');
     if (narrow === wasNarrow) return; wasNarrow = narrow;
-    if (narrow) { $('#statsSlot').append($('#charBox'), $('#skillsBox')); $('#npcSlot').append($('#npc')); }
+    if (narrow) { $('#statsSlot').append($('#charBox'), $('#skillsBox')); $('#npcSlot').append($('#npc')); }   // Wilma oben in „Heute“
     else { scene.after($('#charBox')); $('#charBox').after($('#skillsBox')); $('#skillsBox').after($('#npc')); }
     document.documentElement.classList.toggle('narrow', narrow);
   }
@@ -757,11 +839,13 @@
   function tabIcons() {
     const ic = { today: 'sonnig', habits: 'p3', journal: 'book', progress: 'gem', chest: 'crate' };
     $$('.tab .ti').forEach(sp => { sp.innerHTML = img(ic[sp.dataset.icon], 3, ''); });
+    $('#gearBtn').innerHTML = img('gear', 4, '');
   }
 
   /* ---------- Start ---------- */
   function boot(state, assets) {
     S = state || L.emptyState(today()); L.migrateV8a(S); applyLook();
+    sheets = root.LAGSheet.createSheets(document, { reduce, raf: f => requestAnimationFrame(() => requestAnimationFrame(f)) });
     au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
     derive();
     scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
