@@ -42,6 +42,8 @@ Grundlage: `docs/pixel-styleguide-stil-b.md` (Abschnitte 2, 3, 6, 7, 8), Leitfad
 
 **Sollte (M):** Stufe-4-Gebäude, Gewächshaus und Schmiede leuchten abends (glow). Hinweis „Vorläufige Grafiken“ in den Einstellungen, solange `meta.platzhalter` gilt.
 
+**Nacharbeit v8a.1:** Kompakte Szene ohne Seitenstreifen (logische Breite = floor(verfügbare Breite / Faktor), Kern 256 × 160 mittig, Ränder nur Natur aus den Randzonen der Karte); Großansicht mit dem größten Faktor, bei dem die Höhe passt (iPhone 3×), verschiebbar, Hinweis „Zum Umsehen wischen“.
+
 **Nicht in v8a:** Truhengegenstände (Paket 3), Farbthemen, Figuren, Tiere, neue Wetter-Partikel, Flutter.
 
 ## Prüfen vor dem Push

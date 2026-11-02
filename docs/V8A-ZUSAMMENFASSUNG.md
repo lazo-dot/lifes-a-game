@@ -1,6 +1,6 @@
 # Prototyp v8a · Zusammenfassung (Grafik auf Sprite-Sheets, Stil B)
 
-Stand: 02.11.2026 · Branch `v8a`, nicht nach `main` gemergt und nicht auf GitHub Pages veröffentlicht (dort läuft v7 für Selbsttest und Usability-Test). Grundlage: Arbeitsliste v8a (CLAUDE.md), `docs/pixel-styleguide-stil-b.md`, Leitfaden 5.4, `art/platzhalter/README.md`. Spielregeln (Stärke, XP, Funde, Graduierung) sind unverändert. Die Abgleich-Checkliste ist nicht ausgefüllt.
+Stand: 02.11.2026 (v8a.1) · Branch `v8a`, nicht nach `main` gemergt und nicht auf GitHub Pages veröffentlicht (dort läuft v7 für Selbsttest und Usability-Test). Grundlage: Arbeitsliste v8a (CLAUDE.md), `docs/pixel-styleguide-stil-b.md`, Leitfaden 5.4, `art/platzhalter/README.md`. Spielregeln (Stärke, XP, Funde, Graduierung) sind unverändert. Die Abgleich-Checkliste ist nicht ausgefüllt.
 
 Aufräumen: Werkstatt, Bücherturm und `art/platzhalter-v3.zip` waren schon mit Commit `5ec7f40` entfernt und die übrigen Änderungen in `art/` sowie der Style-Guide committet; v8a baut darauf auf.
 
@@ -10,12 +10,29 @@ Aufräumen: Werkstatt, Bücherturm und `art/platzhalter-v3.zip` waren schon mit 
 |---|---|---|
 | Kompakte Szene | ca. 240 × 150 pt, krumm verkleinert | **256 × 160 pt (1:1)**, Canvas 768 × 480 px = CSS × 3 |
 | Verschwommene Szenen-Pixel | – | **0** (jeder Szenen-Pixel ist ein gleichfarbiger 3 × 3- bzw. 6 × 6-Block) |
-| Großansicht | – | 2×, 512 × 320 pt, waagerecht verschiebbar, startet mittig; Schließen 108 × 44 pt |
+| Großansicht | – | 2×, 512 × 320 pt (v8a.1: 3×), waagerecht verschiebbar, startet mittig; Schließen 108 × 44 pt |
 | Erster Haken (Oberkante) | 468 pt | **478 pt**, ohne Scrollen sichtbar (+10 pt durch die 1:1-Szene) |
 | Kleinste Tap-Fläche | 81 × 44 pt | 81 × 44 pt, keine unter 44 pt (Gebäude-Raster 138 × 77, Pflanzenwahl ≥ 98 × 46) |
 | Desktop 1280 px | Szene 100 % breit | Szene 2× (512 × 320), erster Haken bei 321 pt |
 
-Gemessen mit `node tools/ux/screenshots-v8a.js` (Screenshots unter `docs/screenshots-v8a/`: Tag und Abend, kompakt und Großansicht, dazu die Szene 1:1). Alle 8 Aufgaben aus `docs/ux-testleitfaden-v6.md` lassen sich weiter lösen (Skript wie in v7, Uhr auf 12 Uhr).
+Stand v8a (vor der Nacharbeit). Die aktuellen Werte und Screenshots stehen unter „Nacharbeit v8a.1“. Alle 8 Aufgaben aus `docs/ux-testleitfaden-v6.md` lassen sich weiter lösen (Skript wie in v7, Uhr auf 12 Uhr).
+
+## Nacharbeit v8a.1 (Darstellung)
+
+1. **Kompakte Szene ohne Seitenstreifen:** Faktor bleibt ganzzahlig; die logische Breite ist `floor(verfügbare Breite / Faktor)` (mindestens 256), die Höhe 160. Der Kern (256 × 160 mit allen Gebäuden, Beeten, Teich) steht mittig, die Ränder füllt die Karte mit Natur (Randzonen Waldrand, Wegsaum, Wiese; gleicher Seed, keine Spielobjekte). Gilt für kompakte Ansicht, Großansicht und Desktop.
+2. **Großansicht 3×:** größter ganzzahliger Faktor, bei dem die Höhe passt, waagerecht verschiebbar, startet mittig; Hinweis „Zum Umsehen wischen“, bis man einmal gewischt hat.
+
+Gemessen mit `node tools/ux/screenshots-v8a.js` (devicePixelRatio 3, Test-Hof; Screenshots unter `docs/screenshots-v8a/`: je Breite Tag und Abend, kompakt, Großansicht und Szene 1:1):
+
+| | 390 × 844 pt | 430 × 932 pt |
+|---|---|---|
+| Kompakte Szene | **344 × 160 pt** (1×), Rand links/rechts je 23 pt = Seitenabstand + Rahmen, keine Streifen | **384 × 160 pt** (1×) |
+| Canvas-Auflösung | 1032 × 480 px = CSS × 3 | 1152 × 480 px |
+| Verschwommene Szenen-Pixel | 0 | 0 |
+| Großansicht | **3×, 768 × 480 pt**, verschiebbar (sichtbar 390 pt), startet mittig, Hinweis sichtbar | 3×, 768 × 480 pt (sichtbar 430 pt) |
+| Erster Haken (Oberkante) | **478 pt**, ohne Scrollen | 455 pt, ohne Scrollen |
+
+Desktop 1280 px: Szene 2× (514 pt verfügbar → 257 × 160 logisch), erster Haken bei 320 pt. Kleinste Tap-Fläche weiterhin 81 × 44 pt, keine unter 44 pt; alle 8 Aufgaben des Testleitfadens lösbar.
 
 ## Umgesetzt
 
@@ -38,11 +55,11 @@ Gemessen mit `node tools/ux/screenshots-v8a.js` (Screenshots unter `docs/screens
 
 ## Tests
 
-`npm test`: **79 Tests grün** (68 bestehende unverändert + 11 neue in `tests/v8a.test.js`): Loader (Ebenen, Tags, Fußpunkt, getrimmte Frames, alle Exporte und Karten-Verweise gültig, Rückfall bei fehlenden oder kaputten Dateien), Gebäude- und Pflanzenstufen, Migration v7 → v8a (nur zwei Felder kommen dazu, Ableitungen gleich), Import alter Exporte (v7, v5, v3), neue Gewohnheit mit Pflanzensorte, Skalierung immer ganzzahlig (390, 430, 768, 1024 pt).
+`npm test`: **80 Tests grün** (68 bestehende unverändert + 12 neue in `tests/v8a.test.js`; v8a.1: Großansicht-Regel angepasst, Breitenregel neu): Loader (Ebenen, Tags, Fußpunkt, getrimmte Frames, alle Exporte und Karten-Verweise gültig, Rückfall bei fehlenden oder kaputten Dateien), Gebäude- und Pflanzenstufen, Migration v7 → v8a (nur zwei Felder kommen dazu, Ableitungen gleich), Import alter Exporte (v7, v5, v3), neue Gewohnheit mit Pflanzensorte, Skalierung immer ganzzahlig (390, 430, 768, 1024 pt).
 
 ## Abweichungen
 
-Siehe [ABWEICHUNGEN.md](ABWEICHUNGEN.md), Abschnitt v8a: 1 Migration als eigene Funktion · 2 Pflanzensorte reihum · 3 gemeistert zeigt immer das gemeistert-Bild · 4 ein Schild je Beet · 5 Großansicht 2× verschiebbar · 6 Desktop-Spalte 532 px · 7 Wohnhaus, Deko, Figuren, Boden bleiben Code · 8 Früchte noch nicht in Fähigkeitsfarbe · 9 Headless-Chrome statt Playwright · 10 Gebäudewahl beim Bearbeiten der Fähigkeit.
+Siehe [ABWEICHUNGEN.md](ABWEICHUNGEN.md), Abschnitt v8a: 1 Migration als eigene Funktion · 2 Pflanzensorte reihum · 3 gemeistert zeigt immer das gemeistert-Bild · 4 ein Schild je Beet · 5 Großansicht 3× verschiebbar · 6 Desktop-Spalte 532 px · 7 Wohnhaus, Deko, Figuren, Boden bleiben Code · 8 Früchte noch nicht in Fähigkeitsfarbe · 9 Headless-Chrome statt Playwright · 10 Gebäudewahl beim Bearbeiten der Fähigkeit · 11 breitere Szene nur mit Hof-Karte · 12 Wisch-Hinweis im Browser gemerkt.
 
 ## Offen
 
