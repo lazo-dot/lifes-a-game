@@ -1,6 +1,6 @@
-# Life's a Game – Abgleich-Checkliste Prototyp ↔ Leitfaden v1.6
+# Life's a Game – Abgleich-Checkliste Prototyp ↔ Leitfaden v1.7
 
-Stand: 01.11.2026 (v6 abgeglichen) · Wird für jede Prototyp-Version neu ausgefüllt (v3, v4 …). Referenz: [Entwicklungsleitfaden v1.2](habit-tracker-entwicklungsleitfaden.md)
+Stand: 02.11.2026 (v7 abgeglichen) · Wird für jede Prototyp-Version neu ausgefüllt (v3, v4 …). Referenz: [Entwicklungsleitfaden v1.2](habit-tracker-entwicklungsleitfaden.md)
 
 Bewertung: ✅ erfüllt · 🟡 teilweise · ❌ fehlt · ⚠️ widerspricht Leitfaden · — bewusst verschoben
 Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M** sollte · **N** kann
@@ -21,7 +21,7 @@ Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M**
 | A8 | „Noch X bis Level Y“ sichtbar | 4.1 | | ✅ | ✅ | ✅ |  |  |
 | A9 | Rückgängig ohne rote Minus-Animation | 4.1 | ⚠️ Minus-Anzeige | ⚠️ | ✅ | ✅ |  | Minus-Anzeige entfernt |
 | A10 | Gewohnheitsstärke `a = 0.044` pro geplantem Termin | 4.2 | ❌ | ✅ | ✅ | ✅ |  |  |
-| A11 | Wöchentliche Gewohnheiten pro Termin, nicht pro Tag berechnet | 4.2 | ❌ | 🟡 | ✅ | ✅ |  | angebrochene Wochen anteilig (Leitfaden v1.6) |
+| A11 | Wöchentliche Gewohnheiten pro Termin, nicht pro Tag berechnet | 4.2 | ❌ | 🟡 | ✅ | ✅ |  | angebrochene Wochen anteilig (Leitfaden v1.7) |
 | A12 | Streak pro Gewohnheit ein/aus, Standard aus bei wöchentlich | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
 | A13 | Mini-Version verlängert Streak | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
 | A14 | Regentag-Token: 1 pro 7 Termine, max. 2, automatisch eingesetzt | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
@@ -38,7 +38,7 @@ Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M**
 | B2 | Gold aus Ernte bei neuer Wachstumsstufe | 4.4 | ❌ | ❌ | ✅ | ✅ |  | Ernte einmal pro Wachstumsstufe |
 | B3 | Überraschungs-Drops 10–15 %, seltene Items seltener | 4.4 | ❌ | ✅ | ✅ | ✅ |  | 12 %, davon 20 % selten |
 | B4 | Gold bei Meilensteinen (Skill-Level, Gemeistert) | 4.4 | | 🟡 | ✅ | ✅ |  | seltener Fund bei „Gemeistert“ |
-| B5 | Laden nur Kosmetik, nie XP/Wachstum/Streak-Schutz | 4.4 | ✅ | — | — | — |  | kein Laden mehr (Leitfaden v1.6) |
+| B5 | Laden nur Kosmetik, nie XP/Wachstum/Streak-Schutz | 4.4 | ✅ | — | — | — |  | kein Laden mehr (Leitfaden v1.7) |
 | B6 | Nur eine Währung | 4.4, 7 | ✅ | ✅ | ✅ | ✅ |  |  |
 
 ## C. Spielwelt & Atmosphäre (Phase 2)
@@ -75,7 +75,7 @@ Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M**
 | E1 | Nudge-Text = Plan des Nutzers („Nach dem Kaffee: dehnen“) | 4.5 | ❌ | ✅ | ✅ | ✅ |  | über Wilma |
 | E2 | Max. 1 Nudge pro Gewohnheit/Tag zur Ankerzeit | 4.5 | | 🟡 | 🟡 | 🟡 | — | ohne Push-Server nicht machbar → Flutter (lokale Notifications) |
 | E3 | Ausschleichen-Vorschlag ab Stärke ≥ 0,8 und 14 Terminen | 4.5 | ❌ | ✅ | ✅ | ✅ |  |  |
-| E4 | Graduierung „Gemeistert“ nach 30 Tagen ohne Erinnerung | 4.5 | ❌ | ✅ | ✅ | ✅ |  | „Gemeistert“ jetzt dauerhaft (Leitfaden v1.6) |
+| E4 | Graduierung „Gemeistert“ nach 30 Tagen ohne Erinnerung | 4.5 | ❌ | ✅ | ✅ | ✅ |  | „Gemeistert“ jetzt dauerhaft (Leitfaden v1.7) |
 | E5 | Installationshinweis für iOS-Web-Push | 4.5 | ❌ | ❌ | ✅ | ✅ |  |  |
 
 ## F. Technik & Daten
@@ -171,7 +171,38 @@ Umgesetzt mit Claude Code nach Leitfaden v1.5; Prüfpunkte A–H unverändert ge
 | V10 | Simulation erreicht Referenz | ✅ | Koordinations-Chat nachgerechnet: „Gemeistert“ 51 % (Ref. 49 %), „gehalten“ Tag 66 89 %, 1,63 Abschaltungen je Person, erstes „Gemeistert“ Tag ~60 |
 | V11 | Update auf dem iPhone: Hinweis „Neue Version“, Daten erhalten, Nachtragen funktioniert | ⬜ | durch Lars prüfen |
 
-Tests: 65/65 grün (im Koordinations-Chat nachgeprüft). Alle 5 Abweichungen in Leitfaden v1.6 übernommen. Kleinigkeit offen: Fußzeile und `package.json` zeigen noch „V5“ / 5.0.0.
+Tests: 65/65 grün (im Koordinations-Chat nachgeprüft). Alle 5 Abweichungen in Leitfaden v1.7 übernommen. Kleinigkeit offen: Fußzeile und `package.json` zeigen noch „V5“ / 5.0.0.
+
+---
+
+## Ergebnis v7 – Bedienbarkeit (02.11.2026)
+
+Umgesetzt mit Claude Code nach `CLAUDE.md` (Arbeitsliste v7) und UX-Evaluation. Spielregeln, Speicherschema und bestehende Tests unverändert; A–H und V1–V10 bleiben erfüllt.
+
+| Fund | Schwere | v7 | Notiz |
+|---|---|---|---|
+| U1 Abhaken unter dem Falz | 3 | ✅ | erster Haken 1.700 → 468 pt (im Koordinations-Chat nachgemessen) |
+| U2 Hinweise verdecken Inhalt | 1 | ✅ | |
+| U3 Zahlen nur mit Symbol | 2 | ✅ | |
+| U4 „Tag 1“ | 2 | ✅ | „2. November · Herbst · Montag“ |
+| U5 „Tag 93 von etwa 66“ | 2 | ✅ | |
+| U6 „Einheiten“ | 2 | ✅ | |
+| U7 Viele Begriffe | 2 | ❌ | nicht in v7; teilweise entschärft durch U3, U9, U17 |
+| U8 Regentag/Nachtragen | 3 | 🟡 | Hinweis „Regentag wieder frei“ (nachgeprüft); Verbrauchsregel unverändert – nach Usability-Test entscheiden |
+| U9 Ähnliche Zustände | 2 | ✅ | „Extra-Runde“ einheitlich |
+| U10 Version | 1 | ✅ | v7.0.0 |
+| U11 Schalter „Erinnerung“ | 2 | ✅ | |
+| U12 Tap-Flächen | 2 | ✅ | 0 Flächen unter 44 pt in allen Tabs (nachgemessen); Ausnahme Kalenderkacheln |
+| U13 Haken unklar | 2 | ✅ | |
+| U14 Langes Formular | 2 | ✅ | Schritte 5–6 eingeklappt |
+| U15 Tabs zweizeilig | 1 | ✅ | |
+| U16 Pixel-Schrift im Fließtext | 2 | ✅ | als Option „Lesbare Schrift“ |
+| U17 Tooltips | 3 | ✅ | |
+| U18 Wenige Vorlagen | 1 | — | bewusst nicht in v7 |
+
+Tests: 68/68 grün (nachgeprüft). Alle 8 Aufgaben des Testleitfadens mit Test-Hof lösbar (Claude Code), Nachtragen mit Regentag-Hinweis nachgeprüft. Alle 6 Abweichungen in Leitfaden v1.7 übernommen bzw. als offen vermerkt (U8).
+
+**Neu beobachtet:** In der Pixel-Schrift ist das große „B“ kaum vom „G“ zu unterscheiden („NOVEMGER“, „NACHGARIN“) – betrifft Großbuchstaben in Überschriften; im Usability-Test beobachten.
 
 ---
 

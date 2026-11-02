@@ -1,9 +1,20 @@
 # Life's a Game – Entwicklungsleitfaden Habit Tracker (forschungs- und marktbasiert)
 
-Version 1.6 · Stand: 01.11.2026
-Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp v6 (Repo `lifes-a-game-v4`, GitHub Pages) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
+Version 1.7 · Stand: 02.11.2026
+Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp v7 (Repo `lifes-a-game`, GitHub Pages) · [UX-Evaluation](ux-heuristische-evaluation-v6.md) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
 
 Dieses Dokument übersetzt die Forschung zu Motivation, Gamification und Gewohnheitsbildung sowie die Erkenntnisse aus der Marktanalyse in konkrete Entwicklungsentscheidungen. Zahlenwerte (XP, Kurven, Wahrscheinlichkeiten) sind begründete Startwerte, die im Prototyp getestet und angepasst werden.
+
+### Änderungen in v1.7 (Abgleich mit Prototyp v7 – Bedienbarkeit)
+
+| Bereich | Änderung | Grund |
+|---|---|---|
+| Aufbau | **Abhaken steht in „Heute“ an erster Stelle.** Auf schmalen Bildschirmen (bis 767 px): Tab-Leiste fest unten, kompakte Szene, Erfahrung und Fähigkeiten im Tab „Fortschritt“; Hinweise (Installieren, neuer Monat, Check-in) unter der Liste | UX-Fund U1: erster Haken 1.700 → 468 pt, ohne Scrollen |
+| Bedienung | Tap-Flächen mindestens 44 × 44 pt auf schmalen Bildschirmen und Touch-Geräten. **Ausnahme:** Kacheln des Erntekalenders (reine Anzeige, Antippen zeigt Datum und Status) | U12; ein Jahresraster mit 53 Spalten passt nicht in 44-pt-Kacheln |
+| Hilfe | Keine Information nur im Tooltip: Regentage und Kalenderkacheln sind antippbar | U17 |
+| Begriffe | „Nachgeholt“ heißt in der Oberfläche einheitlich **„Extra-Runde“**; Erinnerungs-Schalter heißt bis Flutter „Wilma erinnert in der App“ | U9, U11 |
+| Nachtragen | Wird ein per Regentag geretteter Tag nachgetragen, sagt die App „Dein Regentag ist wieder frei“ | U8 (nur Hinweis; Regentag-Verbrauch unverändert, siehe 4.3) |
+| Einstellungen | Darstellung: `textScale` (Normal/Groß/Sehr groß), `palette` (Standard/Gut unterscheidbar), `readableFont` (Fließtext in Systemschrift) – optionale Felder, Speicherschema unverändert | U16 |
 
 ### Änderungen in v1.6 (Abgleich mit Prototyp v6)
 
@@ -99,7 +110,7 @@ Legende Ist-Stand: ✅ im Prototyp v5 umgesetzt · 🟡 teilweise · ⬜ offen
 
 ## 2. Plattform und Architektur
 
-- **Prototyp:** PWA im Browser zum Testen der Mechanik. Bis v4 als Artifact im Chat, **ab v5 mit Claude Code** im git-Repo `lifes-a-game-v4` (GitHub: lazo-dot/lifes-a-game), veröffentlicht über GitHub Pages (HTTPS). Klassische Skripte mit Namensraum, ein Kopier-Build nach `dist/`, kein Bundler. Tests mit `node --test`.
+- **Prototyp:** PWA im Browser zum Testen der Mechanik. Bis v4 als Artifact im Chat, **ab v5 mit Claude Code** im git-Repo `lifes-a-game` (GitHub: lazo-dot/lifes-a-game), veröffentlicht über GitHub Pages (HTTPS). Klassische Skripte mit Namensraum, ein Kopier-Build nach `dist/`, kein Bundler. Tests mit `node --test`.
 - **Produkt:** **Flutter** (iOS zuerst auf dem MacBook Pro M4, danach Android aus derselben Codebasis). Pixel-Szene mit **Flame**, Listen und Formulare als Flutter-Widgets, Notifications, Widgets und Haptik über Plugins.
 - **Portierbarkeit:** Spiellogik (Formeln, Streak-Regeln, Datenmodell) im Prototyp als eigenes, UI-freies Modul halten und mit Tests absichern. Sie wird 1:1 nach Dart übertragen; Szene und Musik (Ebenen-System, Wetter-Musik-Logik) ebenfalls getrennt halten.
 - **Daten:** lokal zuerst (IndexedDB im Prototyp ✅, SQLite/Isar o. ä. in Flutter), Sync später optional.
@@ -218,6 +229,7 @@ a = 0.044   // pro geplantem Termin
 - **Regentag-Token:** Alle 7 erledigten Termine 1 Token, maximal 2 gespeichert (Duolingo: 2 gleichzeitige Freezes wirken besser als 1). Ein verpasster Tag wird automatisch „bewässert“.
 - **Nachtragen ✅ (v6):** Erledigungen von gestern und vorgestern lassen sich nachtragen (voll oder Mini). Sie zählen für Stärke, Serie, XP und Ernte genauso wie Eintragungen am selben Tag, würfeln aber keinen Zufallsfund und sind im Erntekalender dezent markiert. Ältere Tage lassen sich nicht nachtragen. Ein per Extra-Runde „nachgeholter“ Tag kann innerhalb der 48 h noch als erledigt/Mini nachgetragen werden; Einträge vom selben Tag lassen sich darüber nicht ändern.
 - **Reparatur-Quest:** Nur für Tage, an denen die Gewohnheit wirklich ausgefallen ist: Ohne Token kann ein Streak 48 h lang gerettet werden, indem die Gewohnheit am Folgetag zusätzlich erledigt wird („Extra-Runde“). Die App fragt zuerst „Doch erledigt? Nachtragen / Mini nachtragen / Nein, ist ausgefallen“; erst danach erscheint die Extra-Runde.
+- **Regentag beim Nachtragen ✅ (v7):** Wird ein Tag nachgetragen, den ein Regentag gerettet hatte, ist der Regentag wieder frei; die App sagt das ausdrücklich. *Offen (nach Usability-Test):* Regentag erst nach Ablauf der 48 h verbrauchen bzw. als „vorläufig“ zeigen.
 - **Regentag und nachgeholt ✅ (v6)** zählen für alle Zähler als gehaltener Termin; sie setzen weder die Serie noch den Zähler für das Ausschleichen zurück.
 - **Nach einem Bruch:** Anzeige „47 Tage Kochen dieses Jahr“ statt „0 Tage“. Keine Push-Nachricht zum Bruch.
 - **Neustart-Momente:** Zu Monatsbeginn bzw. neuer Jahreszeit freundliche Einladung zum Neustart (Fresh-Start-Effekt).
@@ -298,7 +310,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 
 ### 5.5 Fortschritt & Statistiken 🟡
 
-- **Erntekalender (Phase 1) ✅:** Jahres-Kachelraster pro Gewohnheit und gesamt im Pixel-Stil; Kachelfarbe nach Status (erledigt / Mini / repariert); nachgetragene Tage dezent markiert (abgeschrägte Ecke, Tooltip, Legende) ✅.
+- **Erntekalender (Phase 1) ✅:** Jahres-Kachelraster pro Gewohnheit und gesamt im Pixel-Stil; Kachelfarbe nach Status (erledigt / Mini / repariert); nachgetragene Tage dezent markiert (abgeschrägte Ecke, Legende) ✅. Kacheln sind antippbar (Datum, Status) und als einziges Element von der 44-pt-Regel ausgenommen ✅ (v7).
 - Pro Skill ein Verlaufsgraph ✅ (v3: 30 Tage) (Vergleich mit sich selbst, nicht mit anderen – Sailer 2017). Gerade hier ist Habitica am schwächsten.
 - Monatsrückblick ✅: erledigte Termine, gewachsene Pflanzen, gemeisterte Gewohnheiten.
 
@@ -348,7 +360,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 | 4 – Langzeit | Jahreszeiten-Inhalte, Freischaltungen, NPC-Story, saisonale Events, Monatsrückblicke, Widgets, Apple Health | Flutter (iOS) | 🟡 Jahreszeiten-Optik, Monatsrückblick |
 | 5 – Sozial (optional) | Kooperatives Dorf mit Freunden, Teilen von Wochenkarten | Flutter (iOS, dann Android) | ⬜ |
 
-**Nächster Schritt:** v6 auf dem iPhone prüfen und den Selbsttest mit v6 fortsetzen (Beta-Zahlen ab `rulesSince` getrennt). Danach Entscheidung über die übrigen Simulations-Kandidaten, dann Flutter-Grundgerüst: Logik und Tests 1:1 nach Dart, Szene mit Flame, lokale Notifications.
+**Nächster Schritt:** v7 auf dem iPhone prüfen, Usability-Test mit 5 Personen auf v7 (Testleitfaden), Selbsttest fortsetzen. Danach Entscheidung über die übrigen Simulations-Kandidaten, dann Flutter-Grundgerüst: Logik und Tests 1:1 nach Dart, Szene mit Flame, lokale Notifications.
 
 ---
 
