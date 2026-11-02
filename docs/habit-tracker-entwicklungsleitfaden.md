@@ -1,9 +1,30 @@
 # Life's a Game – Entwicklungsleitfaden Habit Tracker (forschungs- und marktbasiert)
 
-Version 1.6 · Stand: 01.11.2026
-Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp v6 (Repo `lifes-a-game-v4`, GitHub Pages) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
+Version 1.8 · Stand: 02.11.2026
+Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp v7 (Repo `lifes-a-game`, GitHub Pages), v8a auf Branch `v8a` · [Pixel-Style-Guide](pixel-styleguide-stil-b.md) · [UX-Evaluation](ux-heuristische-evaluation-v6.md) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
 
 Dieses Dokument übersetzt die Forschung zu Motivation, Gamification und Gewohnheitsbildung sowie die Erkenntnisse aus der Marktanalyse in konkrete Entwicklungsentscheidungen. Zahlenwerte (XP, Kurven, Wahrscheinlichkeiten) sind begründete Startwerte, die im Prototyp getestet und angepasst werden.
+
+### Änderungen in v1.8 (Abgleich mit Prototyp v8a – Sprite-Sheets, Stil B)
+
+| Bereich | Änderung | Grund |
+|---|---|---|
+| Datenmodell | `Skill.buildingType` und `Habit.plantType` als neue Felder; Ergänzung beim Laden/Import über eine eigene Migration, Speicherschema bleibt `4`, ältere Versionen ignorieren die Felder | Gebäude je Fähigkeit, Pflanzensorte je Gewohnheit |
+| Spielwelt | Grafik als Sprite-Sheets (Aseprite-JSON + PNG, Ebenen base/glow/shadow), Hof als Karte (`hof-karte.json`) mit festem Seed; ohne Datei Rückfall auf den Zeichencode | Stiländerung ohne Programmierung, 1:1 in Flutter/Flame nutzbar |
+| Spielwelt | Szene nur ganzzahlig skaliert (1×/2×/3×); statt leerer Streifen zeigt sie seitlich mehr Natur (Kern 256 × 160 mittig). Antippen öffnet die Großansicht (größter Faktor, bei dem die Höhe passt, verschiebbar) | Style-Guide 3.1, v8a.1 |
+| Spielwelt | Gebäudestufe aus Skill-Level: 1–2 → 1, 3–5 → 2, 6–9 → 3, ab 10 → 4. Pflanzenbild: Wachstumsstufe 0–4 → Keim … Ausgewachsen; „Gemeistert“ zeigt immer das eigene Bild | Prinzip 7: „Gemeistert“ wird nie entzogen |
+| Spielwelt | Beete mit bis zu 3 Pflanzen, Schild in der Farbe der ersten Gewohnheit; Gebäudetyp wird beim Bearbeiten der Fähigkeit gewählt (Vorschlag nach Symbol), Pflanzensorte im Gewohnheitsformular (Vorschlag reihum) | Formular bleibt kurz (U14) |
+
+### Änderungen in v1.7 (Abgleich mit Prototyp v7 – Bedienbarkeit)
+
+| Bereich | Änderung | Grund |
+|---|---|---|
+| Aufbau | **Abhaken steht in „Heute“ an erster Stelle.** Auf schmalen Bildschirmen (bis 767 px): Tab-Leiste fest unten, kompakte Szene, Erfahrung und Fähigkeiten im Tab „Fortschritt“; Hinweise (Installieren, neuer Monat, Check-in) unter der Liste | UX-Fund U1: erster Haken 1.700 → 468 pt, ohne Scrollen |
+| Bedienung | Tap-Flächen mindestens 44 × 44 pt auf schmalen Bildschirmen und Touch-Geräten. **Ausnahme:** Kacheln des Erntekalenders (reine Anzeige, Antippen zeigt Datum und Status) | U12; ein Jahresraster mit 53 Spalten passt nicht in 44-pt-Kacheln |
+| Hilfe | Keine Information nur im Tooltip: Regentage und Kalenderkacheln sind antippbar | U17 |
+| Begriffe | „Nachgeholt“ heißt in der Oberfläche einheitlich **„Extra-Runde“**; Erinnerungs-Schalter heißt bis Flutter „Wilma erinnert in der App“ | U9, U11 |
+| Nachtragen | Wird ein per Regentag geretteter Tag nachgetragen, sagt die App „Dein Regentag ist wieder frei“ | U8 (nur Hinweis; Regentag-Verbrauch unverändert, siehe 4.3) |
+| Einstellungen | Darstellung: `textScale` (Normal/Groß/Sehr groß), `palette` (Standard/Gut unterscheidbar), `readableFont` (Fließtext in Systemschrift) – optionale Felder, Speicherschema unverändert | U16 |
 
 ### Änderungen in v1.6 (Abgleich mit Prototyp v6)
 
@@ -99,13 +120,13 @@ Legende Ist-Stand: ✅ im Prototyp v5 umgesetzt · 🟡 teilweise · ⬜ offen
 
 ## 2. Plattform und Architektur
 
-- **Prototyp:** PWA im Browser zum Testen der Mechanik. Bis v4 als Artifact im Chat, **ab v5 mit Claude Code** im git-Repo `lifes-a-game-v4` (GitHub: lazo-dot/lifes-a-game), veröffentlicht über GitHub Pages (HTTPS). Klassische Skripte mit Namensraum, ein Kopier-Build nach `dist/`, kein Bundler. Tests mit `node --test`.
+- **Prototyp:** PWA im Browser zum Testen der Mechanik. Bis v4 als Artifact im Chat, **ab v5 mit Claude Code** im git-Repo `lifes-a-game` (GitHub: lazo-dot/lifes-a-game), veröffentlicht über GitHub Pages (HTTPS). Klassische Skripte mit Namensraum, ein Kopier-Build nach `dist/`, kein Bundler. Tests mit `node --test`.
 - **Produkt:** **Flutter** (iOS zuerst auf dem MacBook Pro M4, danach Android aus derselben Codebasis). Pixel-Szene mit **Flame**, Listen und Formulare als Flutter-Widgets, Notifications, Widgets und Haptik über Plugins.
 - **Portierbarkeit:** Spiellogik (Formeln, Streak-Regeln, Datenmodell) im Prototyp als eigenes, UI-freies Modul halten und mit Tests absichern. Sie wird 1:1 nach Dart übertragen; Szene und Musik (Ebenen-System, Wetter-Musik-Logik) ebenfalls getrennt halten.
 - **Daten:** lokal zuerst (IndexedDB im Prototyp ✅, SQLite/Isar o. ä. in Flutter), Sync später optional.
 - **Keine externen Anfragen:** Schriften, Grafiken und Musik liegen in der App bzw. werden erzeugt. Keine Tracking-, Werbe- oder Analyse-Dienste ✅.
 - **Abgeleitete Werte:** Gespeichert werden nur Eingaben (Gewohnheiten mit Verlauf, Logs, Pausen, Check-ins, Logbuch, Truhe). Stärke, Serien, Regentage, XP, Level und Graduierung werden daraus berechnet.
-- **Grafikstil:** v3 nutzt einen Hof in Draufsicht nach Stilreferenz von Lars (ein Beet pro Gewohnheit). Offen ist noch der Detailgrad: Stardew-nah (einfacher zu produzieren) oder Sea-of-Stars-nah (Licht, Wetter, mehr Asset-Aufwand). Vor Phase 2 der nativen App festlegen, da es die Asset-Pipeline (Aseprite, Spritesheets, Auflösung) bestimmt.
+- **Grafikstil (entschieden 02.11.2026): Richtung B – detailreich mit Licht.** Hof in Draufsicht, ein Beet pro Gewohnheit, eigenes Gebäude je Fähigkeit. Farbige Umrisse (dunklere Fassung der Eigenfarbe), 3–4 Schattierungen pro Material, Licht von oben links, Lichtkanten, weiche Schlagschatten, eigene Licht-Ebenen für Tageszeit und Wetter. Lesbarkeit auf dem iPhone hat Vorrang vor Detail: Mindestgrößen für Pflanzen und Gebäude in der kompakten Szene, Antippen zum Vergrößern. Grafiken entstehen ab v8 als Sprite-Sheets (Aseprite), die PWA und Flutter/Flame gemeinsam nutzen; keine KI-generierten Grafiken.
 
 ---
 
@@ -139,6 +160,7 @@ interface Habit {
   harvestStage: number;          // höchste bereits geerntete Wachstumsstufe
   gradRewarded: boolean;         // Fund für "Gemeistert" schon vergeben
   plotId?: string;               // Beet auf dem Hof
+  plantType?: "beere" | "blume" | "kuerbis" | "baeumchen"; // ab v8a, Vorschlag reihum
   archivedAt?: string;
   createdAt: string;
 }
@@ -164,6 +186,8 @@ interface Todo {
 interface Skill {
   id: string;
   name: string;                  // vom Nutzer benennbar, z. B. "Läufer", "Koch"
+  buildingType?: "muehle" | "archiv" | "gewaechshaus" | "schmiede" | "gemeinschaftshaus"
+    | "musikpavillon" | "backhaus" | "kontor" | "scheune"; // ab v8a, Vorschlag nach Symbol
   xp: number;
   level: number;
 }
@@ -218,6 +242,7 @@ a = 0.044   // pro geplantem Termin
 - **Regentag-Token:** Alle 7 erledigten Termine 1 Token, maximal 2 gespeichert (Duolingo: 2 gleichzeitige Freezes wirken besser als 1). Ein verpasster Tag wird automatisch „bewässert“.
 - **Nachtragen ✅ (v6):** Erledigungen von gestern und vorgestern lassen sich nachtragen (voll oder Mini). Sie zählen für Stärke, Serie, XP und Ernte genauso wie Eintragungen am selben Tag, würfeln aber keinen Zufallsfund und sind im Erntekalender dezent markiert. Ältere Tage lassen sich nicht nachtragen. Ein per Extra-Runde „nachgeholter“ Tag kann innerhalb der 48 h noch als erledigt/Mini nachgetragen werden; Einträge vom selben Tag lassen sich darüber nicht ändern.
 - **Reparatur-Quest:** Nur für Tage, an denen die Gewohnheit wirklich ausgefallen ist: Ohne Token kann ein Streak 48 h lang gerettet werden, indem die Gewohnheit am Folgetag zusätzlich erledigt wird („Extra-Runde“). Die App fragt zuerst „Doch erledigt? Nachtragen / Mini nachtragen / Nein, ist ausgefallen“; erst danach erscheint die Extra-Runde.
+- **Regentag beim Nachtragen ✅ (v7):** Wird ein Tag nachgetragen, den ein Regentag gerettet hatte, ist der Regentag wieder frei; die App sagt das ausdrücklich. *Offen (nach Usability-Test):* Regentag erst nach Ablauf der 48 h verbrauchen bzw. als „vorläufig“ zeigen.
 - **Regentag und nachgeholt ✅ (v6)** zählen für alle Zähler als gehaltener Termin; sie setzen weder die Serie noch den Zähler für das Ausschleichen zurück.
 - **Nach einem Bruch:** Anzeige „47 Tage Kochen dieses Jahr“ statt „0 Tage“. Keine Push-Nachricht zum Bruch.
 - **Neustart-Momente:** Zu Monatsbeginn bzw. neuer Jahreszeit freundliche Einladung zum Neustart (Fresh-Start-Effekt).
@@ -294,11 +319,12 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 - **Schrittweise Freischaltung:** neue Bereiche, Jahreszeiten-Inhalte, Crafting über die ersten Wochen verteilt (Neuheitseffekt-Abfall nach ca. 3–8 Wochen, Koivisto & Hamari 2019).
 - **Saisonale Events** pro Jahreszeit als Inhalts-Rhythmus (Habitica-Prinzip), ohne Zeitdruck und ohne verpassbare Exklusiv-Belohnungen.
 - **„Die Farm schläft nachts“ ✅ (22–6 Uhr):** spätabends keine Spielaktionen – kurze Sessions, kein Grinding (Allcott et al. 2022).
+- **Grafik ab v8a:** Sprite-Sheets nach [Pixel-Style-Guide](pixel-styleguide-stil-b.md) (Stil B), Hof als Karte, Szene ganzzahlig skaliert, Licht über Ebenen (Tönung multiplizieren, Leuchten addieren, Schatten 30 %). Gebäude je Fähigkeit in 4 Ausbaustufen (Skill-Level 1–2/3–5/6–9/ab 10), Pflanzen in 5 Stufen plus „Gemeistert“, bis zu 3 Pflanzen je Beet. Grafiken bis zum Launch sind Platzhalter; veröffentlicht werden nur handgezeichnete Grafiken.
 - **Performance:** statische Ebenen nur bei Änderung neu zeichnen, Animation und Musik im Hintergrund pausieren ✅.
 
 ### 5.5 Fortschritt & Statistiken 🟡
 
-- **Erntekalender (Phase 1) ✅:** Jahres-Kachelraster pro Gewohnheit und gesamt im Pixel-Stil; Kachelfarbe nach Status (erledigt / Mini / repariert); nachgetragene Tage dezent markiert (abgeschrägte Ecke, Tooltip, Legende) ✅.
+- **Erntekalender (Phase 1) ✅:** Jahres-Kachelraster pro Gewohnheit und gesamt im Pixel-Stil; Kachelfarbe nach Status (erledigt / Mini / repariert); nachgetragene Tage dezent markiert (abgeschrägte Ecke, Legende) ✅. Kacheln sind antippbar (Datum, Status) und als einziges Element von der 44-pt-Regel ausgenommen ✅ (v7).
 - Pro Skill ein Verlaufsgraph ✅ (v3: 30 Tage) (Vergleich mit sich selbst, nicht mit anderen – Sailer 2017). Gerade hier ist Habitica am schwächsten.
 - Monatsrückblick ✅: erledigte Termine, gewachsene Pflanzen, gemeisterte Gewohnheiten.
 
@@ -348,7 +374,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 | 4 – Langzeit | Jahreszeiten-Inhalte, Freischaltungen, NPC-Story, saisonale Events, Monatsrückblicke, Widgets, Apple Health | Flutter (iOS) | 🟡 Jahreszeiten-Optik, Monatsrückblick |
 | 5 – Sozial (optional) | Kooperatives Dorf mit Freunden, Teilen von Wochenkarten | Flutter (iOS, dann Android) | ⬜ |
 
-**Nächster Schritt:** v6 auf dem iPhone prüfen und den Selbsttest mit v6 fortsetzen (Beta-Zahlen ab `rulesSince` getrennt). Danach Entscheidung über die übrigen Simulations-Kandidaten, dann Flutter-Grundgerüst: Logik und Tests 1:1 nach Dart, Szene mit Flame, lokale Notifications.
+**Nächster Schritt:** v7 auf dem iPhone prüfen, Usability-Test mit 5 Personen auf v7 (Testleitfaden), Selbsttest fortsetzen. Danach Entscheidung über die übrigen Simulations-Kandidaten, dann Flutter-Grundgerüst: Logik und Tests 1:1 nach Dart, Szene mit Flame, lokale Notifications.
 
 ---
 

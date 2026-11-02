@@ -286,12 +286,13 @@
       id, title: i.title.trim(), anchor: cleanAnchor(i.anchor), anchorTime: i.anchorTime || '', tinyVersion: i.tinyVersion.trim(),
       frequency: i.frequency, skillId: i.skillId, effort: i.effort, streakEnabled: !!i.streakEnabled, remindersEnabled: !!i.remindersEnabled,
       remOffAt: i.remindersEnabled ? null : today, createdAt: today, history: [{ from: today, effort: i.effort, frequency: i.frequency }],
-      pauses: [], logs: {}, harvestStage: 0, gradRewarded: false, rolled: ''
+      pauses: [], logs: {}, harvestStage: 0, gradRewarded: false, rolled: '', ...(PLANTS.includes(i.plantType) ? { plantType: i.plantType } : {})
     };
   }
   /** F7: Bearbeiten. Aufwand/Frequenz gelten ab heute, ältere Termine behalten ihre Werte. */
   function applyEdit(h, i, today) {
     const changedSched = h.effort !== i.effort || JSON.stringify(h.frequency) !== JSON.stringify(i.frequency);
+    if (PLANTS.includes(i.plantType)) h.plantType = i.plantType;
     h.title = i.title.trim(); h.anchor = cleanAnchor(i.anchor); h.anchorTime = i.anchorTime || ''; h.tinyVersion = i.tinyVersion.trim(); h.skillId = i.skillId;
     if (h.streakEnabled !== !!i.streakEnabled) h.streakEnabled = !!i.streakEnabled;
     if (h.remindersEnabled !== !!i.remindersEnabled) { h.remindersEnabled = !!i.remindersEnabled; h.remOffAt = h.remindersEnabled ? null : today; }
@@ -395,11 +396,32 @@
     return out;
   }
 
+  /* ---------- Hof-Grafik v8a: Gebäude- und Pflanzentyp ----------
+   * Reine Darstellung, keine Spielregel: Stärke, XP und Stufen bleiben, wie sie sind.
+   * Ausbaustufe aus dem Skill-Level (Style-Guide 8, Leitfaden 5.4): 1–2 → 1, 3–5 → 2, 6–9 → 3, ab 10 → 4.
+   * Wachstumsstufe aus der Stärke (STAGES): Index 0–4 → keim … ausgewachsen, gemeistert hat ein eigenes Bild.
+   */
+  const BUILDINGS = ['muehle', 'archiv', 'gewaechshaus', 'schmiede', 'gemeinschaftshaus', 'musikpavillon', 'backhaus', 'kontor', 'scheune'];
+  const BUILDING_BY_ICON = { boot: 'muehle', book: 'archiv', flower: 'gewaechshaus', crate: 'schmiede', heart: 'gemeinschaftshaus', note: 'musikpavillon', pan: 'backhaus', coin: 'kontor' };
+  const PLANTS = ['beere', 'blume', 'kuerbis', 'baeumchen'];
+  const PLANT_FRAMES = ['keim', 'setzling', 'jungpflanze', 'bluete', 'ausgewachsen'];
+  const suggestBuilding = icon => BUILDING_BY_ICON[icon] || 'scheune';
+  const suggestPlant = i => PLANTS[((i % PLANTS.length) + PLANTS.length) % PLANTS.length];   // reihum
+  const buildingStage = level => (level >= 10 ? 4 : level >= 6 ? 3 : level >= 3 ? 2 : 1);
+  const plantFrame = (stage, graduated) => (graduated ? 'gemeistert' : PLANT_FRAMES[Math.max(0, Math.min(PLANT_FRAMES.length - 1, stage))]);
+  /** v7 → v8a: ergänzt fehlende Gebäude- und Pflanzentypen als Vorschlag. Alle anderen Daten bleiben unverändert. Gibt true zurück, wenn etwas ergänzt wurde. */
+  function migrateV8a(state) {
+    let changed = false;
+    (state.skills || []).forEach(s => { if (!BUILDINGS.includes(s.buildingType)) { s.buildingType = suggestBuilding(s.icon); changed = true; } });
+    (state.habits || []).forEach((h, i) => { if (!PLANTS.includes(h.plantType)) { h.plantType = suggestPlant(i); changed = true; } });
+    return changed;
+  }
+
   /* ---------- Neuer Zustand, Migration, Import (F6) ---------- */
   function emptyState(today) {
     return {
       schema: C.SCHEMA, onboarded: false, startedAt: today, rulesV6Since: today, sound: true, music: false, freshSeen: '', installHintSeen: false,
-      skills: [{ id: 's1', name: 'Körper', icon: 'boot', st: 0 }, { id: 's2', name: 'Geist', icon: 'book', st: 1 }, { id: 's3', name: 'Alltag', icon: 'crate', st: 3 }],
+      skills: [{ id: 's1', name: 'Körper', icon: 'boot', st: 0, buildingType: 'muehle' }, { id: 's2', name: 'Geist', icon: 'book', st: 1, buildingType: 'archiv' }, { id: 's3', name: 'Alltag', icon: 'crate', st: 3, buildingType: 'schmiede' }],
       habits: [], todos: [], journal: [], checkins: {}, chest: { items: {}, placed: [] }
     };
   }
@@ -449,7 +471,8 @@
     isHeld, heldShare, isLate, canLogLate, lateDays, logLate, dropAllowed, freesRainDay,
     canAddHabit, validateHabitInput, cleanAnchor, newHabit, applyEdit, pause, resume,
     dayWeather, journalOn, currentWeather, needsCheckin, farmSleeps, yearGrid,
-    emptyState, migrateV3, importState
+    emptyState, migrateV3, importState,
+    BUILDINGS, PLANTS, PLANT_FRAMES, suggestBuilding, suggestPlant, buildingStage, plantFrame, migrateV8a
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = LAG; else root.LAG = LAG;
 })(typeof self !== 'undefined' ? self : this);

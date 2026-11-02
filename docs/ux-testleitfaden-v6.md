@@ -1,13 +1,13 @@
 # Life's a Game – Testleitfaden Usability-Test (Prototyp v6)
 
-Stand: 01.11.2026 · Durchführung auf **Prototyp v7** (Bedienbarkeits-Verbesserungen aus der Evaluation; Aufgaben unverändert lösbar) · Bezug: [Heuristische Evaluation v6](ux-heuristische-evaluation-v6.md) · Durchführung: Lars
+Stand: 02.11.2026 · Durchführung auf **Prototyp v8a** (Bedienbarkeit aus v7 plus Hof in Stil B mit Gebäuden je Fähigkeit, Pflanzensorten, Großansicht; Grafiken sind vorläufige Platzhalter) · Bezug: [Heuristische Evaluation v6](ux-heuristische-evaluation-v6.md) · Durchführung: Lars
 
 ## 1. Ziel und Rahmen
 
-- **Ziel:** Prüfen, ob Menschen ohne Vorwissen die Kernabläufe schaffen und die Spielregeln verstehen. Im Fokus stehen die Funde U1, U8, U12, U13, U14 und U17 der heuristischen Evaluation.
+- **Ziel:** Prüfen, ob Menschen ohne Vorwissen die Kernabläufe schaffen, die Spielregeln verstehen und den Hof lesen können. Im Fokus stehen die Funde U1, U8, U12, U13, U14 und U17 der heuristischen Evaluation sowie die v8a-Neuerungen (Gebäudewahl, Pflanzensorte, Großansicht).
 - **Methode:** moderierter Test mit lautem Denken, danach SUS-Fragebogen und Verständnisfragen.
 - **Umfang:** 5 Personen, je ca. 35 Minuten.
-- **Ergebnisse:** Erfolgsquote, Zeit und Fehler je Aufgabe, SUS-Wert, Verständnis, Liste der Probleme mit Schweregrad. Sie fließen zusammen mit Selbsttest und Simulation in die Entscheidung über v7.
+- **Ergebnisse:** Erfolgsquote, Zeit und Fehler je Aufgabe, SUS-Wert, Verständnis, Liste der Probleme mit Schweregrad. Sie fließen zusammen mit Selbsttest und Simulation in die Entscheidung über v8b.
 
 ## 2. Teilnehmende
 
@@ -32,10 +32,13 @@ Fünf Personen, möglichst gemischt nach den Simulations-Personas. Niemand sollt
 2. Inhalt der Datei aufs iPhone bringen (z. B. per AirDrop oder Notiz) und kopieren.
 3. Im Safari-Tab: Willkommen → „Sicherung importieren“ → Text einfügen → „Wiederherstellen“. Bei einem bereits benutzten Tab: Fortschritt → „Sicherung importieren“.
 
+**Hinweis an die Testperson (beim Einleitungstext):** Die Grafiken sind vorläufig und werden noch ersetzt. Bewertet wird die Bedienung, nicht die Optik.
+
 Der Test-Hof enthält:
 - drei Gewohnheiten seit 20 Tagen: „10 Minuten lesen“ täglich mit Serie, „Spazieren gehen“ 3× pro Woche, „5 Minuten dehnen“ täglich;
 - „10 Minuten lesen“ ist gestern nicht eingetragen, die App hat dafür automatisch einen Regentag verbraucht (prüft Fund U8);
-- drei Funde in der Truhe, zwei Logbuch-Einträge und ein offenes To-do.
+- drei Funde in der Truhe, zwei Logbuch-Einträge und ein offenes To-do;
+- zwei Fähigkeiten (Körper → Mühle, Geist → Archiv), beide noch in frühen Ausbaustufen.
 
 **Weitere Vorbereitung:**
 - Uhrzeit: zwischen 8 und 21 Uhr testen. Ab 22 Uhr „schläft die Farm“, dann lässt sich nicht dekorieren (Aufgabe 6).
@@ -74,14 +77,15 @@ Lies jeweils nur den Aufgabentext vor, nicht die Hinweise. Starte bei jeder Aufg
 
 | # | Aufgabentext (vorlesen) | Erfolgskriterium | Beobachten | Prüft |
 |---|---|---|---|---|
-| 1 | „Du möchtest dir angewöhnen, jeden Morgen ein Glas Wasser zu trinken. Leg das als neue Gewohnheit an.“ | Gewohnheit angelegt **mit eigenem, sinnvollem Anker** und echter Mini-Version | Wird der Anker verstanden („Nach welcher Routine“)? Wird eine Vorlage genutzt? Abbrüche im langen Formular? Erwartung bei „Erinnerung“? | U11, U14, U18 |
+| 1 | „Du möchtest dir angewöhnen, jeden Morgen ein Glas Wasser zu trinken. Leg das als neue Gewohnheit an.“ | Gewohnheit angelegt **mit eigenem, sinnvollem Anker** und echter Mini-Version | Wird der Anker verstanden („Nach welcher Routine“)? Wird eine Vorlage genutzt? Abbrüche im langen Formular? Erwartung bei „Erinnerung“? Wird die Pflanzensorte bemerkt oder bewusst gewählt? Sucht die Person die neue Pflanze danach auf dem Hof? | U11, U14, U18, v8a |
 | 2 | „Du hast heute schon gedehnt. Trag das ein. Beim Lesen hast du heute nur eine Seite geschafft. Trag auch das ein.“ | „Dehnen“ voll erledigt, „Lesen“ als Mini | Zeit bis zum ersten Haken, Scrollen, Fehlgriffe (Kasten vs. Mini-Knopf) | U1, U12, U13 |
 | 3 | „Gestern Abend hast du doch gelesen, aber vergessen, es einzutragen. Hol das nach.“ | „Lesen“ für gestern nachgetragen | Wird „Gestern und vorgestern“ gefunden? Kommentar zum Regentag? | U8, U9 |
 | 4 | „Spazieren gehen klappt nicht dreimal pro Woche. Ändere das auf zweimal pro Woche.“ | Frequenz auf 2× pro Woche geändert und gespeichert | Wird „Bearbeiten“ gefunden? Wird der Hinweis „gilt ab heute“ verstanden? | Heuristik 3, 6 |
 | 5 | „Schau nach: An wie vielen Tagen hast du in den letzten Wochen gelesen?“ | Antwort aus Erntekalender oder Gewohnheitsdetails, ungefähr richtig (± 2) | Wird der Kalender gefunden und gelesen? Versucht die Person, auf Kacheln zu tippen? | U17 |
-| 6 | „In deiner Truhe liegt etwas für den Hof. Stell einen Gegenstand auf deinen Hof.“ | Gegenstand aufgestellt und auf dem Hof sichtbar | Ist klar, woher Funde kommen? | Heuristik 6 |
+| 6 | „In deiner Truhe liegt etwas für den Hof. Stell einen Gegenstand auf deinen Hof.“ | Gegenstand aufgestellt und auf dem Hof sichtbar | Ist klar, woher Funde kommen? Wird der Gegenstand auf dem Hof gefunden? Wird die Großansicht (Antippen der Szene) entdeckt und gewischt? | Heuristik 6, v8a |
 | 7 | „Du fährst nächste Woche eine Woche in den Urlaub und willst mit dem Dehnen so lange aussetzen. Was machst du?“ | Gewohnheit pausiert, **nicht** gelöscht | Wird „Pausieren“ gefunden? Gibt es Sorge, dass die Pflanze leidet? | Heuristik 3 |
-| 8 | „Schreib einen kurzen Eintrag für heute und schließ den Tag ab.“ | Logbuch-Eintrag gespeichert | Wird die Wetterwahl verstanden? | Heuristik 2 |
+| 8 | „Zu deiner Fähigkeit ‚Geist‘ passt eher eine Scheune als das Archiv. Ändere das.“ | Gebäudetyp der Fähigkeit auf Scheune geändert, auf dem Hof sichtbar | Wo wird zuerst gesucht (Gewohnheit, Hof, Fortschritt)? Wird „Ändern“ bei der Fähigkeit gefunden? Wird das Raster verstanden? | v8a (Abweichung 10) |
+| (9) | *Nur wenn Zeit bleibt:* „Schreib einen kurzen Eintrag für heute und schließ den Tag ab.“ | Logbuch-Eintrag gespeichert | Wird die Wetterwahl verstanden? | Heuristik 2 |
 
 **Bewertung je Aufgabe:** 2 = ohne Hilfe geschafft · 1 = mit Umweg oder kleinem Hinweis · 0 = nicht geschafft oder abgebrochen. Hilfe nur geben, wenn die Person ausdrücklich nicht weiterkommt, und notieren.
 
@@ -114,11 +118,12 @@ Ohne die App anzusehen beantworten lassen und die Antworten wörtlich notieren.
 2. „Was passiert, wenn du einen Tag verpasst? Was ist ein Regentag?“ Richtig ist sinngemäß: Die Pflanze wächst langsamer und stirbt nicht. Ein Regentag rettet automatisch die Serie, und man verdient ihn sich durch Erledigungen.
 3. „Was ist die Mini-Version, und wann würdest du sie nutzen?“
 4. „Was bedeutet ‚Gemeistert‘, und wie kommt man dahin?“ Das ist offen, weil es im Test nicht vorkommt. Interessant ist, ob es überhaupt jemand bemerkt.
+5. „Was zeigen die Gebäude auf dem Hof, und warum sehen sie unterschiedlich weit gebaut aus?“ Richtig ist sinngemäß: Jedes Gebäude gehört zu einer Fähigkeit und wird mit deren Level ausgebaut.
 
 **Abschlussgespräch:**
 - Was hat dir gefallen? Was hat dich gestört oder verwirrt?
 - Würdest du die App nutzen? Was müsste dafür anders sein?
-- Was heißt für dich „Tag 1“ oben in der Kopfzeile? (prüft U4)
+- Was würdest du gern auf deinem Hof sehen oder bauen? (Ideen für Freischaltungen, Entscheidung 7)
 - Ein Wort, das die App für dich beschreibt?
 
 ## 8. Beobachtungsbogen (pro Person)
@@ -134,9 +139,10 @@ Ohne die App anzusehen beantworten lassen und die Antworten wörtlich notieren.
 | 5 Kalender | | | | | |
 | 6 Truhe | | | | | |
 | 7 Pausieren | | | | | |
-| 8 Logbuch | | | | | |
+| 8 Gebäude ändern | | | | | |
+| (9) Logbuch | | | | | |
 
-**SUS-Wert:** __ · **Verständnisfragen richtig (von 3):** __
+**SUS-Wert:** __ · **Verständnisfragen richtig (von 4, ohne Frage 4):** __
 
 **Beobachtete Probleme:**
 
@@ -151,7 +157,7 @@ Ohne die App anzusehen beantworten lassen und die Antworten wörtlich notieren.
 3. **Verständnis:** Anteil richtiger Antworten je Frage.
 4. **Probleme zusammenführen:** Gleiche Probleme bündeln und zählen, wie viele Personen betroffen waren. Den Schweregrad als höchsten beobachteten Wert ansetzen, bei 3 oder mehr Betroffenen +1.
 5. **Abgleich mit der heuristischen Evaluation:** Für jeden Fund U1–U18 festhalten, ob er bestätigt, nicht beobachtet oder widerlegt wurde. Neue Probleme ergänzen.
-6. **Ergebnis hierher bringen:** Beobachtungsbögen bzw. die zusammengefasste Liste. Der Koordinations-Chat erstellt daraus die UX-Punkte für v7.
+6. **Ergebnis hierher bringen:** Beobachtungsbögen bzw. die zusammengefasste Liste. Der Koordinations-Chat erstellt daraus die UX-Punkte für v8b.
 
 **Hinweise für die Moderation:**
 - Nicht erklären, nicht bestätigen („gut so“).

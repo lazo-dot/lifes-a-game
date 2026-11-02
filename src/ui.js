@@ -3,7 +3,7 @@
  */
 (function (root) {
   'use strict';
-  const L = root.LAG, SP = root.LAGSprites, Store = root.LAGStore, img = SP.img, esc = SP.esc;
+  const L = root.LAG, SP = root.LAGSprites, SH = root.LAGSheets, Store = root.LAGStore, img = SP.img, esc = SP.esc;
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const reduce = !!(root.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const today = () => L.dkey(new Date()), hour = () => new Date().getHours();
@@ -23,6 +23,19 @@
   let S = null, D = null, realState = null, scene = null, au = null, preview = null;
   const U = { npcIdx: 0, selWeather: null, editingJournal: false, draft: '', promptShift: 0, renaming: null, editHabit: null, wipeArmed: false, showExport: false,
     importPending: null, calHabit: '', calYear: null, lastTodoSkill: null, obStep: null, ci: null, undo: null };
+
+  // v8a: Gebäude je Fähigkeit und Pflanzensorten (Namen immer als Text, nicht nur Bild)
+  const BNAME = { muehle: 'Mühle', archiv: 'Archiv', gewaechshaus: 'Gewächshaus', schmiede: 'Schmiede', gemeinschaftshaus: 'Gemeinschafts&shy;haus', musikpavillon: 'Musik&shy;pavillon', backhaus: 'Backhaus', kontor: 'Kontor', scheune: 'Scheune' };
+  const PNAME = { beere: 'Beere', blume: 'Blume', kuerbis: 'Kürbis', baeumchen: 'Bäumchen' };
+  const sheetUrls = new Map();
+  /** Vorschaubild aus einem Sprite-Sheet (Ebene base), ganzzahlig vergrößert. Ohne Sheet: leer. */
+  function sheetImg(sheet, tag, scale) {
+    const key = sheet + tag + scale; if (sheetUrls.has(key)) return sheetUrls.get(key);
+    const sh = SH && SH.get(sheet); if (!sh) return '';
+    const c = document.createElement('canvas'); c.width = sh.w * scale; c.height = sh.h * scale; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.scale(scale, scale);
+    SH.draw(x, sh, 'base', tag, sh.anchor.x, sh.anchor.y);
+    const h = `<img class="pi" src="${c.toDataURL()}" alt="" width="${c.width}" height="${c.height}">`; sheetUrls.set(key, h); return h;
+  }
 
   /* ---------- Hilfen ---------- */
   const skillById = id => S.skills.find(s => s.id === id) || S.skills[0];
@@ -166,7 +179,7 @@
   /* ---------- Gewohnheits-Formular (Onboarding, Neu, Bearbeiten) ---------- */
   function skillOptions(sel) { return S.skills.map(s => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${esc(s.name)}</option>`).join('') + (S.skills.length < L.C.MAX_SKILLS ? '<option value="__new">+ Neue Fähigkeit …</option>' : ''); }
   function habitForm(p, h) {
-    const f = h ? h.frequency : { kind: 'daily' }, days = f.kind === 'weekdays' ? f.days : [1, 2, 3, 4, 5], n = f.kind === 'weekly' ? f.timesPerWeek : 3, eff = h ? h.effort : 2;
+    const f = h ? h.frequency : { kind: 'daily' }, days = f.kind === 'weekdays' ? f.days : [1, 2, 3, 4, 5], n = f.kind === 'weekly' ? f.timesPerWeek : 3, eff = h ? h.effort : 2, plant = (h && h.plantType) || L.suggestPlant(S.habits.length);
     return `<form class="hform" data-form="${p}" novalidate>
       <div class="step"><b>1</b><label for="${p}-title">Was möchtest du tun?</label><div class="ctl"><input class="in" id="${p}-title" data-f="title" maxlength="60" placeholder="z. B. 10 Minuten dehnen" value="${h ? esc(h.title) : ''}"></div></div>
       <div class="step"><b>2</b><label for="${p}-anchor">Wann genau? Nach welcher Routine?</label><div class="ctl"><span class="pre">Nach</span><input class="in" id="${p}-anchor" data-f="anchor" maxlength="60" placeholder="dem ersten Kaffee" value="${h ? esc(h.anchor) : ''}"><input class="in" type="time" data-f="time" aria-label="Ungefähre Uhrzeit der Routine (optional)" value="${h ? esc(h.anchorTime) : ''}"></div></div>
@@ -176,7 +189,8 @@
         <div class="ctl" data-g="times" ${f.kind === 'weekly' ? '' : 'hidden'}><input class="in" type="number" min="1" max="6" value="${n}" data-f="n" style="flex:0 0 80px" aria-label="Mal pro Woche"><span>mal pro Woche, an beliebigen Tagen</span></div></div>
       <div class="step"><b>4</b><label for="${p}-tiny">Was ist die Mini-Version für schlechte Tage?</label><div class="ctl"><input class="in" id="${p}-tiny" data-f="tiny" maxlength="60" placeholder="z. B. eine einzige Dehnübung" value="${h ? esc(h.tinyVersion) : ''}"></div><p class="hint" style="grid-column:2">Eine echte kleine Handlung, nicht nur „App öffnen“.</p></div>
       <details class="more"${h ? ' open' : ''}><summary>Fähigkeit, Aufwand und Optionen <span class="hint">(mit Vorgaben, zum Ändern antippen)</span></summary>
-      <div class="step"><b>5</b><label for="${p}-skill">Zu welcher Fähigkeit gehört das?</label><div class="ctl"><select class="in" id="${p}-skill" data-f="skill">${skillOptions(h ? h.skillId : null)}</select><input class="in" data-f="newskill" maxlength="20" placeholder="Name der neuen Fähigkeit" aria-label="Name der neuen Fähigkeit" hidden></div></div>
+      <div class="step"><b>5</b><label for="${p}-skill">Zu welcher Fähigkeit gehört das?</label><div class="ctl"><select class="in" id="${p}-skill" data-f="skill">${skillOptions(h ? h.skillId : null)}</select><input class="in" data-f="newskill" maxlength="20" placeholder="Name der neuen Fähigkeit" aria-label="Name der neuen Fähigkeit" hidden></div>
+        <span class="lab" style="grid-column:2" id="${p}-plant">Was wächst im Beet?</span><div class="ctl ppick" role="group" aria-labelledby="${p}-plant">${L.PLANTS.map(k => `<button type="button" class="chip pchip" data-plant="${k}" aria-pressed="${plant === k}">${sheetImg('pflanzen-' + k, 'ausgewachsen', 2)}<span>${PNAME[k]}</span></button>`).join('')}</div></div>
       <div class="step"><b>6</b><span class="lab">Aufwand und Optionen</span>
         <div class="ctl">${[1, 2, 3].map(e => `<button type="button" class="chip" data-eff="${e}" aria-pressed="${eff === e}">${['Leicht', 'Mittel', 'Schwer'][e - 1]} · ${10 * e} XP</button>`).join('')}</div>
         <div class="ctl"><label class="sw"><input type="checkbox" data-f="streak" ${h ? (h.streakEnabled ? 'checked' : '') : 'checked'}> Serie zählen</label><label class="sw"><input type="checkbox" data-f="rem" ${h ? (h.remindersEnabled ? 'checked' : '') : 'checked'}> Wilma erinnert in der App</label></div>
@@ -191,7 +205,7 @@
     const frequency = kind === 'weekly' ? { kind, timesPerWeek: Math.round(+q('[data-f=n]').value || 0) } : kind === 'weekdays' ? { kind, days: pressed('[data-day]').map(b => +b.dataset.day) } : { kind };
     return { title: q('[data-f=title]').value, anchor: q('[data-f=anchor]').value, anchorTime: q('[data-f=time]').value, tinyVersion: q('[data-f=tiny]').value, frequency,
       skillId: q('[data-f=skill]').value, newSkill: q('[data-f=newskill]').value.trim(), effort: +((pressed('[data-eff]')[0] || {}).dataset || {}).eff || 0,
-      streakEnabled: q('[data-f=streak]').checked, remindersEnabled: q('[data-f=rem]').checked };
+      streakEnabled: q('[data-f=streak]').checked, remindersEnabled: q('[data-f=rem]').checked, plantType: ((pressed('[data-plant]')[0] || {}).dataset || {}).plant };
   }
   function fillIdea(form, idea) {
     const q = s => form.querySelector(s);
@@ -206,7 +220,7 @@
     if (miss.length) { const more = form.querySelector('details.more'); if (more && (!i.effort || (i.skillId === '__new' && !i.newSkill))) more.open = true;   // U14: Fehler nie versteckt
       err.hidden = false; err.textContent = 'Bitte ergänze noch: ' + miss.join(', ') + '.'; au.sfx.err(); return; }
     err.hidden = true;
-    if (i.skillId === '__new') { const id = 's' + uid(); S.skills.push({ id, name: i.newSkill, icon: SP.ICONS[S.skills.length % SP.ICONS.length], st: S.skills.length }); i.skillId = id; }
+    if (i.skillId === '__new') { const id = 's' + uid(), icon = SP.ICONS[S.skills.length % SP.ICONS.length]; S.skills.push({ id, name: i.newSkill, icon, st: S.skills.length, buildingType: L.suggestBuilding(icon) }); i.skillId = id; }
     if (kind === 'edit') {
       const h = S.habits.find(x => x.id === U.editHabit); L.applyEdit(h, i, t); U.editHabit = null; au.sfx.place();
       toast(`<span><b>Gespeichert.</b> „${esc(h.title)}“ ist aktualisiert.</span>`);
@@ -318,7 +332,8 @@
     return `<h3>Darstellung</h3><div class="look"><div class="ctl" role="group" aria-label="Schriftgröße"><span class="lab">Schrift</span>${SCALES.map(([v, l]) => `<button type="button" class="chip" data-act="scale" data-v="${v}" aria-pressed="${(S.textScale || 1) === v}">${l}</button>`).join('')}</div>
       <div class="ctl" role="group" aria-label="Farben"><span class="lab">Farben</span><button type="button" class="chip" data-act="palette" data-v="" aria-pressed="${S.palette !== 'cb'}">Standard</button><button type="button" class="chip" data-act="palette" data-v="cb" aria-pressed="${S.palette === 'cb'}">Gut unterscheidbar</button></div>
       <div class="ctl" role="group" aria-label="Schriftart"><span class="lab">Schriftart</span><button type="button" class="chip" data-act="font" data-v="" aria-pressed="${!S.readableFont}">Pixel</button><button type="button" class="chip" data-act="font" data-v="1" aria-pressed="${!!S.readableFont}">Lesbare Schrift</button></div>
-      <p class="hint">„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p></div>`;
+      <p class="hint">„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p>
+      ${SH && SH.placeholder() ? '<p class="hint"><b>Vorläufige Grafiken:</b> Gebäude, Pflanzen und Natur auf dem Hof sind Platzhalter. Sie werden vor dem Start durch handgezeichnete Grafiken ersetzt.</p>' : ''}</div>`;
   }
 
   /* ---------- Beta-Metriken (H5) ---------- */
@@ -354,8 +369,9 @@
     skills() {
       $('#skills').innerHTML = S.skills.map(s => {
         const l = D.levels[s.id], st = styleOf(s), sty = `--c:${st.c};--hi:${st.hi};--dk:${st.dk}`;
-        if (U.renaming === s.id) return `<div class="skill" style="${sty}"><button class="iconbtn" type="button" data-act="icon" data-sid="${s.id}" title="Symbol wechseln">${img(s.icon, 3, 'Symbol wechseln')}</button><input class="in" id="renameIn" value="${esc(s.name)}" maxlength="20" aria-label="Name der Fähigkeit"><button class="btn sm ren" type="button" data-act="renok">OK</button></div>`;
-        return `<div class="skill" style="${sty}">${img(s.icon, 3, '')}<div class="stat-line"><span>${esc(s.name)} <span class="lv">Stufe ${l.l}</span></span><span>${l.into}/${l.need}</span></div><button class="iconbtn ren" type="button" data-act="ren" data-sid="${s.id}" aria-label="${esc(s.name)} umbenennen">Ändern</button><div class="bar sm sk"><i style="width:${Math.round(l.into / l.need * 100)}%"></i></div></div>`;
+        if (U.renaming === s.id) return `<div class="skill" style="${sty}"><button class="iconbtn" type="button" data-act="icon" data-sid="${s.id}" title="Symbol wechseln">${img(s.icon, 3, 'Symbol wechseln')}</button><input class="in" id="renameIn" value="${esc(s.name)}" maxlength="20" aria-label="Name der Fähigkeit"><button class="btn sm ren" type="button" data-act="renok">OK</button>
+          <div class="bpick" role="group" aria-label="Gebäude für ${esc(s.name)}"><span class="lab">Gebäude auf dem Hof</span>${L.BUILDINGS.map(b => `<button type="button" class="chip bchip" data-act="btype" data-sid="${s.id}" data-v="${b}" aria-pressed="${s.buildingType === b}">${sheetImg('gebaeude-' + b, 'stufe-4', 1)}<span>${BNAME[b]}</span></button>`).join('')}</div></div>`;
+        return `<div class="skill" style="${sty}">${img(s.icon, 3, '')}<div class="stat-line"><span>${esc(s.name)} <span class="lv">Stufe ${l.l} · ${BNAME[s.buildingType] || ''}</span></span><span>${l.into}/${l.need}</span></div><button class="iconbtn ren" type="button" data-act="ren" data-sid="${s.id}" aria-label="${esc(s.name)} umbenennen">Ändern</button><div class="bar sm sk"><i style="width:${Math.round(l.into / l.need * 100)}%"></i></div></div>`;
       }).join('') + (S.skills.length < L.C.MAX_SKILLS ? `<div><button class="btn ghost" type="button" data-act="addskill">+ Neue Fähigkeit</button></div>` : '');
       const ri = $('#renameIn'); if (ri) { ri.focus(); ri.select(); }
     },
@@ -530,7 +546,7 @@
     if (onboarding) { applyImport(r.state); return; }
     U.importPending = r.state; R.progress();
   }
-  function applyImport(state) { state.onboarded = true; S = state; applyLook(); U.importPending = null; derive(); flush(); overlay(''); refresh(); scene.refresh(true); toast('<span><b>Wiederhergestellt.</b> Dein Hof ist wieder da.</span>'); }
+  function applyImport(state) { state.onboarded = true; L.migrateV8a(state); S = state; applyLook(); U.importPending = null; derive(); flush(); overlay(''); refresh(); scene.refresh(true); toast('<span><b>Wiederhergestellt.</b> Dein Hof ist wieder da.</span>'); }
 
   /* ---------- Ereignisse ---------- */
   const tabs = () => $$('.tab');
@@ -554,7 +570,9 @@
     document.addEventListener('pointerdown', function once() { if (S && S.music && !au.Music.playing) au.Music.start(weather()); document.removeEventListener('pointerdown', once); });
 
     document.addEventListener('input', e => { const el = e.target; if (el.id === 'jText') U.draft = el.value; const f = el.closest && el.closest('[data-form]'); if (f && (el.dataset.f === 'title' || el.dataset.f === 'anchor')) updatePreview(f); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInfo(); if (e.target.id === 'renameIn') { if (e.key === 'Enter') { e.preventDefault(); commitRename(); } if (e.key === 'Escape') { U.renaming = null; R.skills(); } } });
+    $('#scene').addEventListener('click', openBig);
+    $('#scene').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBig(); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeInfo(); closeBig(); } if (e.target.id === 'renameIn') { if (e.key === 'Enter') { e.preventDefault(); commitRename(); } if (e.key === 'Escape') { U.renaming = null; R.skills(); } } });
     document.addEventListener('change', e => {
       const el = e.target;
       if (el.dataset.f === 'skill') { const f = el.closest('[data-form]'), ns = f.querySelector('[data-f=newskill]'); ns.hidden = el.value !== '__new'; if (!ns.hidden) ns.focus(); }
@@ -576,11 +594,12 @@
       }
     });
     document.addEventListener('click', e => {
-      const chip = e.target.closest('[data-form] [data-freq], [data-form] [data-day], [data-form] [data-eff]');
+      const chip = e.target.closest('[data-form] [data-freq], [data-form] [data-day], [data-form] [data-eff], [data-form] [data-plant]');
       if (chip) {
         const form = chip.closest('[data-form]');
         if (chip.dataset.freq) { form.querySelectorAll('[data-freq]').forEach(b => b.setAttribute('aria-pressed', b === chip)); form.querySelector('[data-g=days]').hidden = chip.dataset.freq !== 'weekdays'; form.querySelector('[data-g=times]').hidden = chip.dataset.freq !== 'weekly'; if (form.dataset.form !== 'edit') form.querySelector('[data-f=streak]').checked = chip.dataset.freq !== 'weekly'; }
         else if (chip.dataset.day) chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') !== 'true');
+        else if (chip.dataset.plant) form.querySelectorAll('[data-plant]').forEach(b => b.setAttribute('aria-pressed', b === chip));
         else form.querySelectorAll('[data-eff]').forEach(b => b.setAttribute('aria-pressed', b === chip));
         au.sfx.tick(); return;
       }
@@ -590,6 +609,7 @@
       const el = e.target.closest('[data-act]'); if (!el || el.tagName === 'INPUT' || el.disabled) return;
       const act = el.dataset.act, t = today(), pt = pointOf(e, el), habit = () => S.habits.find(x => x.id === el.dataset.id);
       switch (act) {
+        case 'big-close': closeBig(); break;
         case 'hdone': { const h = habit(); logHabit(h, h.logs[t] === 'tiny' ? 'tiny' : 'done', pt); scene.refresh(); break; }
         case 'htiny': logHabit(habit(), 'tiny', pt); scene.refresh(); break;
         case 'info': showInfo(el); break;
@@ -611,8 +631,10 @@
         case 'remoff': { const h = habit(); h.remindersEnabled = false; h.remOffAt = t; au.sfx.place(); toast(`${img('gem', 3, '')}<span><b>Erinnerung aus.</b> Hältst du „${esc(h.title)}“ jetzt 30 Tage, ist sie gemeistert.</span>`); derive(); save(); refresh(); break; }
         case 'ren': U.renaming = el.dataset.sid; R.skills(); break;
         case 'renok': commitRename(); break;
-        case 'icon': { const s = S.skills.find(x => x.id === el.dataset.sid), v = ($('#renameIn') || {}).value; s.icon = SP.ICONS[(SP.ICONS.indexOf(s.icon) + 1) % SP.ICONS.length]; R.skills(); if (v != null) $('#renameIn').value = v; au.sfx.tick(); save(); R.legend(); scene.refresh(); break; }
-        case 'addskill': { if (S.skills.length >= L.C.MAX_SKILLS) break; const id = 's' + uid(); S.skills.push({ id, name: 'Neue Fähigkeit', icon: SP.ICONS[S.skills.length % SP.ICONS.length], st: S.skills.length }); U.renaming = id; derive(); save(); refresh(); scene.refresh(); break; }
+        case 'btype': { const s = S.skills.find(x => x.id === el.dataset.sid), v = ($('#renameIn') || {}).value; s.buildingType = el.dataset.v; R.skills(); if (v != null) $('#renameIn').value = v; au.sfx.tick(); save(); scene.refresh(); break; }
+        case 'icon': { const s = S.skills.find(x => x.id === el.dataset.sid), v = ($('#renameIn') || {}).value, was = L.suggestBuilding(s.icon); s.icon = SP.ICONS[(SP.ICONS.indexOf(s.icon) + 1) % SP.ICONS.length];
+          if (s.buildingType === was) s.buildingType = L.suggestBuilding(s.icon); /* Vorschlag folgt dem Symbol, bis man selbst wählt */ R.skills(); if (v != null) $('#renameIn').value = v; au.sfx.tick(); save(); R.legend(); scene.refresh(); break; }
+        case 'addskill': { if (S.skills.length >= L.C.MAX_SKILLS) break; const id = 's' + uid(); const icon = SP.ICONS[S.skills.length % SP.ICONS.length]; S.skills.push({ id, name: 'Neue Fähigkeit', icon, st: S.skills.length, buildingType: L.suggestBuilding(icon) }); U.renaming = id; derive(); save(); refresh(); scene.refresh(); break; }
         case 'weather': U.selWeather = el.dataset.w; preview = U.selWeather; au.sfx.tick(); $$('.wbtn[data-act=weather]').forEach(b => b.setAttribute('aria-pressed', b.dataset.w === U.selWeather)); scene.refresh(); R.cal(); R.npc(); break;
         case 'prompt': U.promptShift++; au.sfx.page(); R.journal(); break;
         case 'editj': U.editingJournal = true; U.selWeather = L.journalOn(S, t).weather; au.sfx.page(); R.journal(); break;
@@ -679,19 +701,47 @@
     else { scene.after($('#charBox')); $('#charBox').after($('#skillsBox')); $('#skillsBox').after($('#npc')); }
     document.documentElement.classList.toggle('narrow', narrow);
   }
+  /** v8a: Szene nur ganzzahlig vergrößert (1×, 2×, 3×); statt leerer Seitenstreifen zeigt sie seitlich mehr Welt (v8a.1). */
+  function sizeScene() {
+    const box = $('.scene'), cs = getComputedStyle(box), w = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const k = SH ? SH.sceneScale(w) : 1; scene.view($('#scene'), k, SH ? SH.sceneWidth(w, k) : 256);
+  }
+  const SWIPED = 'lag:umsehen-gewischt';
+  const swiped = () => { try { return localStorage.getItem(SWIPED) === '1'; } catch (e) { return false; } };
+  /** Großansicht: größter ganzzahliger Faktor, bei dem die Höhe passt; breiter als der Bildschirm → waagerecht verschiebbar, startet mittig. */
+  function openBig() {
+    closeBig(); au.sfx.page();
+    const el = document.createElement('div'); el.className = 'bigscene'; el.id = 'bigScene';
+    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Dein Hof in der Großansicht');
+    el.innerHTML = `<div class="big-bar"><span>Dein Hof</span><button class="btn" type="button" data-act="big-close">Schließen</button></div><div class="big-scroll"><canvas aria-label="Dein Hof von oben, vergrößert"></canvas></div><p class="big-hint" aria-live="polite" hidden>Zum Umsehen wischen</p>`;
+    document.body.append(el);
+    const sc = el.querySelector('.big-scroll'), cv = el.querySelector('canvas'), k = SH.largeScale(sc.clientWidth, sc.clientHeight);
+    scene.view(cv, k, SH.sceneWidth(sc.clientWidth, k)); el.querySelector('.big-bar span').textContent = `Dein Hof · ${k}×`; scene.refresh();
+    sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2; sc.scrollTop = (sc.scrollHeight - sc.clientHeight) / 2;
+    // Hinweis „Zum Umsehen wischen“, bis man einmal gewischt hat (gemerkt nur auf diesem Gerät)
+    const hint = el.querySelector('.big-hint');
+    if (sc.scrollWidth > sc.clientWidth + 1 && !swiped()) {
+      hint.hidden = false;
+      const start = sc.scrollLeft;
+      sc.addEventListener('scroll', function moved() { if (Math.abs(sc.scrollLeft - start) < 8) return; hint.hidden = true; try { localStorage.setItem(SWIPED, '1'); } catch (e) { /* egal */ } sc.removeEventListener('scroll', moved); });
+    }
+    el.querySelector('[data-act=big-close]').focus();
+  }
+  function closeBig() { const el = $('#bigScene'); if (!el) return false; scene.unview(el.querySelector('canvas')); el.remove(); $('#scene').focus(); return true; }
   function tabIcons() {
     const ic = { today: 'sonnig', habits: 'p3', journal: 'book', progress: 'gem', chest: 'crate' };
     $$('.tab .ti').forEach(sp => { sp.innerHTML = img(ic[sp.dataset.icon], 3, ''); });
   }
 
   /* ---------- Start ---------- */
-  function boot(state) {
-    S = state || L.emptyState(today()); applyLook();
+  function boot(state, assets) {
+    S = state || L.emptyState(today()); L.migrateV8a(S); applyLook();
     au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
     derive();
     scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
-    tabIcons(); layout(); if (narrowMQ) narrowMQ.addEventListener('change', layout); root.addEventListener('resize', layout);
-    bind(); refresh(); scene.start();
+    tabIcons(); layout(); sizeScene(); if (narrowMQ) narrowMQ.addEventListener('change', () => { layout(); sizeScene(); }); root.addEventListener('resize', () => { layout(); sizeScene(); });
+    bind(); refresh(); scene.start(assets);
+    if (assets) Promise.resolve(assets).then(() => refresh(), () => {});   // Vorschaubilder und Hinweis „Vorläufige Grafiken“
     if (!S.onboarded) showOnboarding('welcome');
     else { checkRewards(null); if (L.needsCheckin(S, today(), hour())) showCheckin(); }
     let lastDay = today();
