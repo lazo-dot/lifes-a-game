@@ -1,13 +1,13 @@
 # Life's a Game – Hinweise für Claude Code
 
-Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v7 (installierbare PWA, GitHub Pages, Bedienbarkeit). **In Arbeit auf Branch `v8a`: Grafik auf Sprite-Sheets (Stil B).**
+Gamifizierter Habit-Tracker mit To-dos und Logbuch als gemütliche Pixel-Farm. Gewohnheiten wachsen als Pflanzen, Skills als Gebäude. Entwickler: Lars (MacBook Pro M4). Sprache im Projekt: Deutsch (UI, Kommentare dürfen Englisch sein). Aktueller Stand: Prototyp v8a (8.0.0; installierbare PWA, GitHub Pages; Bedienbarkeit aus v7, Hof in Stil B mit Platzhalter-Grafiken). **Selbsttest und Usability-Test laufen auf v8a.**
 
 ## Quellen der Wahrheit
 
 - `docs/habit-tracker-entwicklungsleitfaden.md` – **verbindlich** für Mechaniken, Formeln, Datenmodell und Prinzipien (aktuell v1.8).
 - `docs/pixel-styleguide-stil-b.md` – **Grundlage für v8a** (Raster, Lesbarkeit, Licht-Ebenen, Lieferformat, Asset-Liste).
 - `docs/ux-heuristische-evaluation-v6.md` – Grundlage für v7 (Funde U1–U18 mit Empfehlungen).
-- `docs/ux-testleitfaden-v6.md` – der Usability-Test, der nach v7 läuft; Aufgaben dort müssen weiter funktionieren.
+- `docs/ux-testleitfaden-v6.md` – der Usability-Test, der auf v8a läuft (Aufgabe 8: Gebäude ändern); Aufgaben dort müssen weiter funktionieren.
 - `docs/abgleich-checkliste.md`, `docs/simulation-*.md`, `docs/marketingkonzept.md` – Hintergrund.
 
 Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game“ gepflegt (Koordinations-Chat). **Hier nicht inhaltlich ändern.** Bewusste Abweichungen mit Grund in `docs/ABWEICHUNGEN.md` eintragen (Abschnitt der jeweiligen Version, aktuell „v8a“).
@@ -31,7 +31,7 @@ Leitfaden, Checkliste und Berichte werden im claude.ai-Projekt „Life's a Game�
 
 ## Arbeitsliste v8a – Grafik auf Sprite-Sheets (Stil B)
 
-Grundlage: `docs/pixel-styleguide-stil-b.md` (Abschnitte 2, 3, 6, 7, 8), Leitfaden 5.4, `art/platzhalter/README.md`. Arbeit auf Branch `v8a`, **nicht nach main mergen, nicht auf GitHub Pages veröffentlichen** (auf v7 laufen Selbsttest und Usability-Test). Regeln, Stärke, XP, Funde und Graduierung bleiben unverändert.
+Grundlage: `docs/pixel-styleguide-stil-b.md` (Abschnitte 2, 3, 6, 7, 8), Leitfaden 5.4, `art/platzhalter/README.md`. Entwickelt auf Branch `v8a`, nach Freigabe als 8.0.0 nach `main` gemergt und auf GitHub Pages veröffentlicht; Selbsttest und Usability-Test laufen auf v8a. Regeln, Stärke, XP, Funde und Graduierung bleiben unverändert.
 
 **Muss (H)**
 1. **Sprite-System:** Loader für Aseprite-JSON (Array) + PNG mit Ebenen base/glow/shadow, Frame-Tags, `meta.anchor`, `meta.platzhalter` (`src/sheets.js`). Build kopiert die Exporte nach `public/sprites/` (`tools/sprites.js`, Quelle `art/src/` vor `art/platzhalter/`); der Service Worker cached sie. Fehlt eine Datei: Rückfall auf den bisherigen Zeichencode. Reihenfolge: Boden → Schatten (eine Farbe, 30 %, nachts aus) → base nach Fußpunkt-y → Tönung (multiplizieren) → glow (addieren); kein Glätten.
