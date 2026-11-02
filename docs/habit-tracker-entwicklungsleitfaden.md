@@ -13,6 +13,7 @@ Dieses Dokument übersetzt die Forschung zu Motivation, Gamification und Gewohnh
 | Spielwelt | Grafik als Sprite-Sheets (Aseprite-JSON + PNG, Ebenen base/glow/shadow), Hof als Karte (`hof-karte.json`) mit festem Seed; ohne Datei Rückfall auf den Zeichencode | Stiländerung ohne Programmierung, 1:1 in Flutter/Flame nutzbar |
 | Spielwelt | Szene nur ganzzahlig skaliert (1×/2×/3×); statt leerer Streifen zeigt sie seitlich mehr Natur (Kern 256 × 160 mittig). Antippen öffnet die Großansicht (größter Faktor, bei dem die Höhe passt, verschiebbar) | Style-Guide 3.1, v8a.1 |
 | Spielwelt | Gebäudestufe aus Skill-Level: 1–2 → 1, 3–5 → 2, 6–9 → 3, ab 10 → 4. Pflanzenbild: Wachstumsstufe 0–4 → Keim … Ausgewachsen; „Gemeistert“ zeigt immer das eigene Bild | Prinzip 7: „Gemeistert“ wird nie entzogen |
+| Einstellungen | `theme` (Themen-ID oder `jahreszeit`) auf oberster Ebene neben `palette`, optional; Truhe mit 42 Gegenständen, saisonale nur in ihrer Jahreszeit findbar, Sammelalbum ohne Fristen (v8b) | Abgleich v8b |
 | Spielwelt | Beete mit bis zu 3 Pflanzen, Schild in der Farbe der ersten Gewohnheit; Gebäudetyp wird beim Bearbeiten der Fähigkeit gewählt (Vorschlag nach Symbol), Pflanzensorte im Gewohnheitsformular (Vorschlag reihum) | Formular bleibt kurz (U14) |
 
 ### Änderungen in v1.7 (Abgleich mit Prototyp v7 – Bedienbarkeit)
