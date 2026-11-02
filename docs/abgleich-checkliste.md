@@ -1,4 +1,4 @@
-# Life's a Game – Abgleich-Checkliste Prototyp ↔ Leitfaden v1.7
+# Life's a Game – Abgleich-Checkliste Prototyp ↔ Leitfaden v1.8
 
 Stand: 02.11.2026 (v7 abgeglichen) · Wird für jede Prototyp-Version neu ausgefüllt (v3, v4 …). Referenz: [Entwicklungsleitfaden v1.2](habit-tracker-entwicklungsleitfaden.md)
 
@@ -203,6 +203,33 @@ Umgesetzt mit Claude Code nach `CLAUDE.md` (Arbeitsliste v7) und UX-Evaluation. 
 Tests: 68/68 grün (nachgeprüft). Alle 8 Aufgaben des Testleitfadens mit Test-Hof lösbar (Claude Code), Nachtragen mit Regentag-Hinweis nachgeprüft. Alle 6 Abweichungen in Leitfaden v1.7 übernommen bzw. als offen vermerkt (U8).
 
 **Neu beobachtet:** In der Pixel-Schrift ist das große „B“ kaum vom „G“ zu unterscheiden („NOVEMGER“, „NACHGARIN“) – betrifft Großbuchstaben in Überschriften; im Usability-Test beobachten.
+
+---
+
+## Ergebnis v8a – Sprite-Sheets, Stil B (02.11.2026, Branch `v8a`, nicht veröffentlicht)
+
+Umgesetzt mit Claude Code nach `CLAUDE.md` (Arbeitsliste v8a) und Pixel-Style-Guide. Spielregeln unverändert, A–H bleiben erfüllt; Speicherschema `4` mit zwei optionalen Feldern.
+
+| Punkt | v8a | Notiz |
+|---|---|---|
+| 1 Sprite-System (Loader, Ebenen, Build, Service Worker, Rückfall) | ✅ | 56 Dateien im Build, alle Sheets aus `art/platzhalter/` |
+| 2 Ganzzahlige Skalierung | ✅ | kompakt 256 × 160 pt, Canvas 768 × 480 px bei 3× (nachgemessen) |
+| 3 Gebäude je Fähigkeit | ✅ | Auswahl beim Bearbeiten der Fähigkeit (Abweichung 10) |
+| 4 Pflanzen und Beete | ✅ | bis zu 4 Beete × 3 Pflanzen |
+| 5 Hof als Karte | ✅ | Zonen und Seed wie in `hof.py` |
+| Sollte: Leuchten abends, Hinweis „Vorläufige Grafiken“ | ✅ | |
+| Erster Haken ohne Scrollen | ✅ | 478 pt (v7: 468) |
+| Tap-Flächen ≥ 44 pt | ✅ | |
+
+Tests: 79/79 grün, Build läuft (nachgeprüft). Abweichungen 1 und 3 in Leitfaden v1.8 übernommen, 4 nach dem Selbsttest entscheiden, 7 und 8 sind v8b/v9.
+
+**Im Koordinations-Chat beobachtet (Screenshots 390 × 844):**
+- **Kompakte Szene wirkt klein:** 256 pt von 390 pt Breite, links und rechts dunkle Streifen; Beete und Pflanzen sind bei 1 px = 1 pt winzig.
+- **Großansicht nutzt den Platz schlecht:** im Hochformat 2× (512 × 320 pt) mit großen leeren Flächen darüber und darunter; 3× (768 × 480 pt) passt in der Höhe und wäre besser lesbar.
+- **Gebäude in Stufe 1 (Baustelle) lesen sich als leere Rahmen;** im Test-Hof stehen fast nur Stufe-1-Gebäude. Gerade am Anfang sieht man diese Stufe am längsten.
+- **Stilbruch:** Wohnhaus, Bauer und Deko sind noch im alten Stil (bekannt, Abweichung 7).
+
+**Nacharbeit v8a.1 (02.11.2026, nachgeprüft):** Kompakte Szene ohne Seitenstreifen (390 pt: 344 × 160 pt, 430 pt: 384 × 160 pt, Ränder nur Natur) ✅ · Großansicht 3× (768 × 480 pt), verschiebbar, Hinweis „Zum Umsehen wischen“ ✅ · erster Haken 478 pt ✅ · 80/80 Tests ✅. Neue Abweichungen 11 (breitere Szene nur mit Hof-Karte) und 12 (Wisch-Hinweis im Browser gemerkt) übernommen. Stufe-1-Gebäude im Koordinations-Chat neu gezeichnet: Das Erkennungszeichen steht schon auf der Baustelle (Turmstumpf und Flügelkreuz, Säulen, Glasrahmen, Esse mit Amboss, Bank mit Lichterkette, Bühne mit Notenständer, halber Ofen, Fachwerk mit Waage-Schild, rote Wand mit Heuballen); Stufe 2 behält diese Teile. Über der Großansicht bleibt im Hochformat noch Leerraum (480 von ca. 700 pt) – unkritisch.
 
 ---
 

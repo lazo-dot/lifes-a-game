@@ -44,6 +44,8 @@ Benötigt Python 3 mit Pillow. `pix.py` ist der Zeichenkern: Er setzt Lichtkante
 
 ## Bekannte Grenzen
 
+- Stufe 1 (Baustelle) zeigt schon das Erkennungszeichen des Gebäudes; Stufe 2 behält diese Teile.
+
 - Früchte und Blüten haben feste Standardfarben. Das Einfärben in der Fähigkeitsfarbe übernimmt die App.
 - Keim und Setzling sehen bei allen Sorten ähnlich aus (gewollt, früh im Wachstum).
 - Stufe 3 und Stufe 4 der Gebäude unterscheiden sich vor allem durch Fahne, Licht und Deko. Der Artist sollte Stufe 4 in der Form stärker absetzen (Anbau, Turm, zweites Stockwerk).

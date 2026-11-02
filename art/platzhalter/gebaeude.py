@@ -13,15 +13,17 @@ os.makedirs(OUT, exist_ok=True)
 def foundation(s, x, w):
     s.rect(x, GROUND - 2, w, 3, 'Stein', 2)
 
-def baustelle(s, x, w, skill):
-    """Stufe 1: Fundament, Gerüst, Bretterstapel, kleines Schild in Fähigkeitsfarbe."""
+def baustelle(s, x, w, skill, h=14):
+    """Stufe 1: Fundament, Gerüst mit Querstrebe, Bretterstapel, Schild in Fähigkeitsfarbe.
+    Das Erkennungszeichen des Gebäudes steht schon da (siehe je Gebäude), damit man sieht, was hier entsteht."""
     foundation(s, x, w)
+    top = GROUND - h
     for px in (x + 1, x + w - 2):
-        s.vline(px, GROUND - 14, 12, 'Holz', 1)
-    s.hline(x + 1, GROUND - 14, w - 2, 'Holz', 2)
-    s.line([(x + 2, GROUND - 3), (x + w - 3, GROUND - 13)], 'Holz', 1)
-    s.rect(x + w + 1, GROUND - 3, 7, 2, 'Holz', 2); s.rect(x + w + 2, GROUND - 5, 6, 2, 'Holz', 3)
-    s.vline(x - 3, GROUND - 8, 8, 'Holz', 1); s.rect(x - 5, GROUND - 9, 5, 3, 'skill:' + skill, 2)
+        s.vline(px, top, h - 2, 'Holz', 1)
+    s.hline(x + 1, top, w - 2, 'Holz', 2); s.hline(x + 1, top + h // 2, w - 2, 'Holz', 2)
+    s.line([(x + 2, GROUND - 3), (x + w - 3, top + 1)], 'Holz', 1)
+    s.rect(x + w + 1, GROUND - 3, 6, 2, 'Holz', 2); s.rect(x + w + 2, GROUND - 5, 5, 2, 'Holz', 3)
+    s.vline(x - 3, GROUND - 9, 9, 'Holz', 1); s.rect(x - 6, GROUND - 11, 6, 4, 'skill:' + skill, 2)
 
 def window(s, x, y, w, h, lit=True, frame='Holz'):
     s.rect(x - 1, y - 1, w + 2, h + 2, frame, 1, False)
@@ -52,7 +54,13 @@ def smoke(s, x, y):
 # ---------- Gebäude ----------
 def muehle(s, st):
     sk = 'Körper'
-    if st == 1: return baustelle(s, 16, 16, sk)
+    if st == 1:
+        s.poly([(17, GROUND - 2), (30, GROUND - 2), (29, GROUND - 10), (18, GROUND - 10)], 'Stein', 2)      # Turmstumpf
+        s.hline(20, GROUND - 6, 3, 'Stein', 1); s.hline(25, GROUND - 4, 2, 'Stein', 1)
+        baustelle(s, 15, 18, sk, 18)
+        s.line([(33, GROUND - 1), (45, GROUND - 7)], 'Holz', 1); s.line([(35, GROUND - 7), (44, GROUND - 1)], 'Holz', 1)  # Flügelkreuz am Boden
+        for i in range(3): s.px(37 + i * 2, GROUND - 3 - i, 'Putz & Stoff', 2)
+        return
     foundation(s, 16, 16)
     top = 30 if st == 2 else 20
     s.poly([(17, GROUND - 2), (30, GROUND - 2), (28, top), (19, top)], 'Stein', 2)
@@ -60,7 +68,10 @@ def muehle(s, st):
     door(s, 22, GROUND - 9, 4, 7)
     if st == 2:
         for x in (19, 28): s.vline(x, top - 6, 6, 'Holz', 1)
-        s.hline(19, top - 6, 10, 'Holz', 2); return
+        s.hline(19, top - 6, 10, 'Holz', 2)
+        s.line([(33, GROUND - 1), (45, GROUND - 7)], 'Holz', 1); s.line([(35, GROUND - 7), (44, GROUND - 1)], 'Holz', 1)
+        for i in range(3): s.px(37 + i * 2, GROUND - 3 - i, 'Putz & Stoff', 2)
+        return
     s.poly([(17, 20), (30, 20), (27, 14), (20, 14)], 'Dach rot', 2)
     window(s, 23, 26, 2, 3, lit=st >= 3)
     hub = (23, 16)
@@ -79,14 +90,23 @@ def muehle(s, st):
 def archiv(s, st):
     """Archiv (Geist): breiter Steinbau mit Säulenvorhalle, Bogenfenstern und Schriftrollen; Stufe 4 mit Kuppel-Lesesaal."""
     sk = 'Geist'
-    if st == 1: return baustelle(s, 8, 32, sk)
+    if st == 1:
+        baustelle(s, 8, 32, sk, 16)
+        s.rect(14, 33, 20, 2, 'Putz & Stoff', 3)                                   # erste Säulen der Vorhalle
+        for x in (15, 19, 28, 32): s.vline(x, 35, GROUND - 37, 'Putz & Stoff', 3); s.vline(x + 1, 35, GROUND - 37, 'Putz & Stoff', 1)
+        s.rect(42, GROUND - 6, 5, 3, 'Holz', 2); s.hline(43, GROUND - 7, 3, 'Putz & Stoff', 3)    # Kiste mit Schriftrollen
+        return
     foundation(s, 7, 34)
     s.rect(8, 28, 32, GROUND - 30, 'Stein', 2)
     for yy in range(31, GROUND - 3, 4):
         for xx in range(9 + (yy % 8 == 3) * 3, 39, 6): s.hline(xx, yy, 3, 'Stein', 1)
     if st == 2:
         for x in (8, 39): s.vline(x, 21, 7, 'Holz', 1)
-        s.hline(8, 21, 32, 'Holz', 2); s.rect(41, GROUND - 4, 4, 3, 'Stein', 3); return
+        s.hline(8, 21, 32, 'Holz', 2)
+        s.rect(14, 33, 20, 2, 'Putz & Stoff', 3)
+        for x in (15, 19, 28, 32): s.vline(x, 35, GROUND - 37, 'Putz & Stoff', 3); s.vline(x + 1, 35, GROUND - 37, 'Putz & Stoff', 1)
+        s.rect(42, GROUND - 6, 5, 3, 'Holz', 2); s.hline(43, GROUND - 7, 3, 'Putz & Stoff', 3)
+        return
     # Dach und Giebel
     s.poly([(5, 29), (43, 29), (38, 20), (10, 20)], 'Dach schiefer', 2)
     s.poly([(17, 29), (31, 29), (24, 23)], 'Putz & Stoff', 2)
@@ -111,7 +131,15 @@ def archiv(s, st):
 
 def gewaechshaus(s, st):
     sk = 'Kreativität'
-    if st == 1: return baustelle(s, 9, 30, sk)
+    if st == 1:
+        foundation(s, 9, 30)
+        for x in (9, 15, 21): s.vline(x, 33, GROUND - 35, 'Putz & Stoff', 3)            # erste Glasrahmen
+        s.hline(9, 33, 13, 'Putz & Stoff', 3); s.line([(9, 33), (12, 27)], 'Putz & Stoff', 3); s.hline(12, 27, 9, 'Putz & Stoff', 3)
+        s.rect(10, 34, 5, 6, 'Glas', 2, False); s.px(10, 34, 'Glas', 3)
+        for i in range(3): s.rect(28 + i * 3, GROUND - 9 + i, 2, 8 - i, 'Glas', 2 + (i == 0))   # angelehnte Scheiben
+        s.vline(40, GROUND - 9, 9, 'Holz', 1); s.rect(37, GROUND - 11, 6, 4, 'skill:' + sk, 2)
+        s.rect(4, GROUND - 4, 3, 3, 'Erde & Beet', 3); s.px(5, GROUND - 5, 'Laub', 3)
+        return
     foundation(s, 9, 30)
     body = (9, 29, 30, GROUND - 2 - 29)
     if st >= 3:
@@ -138,13 +166,24 @@ def gewaechshaus(s, st):
 def schmiede(s, st):
     """Offene Schmiede (Alltag): Esse mit Feuer, Amboss, offenes Pultdach auf Pfosten, Wassertrog, Werkzeug."""
     sk = 'Alltag'
-    if st == 1: return baustelle(s, 9, 30, sk)
+    if st == 1:
+        s.rect(7, GROUND - 3, 34, 3, 'Stein', 1)
+        s.rect(10, 37, 11, GROUND - 40, 'Stein', 2); s.rect(13, 38, 5, 3, 'Umriss & Nacht', 1); s.rect(14, 39, 3, 2, 'Licht & Glut', 1); s.light(13, 38, 5, 3, 1)  # niedrige Esse mit Glut
+        s.rect(25, 37, 8, 2, 'Stein', 1); s.rect(27, 39, 4, 2, 'Stein', 0); s.rect(26, 41, 6, 2, 'Holz', 1); s.px(31, 36, 'Stein', 3)  # Amboss
+        for x in (8, 39): s.vline(x, 30, GROUND - 33, 'Holz', 1)
+        s.hline(8, 30, 32, 'Holz', 2)
+        s.vline(4, GROUND - 9, 9, 'Holz', 1); s.rect(1, GROUND - 11, 6, 4, 'skill:' + sk, 2)
+        return
     s.rect(7, GROUND - 3, 34, 3, 'Stein', 1)                              # Steinboden
     s.rect(10, 31, 11, GROUND - 34, 'Stein', 2)                            # Esse
     for x in (8, 39): s.vline(x, 24, GROUND - 27, 'Holz', 1)
     s.vline(29, 24, GROUND - 27, 'Holz', 1)
     if st == 2:
-        s.hline(8, 24, 32, 'Holz', 2); s.rect(41, GROUND - 3, 5, 2, 'Stein', 3); return
+        s.hline(8, 24, 32, 'Holz', 2)
+        s.rect(13, 34, 5, 4, 'Umriss & Nacht', 1); s.rect(14, 35, 3, 3, 'Licht & Glut', 1); s.light(13, 34, 5, 4, 1)
+        s.rect(25, 37, 8, 2, 'Stein', 1); s.rect(27, 39, 4, 2, 'Stein', 0); s.rect(26, 41, 6, 2, 'Holz', 1); s.px(31, 36, 'Stein', 3)
+        s.rect(34, 39, 6, 4, 'Holz', 2); s.hline(35, 39, 4, 'Wasser', 3)
+        return
     s.poly([(5, 25), (43, 25), (40, 18), (8, 18)], 'Dach schiefer', 2)       # offenes Pultdach
     s.hline(6, 25, 37, 'Holz', 2)
     s.rect(12, 8, 6, 17, 'Stein', 2); s.rect(11, 7, 8, 2, 'Stein', 1)       # Kamin über der Esse
@@ -162,10 +201,23 @@ def schmiede(s, st):
 
 def gemeinschaftshaus(s, st):
     sk = 'Soziales'
-    if st == 1: return baustelle(s, 8, 30, sk)
+    if st == 1:
+        s.rect(7, GROUND - 4, 34, 4, 'Holz', 2)                                     # Plattform
+        s.rect(11, 36, 9, 2, 'Holz', 3); s.vline(12, 38, 3, 'Holz', 1); s.vline(18, 38, 3, 'Holz', 1)   # erste Bank
+        s.rect(22, 35, 4, 3, 'Putz & Stoff', 2); s.vline(23, 38, 3, 'Holz', 1)              # Tisch
+        s.vline(39, 29, GROUND - 33, 'Holz', 1); s.vline(8, 29, GROUND - 33, 'Holz', 1)
+        for i, x in enumerate(range(9, 39, 3)): s.px(x, 30 + (i % 2), 'Licht & Glut', 1)   # Lichterkette schon gespannt
+        s.rect(41, GROUND - 3, 6, 2, 'Holz', 2); s.vline(3, GROUND - 9, 9, 'Holz', 1); s.rect(0, GROUND - 11, 6, 4, 'skill:' + sk, 2)
+        return
     s.rect(7, GROUND - 4, 34, 4, 'Holz', 2)
     for x in (8, 23, 39): s.vline(x, 27, GROUND - 31, 'Holz', 1)
-    if st == 2: s.hline(8, 27, 32, 'Holz', 3); return
+    if st == 2:
+        s.hline(8, 27, 32, 'Holz', 3)
+        s.rect(11, 36, 9, 2, 'Holz', 3); s.vline(12, 38, 2, 'Holz', 1); s.vline(18, 38, 2, 'Holz', 1)
+        s.rect(27, 36, 9, 2, 'Holz', 3); s.vline(28, 38, 2, 'Holz', 1); s.vline(34, 38, 2, 'Holz', 1)
+        s.rect(21, 34, 4, 3, 'Putz & Stoff', 2)
+        for i, x in enumerate(range(9, 39, 3)): s.px(x, 28 + (i % 2), 'Licht & Glut', 1)
+        return
     s.poly([(4, 28), (44, 28), (37, 17), (11, 17)], 'Dach rot', 2)
     for x in range(8, 41, 5): s.vline(x, 18, 9, 'Dach rot', 1)
     s.rect(11, 36, 9, 2, 'Holz', 3); s.vline(12, 38, 2, 'Holz', 1); s.vline(18, 38, 2, 'Holz', 1)
@@ -179,10 +231,19 @@ def gemeinschaftshaus(s, st):
 
 def musikpavillon(s, st):
     sk = 'Musik'
-    if st == 1: return baustelle(s, 11, 26, sk)
+    if st == 1:
+        s.ellipse(9, GROUND - 7, 30, 8, 'Stein', 2)                                 # runde Bühne
+        s.vline(24, 31, 9, 'Holz', 1); s.rect(21, 30, 7, 2, 'Holz', 2)                       # Notenständer
+        s.rect(15, 35, 4, 3, 'Holz', 1)
+        s.vline(12, 33, GROUND - 37, 'Putz & Stoff', 3); s.vline(35, 33, GROUND - 37, 'Putz & Stoff', 3)
+        s.vline(42, GROUND - 9, 9, 'Holz', 1); s.rect(39, GROUND - 11, 6, 4, 'skill:' + sk, 2)
+        return
     s.ellipse(9, GROUND - 7, 30, 8, 'Stein', 2)
     for x in (12, 20, 28, 35): s.vline(x, 26, GROUND - 30, 'Putz & Stoff', 3)
-    if st == 2: s.hline(11, 26, 26, 'Putz & Stoff', 2); return
+    if st == 2:
+        s.hline(11, 26, 26, 'Putz & Stoff', 2)
+        s.vline(24, 33, 7, 'Holz', 1); s.rect(22, 32, 5, 2, 'Holz', 2); s.rect(15, 35, 4, 3, 'Holz', 1)
+        return
     s.poly([(8, 27), (40, 27), (35, 19), (24, 13), (13, 19)], 'Dach schiefer', 2)
     s.rect(23, 10, 3, 4, 'skill:' + sk, 2)
     s.vline(24, 33, 7, 'Holz', 1); s.rect(22, 32, 5, 2, 'Holz', 2)   # Notenständer
@@ -194,10 +255,20 @@ def musikpavillon(s, st):
 
 def backhaus(s, st):
     sk = 'Kochen'
-    if st == 1: return baustelle(s, 12, 24, sk)
+    if st == 1:
+        foundation(s, 12, 24)
+        s.ellipse(14, 36, 20, 16, 'Weg & Sand', 1); s.rect(14, 41, 20, 4, 'Weg & Sand', 1)   # halber Lehmofen
+        s.rect(21, 39, 6, 4, 'Umriss & Nacht', 1)
+        s.rect(37, GROUND - 5, 6, 4, 'Holz', 2); s.rect(38, GROUND - 7, 4, 2, 'Holz', 3)          # Holzstapel
+        s.rect(5, GROUND - 4, 4, 3, 'Erde & Beet', 2); s.px(6, GROUND - 5, 'Weg & Sand', 3)       # Lehmeimer
+        s.vline(10, GROUND - 9, 9, 'Holz', 1); s.rect(7, GROUND - 11, 6, 4, 'skill:' + sk, 2)
+        return
     foundation(s, 12, 24)
     if st == 2:
-        s.ellipse(13, 32, 22, 22, 'Weg & Sand', 1); s.rect(13, GROUND - 3, 22, 1, 'Stein', 2); return
+        s.ellipse(13, 30, 22, 24, 'Weg & Sand', 1); s.rect(13, GROUND - 3, 22, 1, 'Stein', 2)
+        s.rect(20, 37, 8, 6, 'Umriss & Nacht', 1); s.rect(21, 39, 6, 4, 'Licht & Glut', 2); s.light(21, 39, 6, 4, 1)
+        s.rect(37, GROUND - 5, 6, 4, 'Holz', 2); s.rect(38, GROUND - 7, 4, 2, 'Holz', 3)
+        return
     s.ellipse(12, 22, 24, 28, 'Weg & Sand', 1)
     s.rect(12, GROUND - 3, 24, 1, 'Stein', 2)
     s.rect(20, 34, 8, 8, 'Umriss & Nacht', 1); s.rect(21, 37, 6, 5, 'Licht & Glut', 2); s.light(21, 37, 6, 5, 1)
@@ -211,12 +282,23 @@ def backhaus(s, st):
 
 def kontor(s, st):
     sk = 'Finanzen'
-    if st == 1: return baustelle(s, 12, 24, sk)
+    if st == 1:
+        foundation(s, 12, 24)
+        for x in (13, 23, 34): s.vline(x, 30, GROUND - 32, 'Holz', 1)                        # Fachwerk ohne Füllung
+        s.hline(13, 30, 22, 'Holz', 1); s.hline(13, 36, 22, 'Holz', 1)
+        s.line([(14, 31), (22, 36)], 'Holz', 1); s.line([(24, 36), (33, 31)], 'Holz', 1)
+        s.hline(36, 31, 6, 'Holz', 1); s.rect(38, 32, 4, 4, 'Holz', 3); s.px(40, 33, 'Stein', 1); s.hline(39, 34, 3, 'Stein', 1)  # Waage-Schild
+        s.vline(8, GROUND - 9, 9, 'Holz', 1); s.rect(5, GROUND - 11, 6, 4, 'skill:' + sk, 2)
+        return
     foundation(s, 12, 24)
     s.rect(13, 27, 22, GROUND - 29, 'Putz & Stoff', 2)
     for x in (13, 23, 34): s.vline(x, 27, GROUND - 29, 'Holz', 1)
     s.hline(13, 33, 22, 'Holz', 1); s.hline(13, 27, 22, 'Holz', 1)
-    if st == 2: s.line([(14, 28), (22, 33)], 'Holz', 1); return
+    if st == 2:
+        s.line([(14, 28), (22, 33)], 'Holz', 1); s.line([(24, 33), (33, 28)], 'Holz', 1)
+        door(s, 23, 37, 4, GROUND - 39)
+        s.hline(36, 30, 6, 'Holz', 1); s.rect(38, 31, 4, 4, 'Holz', 3); s.px(40, 32, 'Stein', 1); s.hline(39, 33, 3, 'Stein', 1)
+        return
     s.line([(14, 28), (22, 33)], 'Holz', 1); s.line([(24, 33), (33, 28)], 'Holz', 1)
     s.poly([(10, 28), (38, 28), (24, 14)], 'Dach rot', 2)
     window(s, 17, 35, 3, 3); window(s, 28, 35, 3, 3)
@@ -232,12 +314,19 @@ def scheune(s, st):
     sk = None
     if st == 1:
         foundation(s, 9, 30)
-        for px in (10, 37): s.vline(px, GROUND - 14, 12, 'Holz', 1)
-        s.hline(10, GROUND - 14, 28, 'Holz', 2); s.rect(40, GROUND - 3, 6, 2, 'Holz', 2); return
+        s.rect(9, 35, 14, GROUND - 37, 'Dach rot', 2)                                 # erste rote Wand
+        for x in range(12, 22, 4): s.vline(x, 36, GROUND - 38, 'Dach rot', 1)
+        for px in (10, 37): s.vline(px, GROUND - 16, 14, 'Holz', 1)
+        s.hline(10, GROUND - 16, 28, 'Holz', 2)
+        s.rect(28, GROUND - 6, 7, 5, 'Frucht gelb', 2); s.hline(29, GROUND - 4, 5, 'Frucht gelb', 1)   # Heuballen
+        s.rect(40, GROUND - 3, 6, 2, 'Holz', 2); return
     foundation(s, 9, 30)
     s.rect(9, 28, 30, GROUND - 30, 'Dach rot', 2)
     for x in range(12, 38, 4): s.vline(x, 29, GROUND - 31, 'Dach rot', 1)
-    if st == 2: s.vline(9, 20, 8, 'Holz', 1); s.vline(38, 20, 8, 'Holz', 1); s.hline(9, 20, 30, 'Holz', 2); return
+    if st == 2:
+        s.vline(9, 20, 8, 'Holz', 1); s.vline(38, 20, 8, 'Holz', 1); s.hline(9, 20, 30, 'Holz', 2)
+        s.rect(41, GROUND - 5, 6, 4, 'Frucht gelb', 2); s.hline(42, GROUND - 3, 4, 'Frucht gelb', 1)
+        return
     s.poly([(6, 29), (41, 29), (37, 21), (29, 15), (18, 15), (10, 21)], 'Holz', 1)
     s.rect(17, 34, 14, GROUND - 36, 'Putz & Stoff', 3)
     s.rect(18, 35, 12, GROUND - 37, 'Dach rot', 1, False)

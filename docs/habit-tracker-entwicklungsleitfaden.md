@@ -1,9 +1,19 @@
 # Life's a Game – Entwicklungsleitfaden Habit Tracker (forschungs- und marktbasiert)
 
-Version 1.7 · Stand: 02.11.2026
-Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp v7 (Repo `lifes-a-game`, GitHub Pages) · [UX-Evaluation](ux-heuristische-evaluation-v6.md) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
+Version 1.8 · Stand: 02.11.2026
+Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp v7 (Repo `lifes-a-game`, GitHub Pages), v8a auf Branch `v8a` · [Pixel-Style-Guide](pixel-styleguide-stil-b.md) · [UX-Evaluation](ux-heuristische-evaluation-v6.md) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
 
 Dieses Dokument übersetzt die Forschung zu Motivation, Gamification und Gewohnheitsbildung sowie die Erkenntnisse aus der Marktanalyse in konkrete Entwicklungsentscheidungen. Zahlenwerte (XP, Kurven, Wahrscheinlichkeiten) sind begründete Startwerte, die im Prototyp getestet und angepasst werden.
+
+### Änderungen in v1.8 (Abgleich mit Prototyp v8a – Sprite-Sheets, Stil B)
+
+| Bereich | Änderung | Grund |
+|---|---|---|
+| Datenmodell | `Skill.buildingType` und `Habit.plantType` als neue Felder; Ergänzung beim Laden/Import über eine eigene Migration, Speicherschema bleibt `4`, ältere Versionen ignorieren die Felder | Gebäude je Fähigkeit, Pflanzensorte je Gewohnheit |
+| Spielwelt | Grafik als Sprite-Sheets (Aseprite-JSON + PNG, Ebenen base/glow/shadow), Hof als Karte (`hof-karte.json`) mit festem Seed; ohne Datei Rückfall auf den Zeichencode | Stiländerung ohne Programmierung, 1:1 in Flutter/Flame nutzbar |
+| Spielwelt | Szene nur ganzzahlig skaliert (1×/2×/3×); statt leerer Streifen zeigt sie seitlich mehr Natur (Kern 256 × 160 mittig). Antippen öffnet die Großansicht (größter Faktor, bei dem die Höhe passt, verschiebbar) | Style-Guide 3.1, v8a.1 |
+| Spielwelt | Gebäudestufe aus Skill-Level: 1–2 → 1, 3–5 → 2, 6–9 → 3, ab 10 → 4. Pflanzenbild: Wachstumsstufe 0–4 → Keim … Ausgewachsen; „Gemeistert“ zeigt immer das eigene Bild | Prinzip 7: „Gemeistert“ wird nie entzogen |
+| Spielwelt | Beete mit bis zu 3 Pflanzen, Schild in der Farbe der ersten Gewohnheit; Gebäudetyp wird beim Bearbeiten der Fähigkeit gewählt (Vorschlag nach Symbol), Pflanzensorte im Gewohnheitsformular (Vorschlag reihum) | Formular bleibt kurz (U14) |
 
 ### Änderungen in v1.7 (Abgleich mit Prototyp v7 – Bedienbarkeit)
 
@@ -116,7 +126,7 @@ Legende Ist-Stand: ✅ im Prototyp v5 umgesetzt · 🟡 teilweise · ⬜ offen
 - **Daten:** lokal zuerst (IndexedDB im Prototyp ✅, SQLite/Isar o. ä. in Flutter), Sync später optional.
 - **Keine externen Anfragen:** Schriften, Grafiken und Musik liegen in der App bzw. werden erzeugt. Keine Tracking-, Werbe- oder Analyse-Dienste ✅.
 - **Abgeleitete Werte:** Gespeichert werden nur Eingaben (Gewohnheiten mit Verlauf, Logs, Pausen, Check-ins, Logbuch, Truhe). Stärke, Serien, Regentage, XP, Level und Graduierung werden daraus berechnet.
-- **Grafikstil:** v3 nutzt einen Hof in Draufsicht nach Stilreferenz von Lars (ein Beet pro Gewohnheit). Offen ist noch der Detailgrad: Stardew-nah (einfacher zu produzieren) oder Sea-of-Stars-nah (Licht, Wetter, mehr Asset-Aufwand). Vor Phase 2 der nativen App festlegen, da es die Asset-Pipeline (Aseprite, Spritesheets, Auflösung) bestimmt.
+- **Grafikstil (entschieden 02.11.2026): Richtung B – detailreich mit Licht.** Hof in Draufsicht, ein Beet pro Gewohnheit, eigenes Gebäude je Fähigkeit. Farbige Umrisse (dunklere Fassung der Eigenfarbe), 3–4 Schattierungen pro Material, Licht von oben links, Lichtkanten, weiche Schlagschatten, eigene Licht-Ebenen für Tageszeit und Wetter. Lesbarkeit auf dem iPhone hat Vorrang vor Detail: Mindestgrößen für Pflanzen und Gebäude in der kompakten Szene, Antippen zum Vergrößern. Grafiken entstehen ab v8 als Sprite-Sheets (Aseprite), die PWA und Flutter/Flame gemeinsam nutzen; keine KI-generierten Grafiken.
 
 ---
 
@@ -150,6 +160,7 @@ interface Habit {
   harvestStage: number;          // höchste bereits geerntete Wachstumsstufe
   gradRewarded: boolean;         // Fund für "Gemeistert" schon vergeben
   plotId?: string;               // Beet auf dem Hof
+  plantType?: "beere" | "blume" | "kuerbis" | "baeumchen"; // ab v8a, Vorschlag reihum
   archivedAt?: string;
   createdAt: string;
 }
@@ -175,6 +186,8 @@ interface Todo {
 interface Skill {
   id: string;
   name: string;                  // vom Nutzer benennbar, z. B. "Läufer", "Koch"
+  buildingType?: "muehle" | "archiv" | "gewaechshaus" | "schmiede" | "gemeinschaftshaus"
+    | "musikpavillon" | "backhaus" | "kontor" | "scheune"; // ab v8a, Vorschlag nach Symbol
   xp: number;
   level: number;
 }
@@ -306,6 +319,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 - **Schrittweise Freischaltung:** neue Bereiche, Jahreszeiten-Inhalte, Crafting über die ersten Wochen verteilt (Neuheitseffekt-Abfall nach ca. 3–8 Wochen, Koivisto & Hamari 2019).
 - **Saisonale Events** pro Jahreszeit als Inhalts-Rhythmus (Habitica-Prinzip), ohne Zeitdruck und ohne verpassbare Exklusiv-Belohnungen.
 - **„Die Farm schläft nachts“ ✅ (22–6 Uhr):** spätabends keine Spielaktionen – kurze Sessions, kein Grinding (Allcott et al. 2022).
+- **Grafik ab v8a:** Sprite-Sheets nach [Pixel-Style-Guide](pixel-styleguide-stil-b.md) (Stil B), Hof als Karte, Szene ganzzahlig skaliert, Licht über Ebenen (Tönung multiplizieren, Leuchten addieren, Schatten 30 %). Gebäude je Fähigkeit in 4 Ausbaustufen (Skill-Level 1–2/3–5/6–9/ab 10), Pflanzen in 5 Stufen plus „Gemeistert“, bis zu 3 Pflanzen je Beet. Grafiken bis zum Launch sind Platzhalter; veröffentlicht werden nur handgezeichnete Grafiken.
 - **Performance:** statische Ebenen nur bei Änderung neu zeichnen, Animation und Musik im Hintergrund pausieren ✅.
 
 ### 5.5 Fortschritt & Statistiken 🟡
