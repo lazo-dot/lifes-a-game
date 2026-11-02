@@ -130,22 +130,40 @@ test('Hof-Karte: Fußpunkte für Deko je Platz, Tierplätze im Kern und nicht au
 /* ---------- Farbthemen: WCAG AA ---------- */
 const CSS = fs.readFileSync(path.join(ROOT, 'public', 'styles.css'), 'utf8');
 const block = sel => { const i = CSS.indexOf(sel + '{'); if (i < 0) return null; const body = CSS.slice(i + sel.length + 1, CSS.indexOf('}', i)); return Object.fromEntries([...body.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})/gi)].map(m => [m[1], m[2].toLowerCase()])); };
-const ROOTV = block(':root'), CB = block(':root[data-palette="cb"]');
-const THEMES = ['standard', 'wald', 'herbst', 'meer', 'kirschbluete'];
+const ROOTV = block(':root'), CB = block(':root[data-palette="cb"]'), CBP = block(':root[data-palette="cb"][data-theme="pergament"]');
+const FT = readJSON('docs/farbthemen.json');
+const THEMES = ['standard', 'wald', 'herbst', 'frost', 'meer', 'kirschbluete', 'pergament'];
 const lum = hex => { const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
 const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 const BGS = ['panel-dk', 'panel', 'panel-2', 'panel-in', 'bg-a'];
+/** Theme-Blöcke stehen je Thema evtl. mehrfach (Werte aus der JSON, dann Zusätze des hellen Themas). */
+const themeBlock = th => { const re = new RegExp(`(?:^|\\n)\\[data-theme="${th}"\\]\\{([^}]*)\\}`, 'g'), out = {}; for (const m of CSS.matchAll(re)) for (const v of m[1].matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})/gi)) out[v[1]] = v[2].toLowerCase(); return out; };
 /** Alle Text-/Hintergrund-Paare der Oberfläche: [Vordergrund, Hintergrund, Mindestwert]. Text 4,5:1, Bedienelemente und Fokus 3:1. */
 const PAIRS = [
-  ...['text', 'text-soft', 'wood-lt', 'leaf', 'leaf-hi', 'water', 'rare', 'repair'].flatMap(f => BGS.map(b => [f, b, 4.5])),
-  ['ink-dk', 'wood', 4.5], ['text', 'panel-3', 4.5], ['white', 'leaf-dk', 4.5],   // Zahl am Tab: Weiß auf --leaf-dk
+  ...['text', 'text-soft', 'wood-lt', 'leaf', 'leaf-hi', 'water', 'rare', 'repair', 'tx-rare', 'tx-info', 'tx-err', 'tx-night'].flatMap(f => BGS.map(b => [f, b, 4.5])),
+  ['ink-dk', 'wood', 4.5], ['text', 'panel-3', 4.5], ['on-leaf-dk', 'leaf-dk', 4.5],   // Zahl am Tab
   ...BGS.map(b => ['wood', b, 3]), ...BGS.map(b => ['wood-lt', b, 3]), ...['panel-dk', 'panel-in'].map(b => ['leaf', b, 3])
 ];
-const tokens = (th, cb) => Object.assign({ white: '#ffffff' }, ROOTV, block(`[data-theme="${th}"]`), cb ? CB : {});
+const tokens = (th, cb) => Object.assign({}, ROOTV, themeBlock(th), cb ? CB : {}, cb && th === 'pergament' ? CBP : {});
 
-test('Farbthemen: alle fünf vorhanden, Standard entspricht den bisherigen Farben', () => {
-  for (const th of THEMES) assert.ok(block(`[data-theme="${th}"]`), th);
-  const std = block('[data-theme="standard"]'); for (const [k, v] of Object.entries(std)) assert.equal(v, ROOTV[k], k);
+test('Farbthemen: alle sieben aus docs/farbthemen.json mit denselben Werten, Standard entspricht den bisherigen Farben', () => {
+  assert.deepEqual(Object.keys(FT.themen), THEMES);
+  // Ausnahme (ABWEICHUNGEN v8b): Pergament-Statusfarben etwas dunkler, weil sie auch als Schrift dienen
+  const EXC = { pergament: ['leaf', 'water', 'repair'] };
+  for (const th of THEMES) { const css = themeBlock(th); for (const [k, v] of Object.entries(FT.themen[th])) if (/^#/.test(v)) {
+    if ((EXC[th] || []).includes(k)) assert.ok(lum(css[k]) < lum(v.toLowerCase()), th + ' --' + k + ' dunkler'); else assert.equal(css[k], v.toLowerCase(), th + ' --' + k); } }
+  const std = themeBlock('standard'); for (const [k, v] of Object.entries(std)) assert.equal(v, ROOTV[k], k);
+  assert.deepEqual(L.THEME_BY_SEASON, FT.jahreszeit_automatisch);
+});
+
+test('Farbthema „passend zur Jahreszeit“ folgt der Jahreszeit der App, feste Themen bleiben', () => {
+  assert.equal(L.themeFor('jahreszeit', '2026-03-01'), 'kirschbluete'); assert.equal(L.themeFor('jahreszeit', '2026-08-31'), 'meer');
+  assert.equal(L.themeFor('jahreszeit', '2026-09-01'), 'herbst'); assert.equal(L.themeFor('jahreszeit', '2026-12-01'), 'frost');
+  assert.equal(L.themeFor('wald', '2026-12-01'), 'wald'); assert.equal(L.themeFor(undefined, '2026-12-01'), 'standard'); assert.equal(L.themeFor('quatsch', '2026-12-01'), 'standard');
+});
+
+test('Farbthemen: die Werte in docs/farbthemen.json „kontraste“ erreichen ihr Minimum', () => {
+  for (const th of THEMES) for (const k of FT.kontraste[th] || []) { const t = tokens(th, false); assert.ok(ratio(t[k.vorne], t[k.hinten]) >= k.mindestens, `${th}: ${k.zweck}`); }
 });
 
 test('Farbthemen: jedes Text- und Hintergrund-Paar erfüllt WCAG AA, auch zusammen mit „Gut unterscheidbar“', () => {

@@ -51,6 +51,9 @@
   /** Reihenfolge und Namen der Gruppen im Sammelalbum. */
   const ITEM_GROUPS = [['garten', 'Garten'], ['hof', 'Hof'], ['selten', 'Selten'], ['tiere', 'Tiere'], ['saison', 'Jahreszeiten']];
   const SEASON_NAME = { fruehling: 'Frühling', sommer: 'Sommer', herbst: 'Herbst', winter: 'Winter' };
+  /** v8b Farbthemen (docs/farbthemen.json): feste Themen und „passend zur Jahreszeit“. */
+  const THEMES = ['standard', 'wald', 'herbst', 'frost', 'meer', 'kirschbluete', 'pergament'];
+  const THEME_BY_SEASON = { fruehling: 'kirschbluete', sommer: 'meer', herbst: 'herbst', winter: 'frost' };
   const WEATHER = ['sonnig', 'heiter', 'bewoelkt', 'regen', 'gewitter'];
 
   /* ---------- Datum (nur Tagesschlüssel) ---------- */
@@ -236,6 +239,8 @@
     return { any: C.DROP_P, rare: C.DROP_P * C.RARE_P, common: C.DROP_P * (1 - C.RARE_P), rareShare: C.RARE_P,
       harvestRare: C.RARE_P, commonItems: findable(k, false), rareItems: findable(k, true), season: k ? seasonKey(k) : null };
   }
+  /** Angezeigtes Thema: gespeicherte Wahl, bei „jahreszeit“ das Thema der Jahreszeit von Tag k, sonst Standard. */
+  const themeFor = (choice, k) => choice === 'jahreszeit' ? THEME_BY_SEASON[seasonKey(k)] : THEMES.includes(choice) ? choice : 'standard';
   /** v8b Sammelalbum: gefunden ist, was in der Truhe liegt oder auf dem Hof steht (Gegenstände gehen nie verloren). */
   function album(chest) {
     const got = new Set([...Object.keys((chest && chest.items) || {}), ...((chest && chest.placed) || []).map(p => p.itemId)]);
@@ -491,7 +496,7 @@
   }
 
   const LAG = {
-    C, STAGES, ITEMS, ITEM_GROUPS, SEASON_NAME, WEATHER, seasonKey, findable, album,
+    C, STAGES, ITEMS, ITEM_GROUPS, SEASON_NAME, THEMES, THEME_BY_SEASON, themeFor, WEATHER, seasonKey, findable, album,
     dkey, parseKey, addDays, daysBetween, weekday, weekStart, seasonOf, hashStr, rng,
     xpFor, charNeed, skillNeed, lvl, unitsToNext, stageOf, settingsAt, isPaused, isScheduled,
     computeHabit, derive, rollDrop, pickItem, harvestsDue, gradRewardDue, slotsFor, dropOdds, heldAt, betaMetrics,

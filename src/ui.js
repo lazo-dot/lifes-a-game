@@ -332,21 +332,22 @@
 
   /* ---------- Darstellung (H4) ---------- */
   const SCALES = [[1, 'Normal'], [1.15, 'Groß'], [1.3, 'Sehr groß']];
-  /** v8b: Farbthemen der Oberfläche (CSS [data-theme]); gespeichert als S.theme, Standard = Feld fehlt. */
-  const THEMES = [['', 'Standard'], ['wald', 'Wald'], ['herbst', 'Herbst'], ['meer', 'Meer'], ['kirschbluete', 'Kirschblüte']];
+  /** v8b: Farbthemen der Oberfläche (CSS [data-theme], Werte aus docs/farbthemen.json); gespeichert als S.theme, Standard = Feld fehlt. */
+  const THEMES = [['', 'Standard'], ['wald', 'Wald'], ['herbst', 'Herbst'], ['frost', 'Frost'], ['meer', 'Meer'], ['kirschbluete', 'Kirschblüte'], ['pergament', 'Pergament (hell)'], ['jahreszeit', 'Passend zur Jahreszeit']];
   function applyLook() {
     const de = document.documentElement; de.style.setProperty('--ts', S.textScale || 1);
-    if (THEMES.some(([v]) => v && v === S.theme)) de.dataset.theme = S.theme; else delete de.dataset.theme;
+    const th = L.themeFor(S.theme, today()); if (th !== 'standard') de.dataset.theme = th; else delete de.dataset.theme;
     const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = getComputedStyle(de).getPropertyValue('--bg-a').trim() || '#0d1719';
     if (S.readableFont) de.dataset.font = 'lesbar'; else delete de.dataset.font;
     if (S.palette === 'cb') de.dataset.palette = 'cb'; else delete de.dataset.palette;
   }
   function settingsHTML() {
     return `<h3>Darstellung</h3><div class="look"><div class="ctl" role="group" aria-label="Schriftgröße"><span class="lab">Schrift</span>${SCALES.map(([v, l]) => `<button type="button" class="chip" data-act="scale" data-v="${v}" aria-pressed="${(S.textScale || 1) === v}">${l}</button>`).join('')}</div>
-      <div class="ctl thm" role="group" aria-label="Farbthema"><span class="lab">Thema</span>${THEMES.map(([v, l]) => `<button type="button" class="chip tchip" data-act="theme" data-v="${v}" aria-pressed="${(S.theme || '') === v}"><span class="tpv" data-theme="${v || 'standard'}" aria-hidden="true"><i></i><i></i><i></i></span>${l}</button>`).join('')}</div>
+      <div class="ctl thm" role="group" aria-label="Farbthema"><span class="lab">Thema</span>${THEMES.map(([v, l]) => { const shown = L.themeFor(v || 'standard', today()), now = v === 'jahreszeit' ? ` (jetzt ${THEMES.find(x => (x[0] || 'standard') === shown)[1]})` : '';
+        return `<button type="button" class="chip tchip" data-act="theme" data-v="${v}" aria-pressed="${(S.theme || '') === v}"><span class="tpv" data-theme="${shown}" aria-hidden="true"><i></i><i></i><i></i></span>${l}${now}</button>`; }).join('')}</div>
       <div class="ctl" role="group" aria-label="Farben"><span class="lab">Farben</span><button type="button" class="chip" data-act="palette" data-v="" aria-pressed="${S.palette !== 'cb'}">Standard</button><button type="button" class="chip" data-act="palette" data-v="cb" aria-pressed="${S.palette === 'cb'}">Gut unterscheidbar</button></div>
       <div class="ctl" role="group" aria-label="Schriftart"><span class="lab">Schriftart</span><button type="button" class="chip" data-act="font" data-v="" aria-pressed="${!S.readableFont}">Pixel</button><button type="button" class="chip" data-act="font" data-v="1" aria-pressed="${!!S.readableFont}">Lesbare Schrift</button></div>
-      <p class="hint">„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. Das Thema ändert nur die Farben der Oberfläche, nicht den Hof. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind, und lässt sich mit jedem Thema kombinieren. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p>
+      <p class="hint">„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. Das Thema ändert nur die Farben der Oberfläche, nicht den Hof; „Passend zur Jahreszeit“ wechselt mit der Jahreszeit. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind, und lässt sich mit jedem Thema kombinieren. Im Erntekalender hat jeder Status zusätzlich ein eigenes Muster.</p>
       ${SH && SH.placeholder() ? '<p class="hint"><b>Vorläufige Grafiken:</b> Gebäude, Pflanzen, Natur, Deko, Tiere, Wohnhaus und Bauer auf dem Hof sind Platzhalter. Sie werden vor dem Start durch handgezeichnete Grafiken ersetzt.</p>' : ''}</div>`;
   }
 
