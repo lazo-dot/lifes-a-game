@@ -8,12 +8,10 @@
  * Benötigt Google Chrome und Node ≥ 22 (WebSocket).
  */
 'use strict';
-const { spawn, execFileSync } = require('child_process'), fs = require('fs'), path = require('path'), os = require('os');
+const fs = require('fs'), path = require('path'), { open, testhof } = require('./chrome');
 const ROOT = path.resolve(__dirname, '..', '..'), OUT = path.join(ROOT, 'docs', 'screenshots-v8b');
 const url = process.argv[2] || 'http://localhost:8000/';
-const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-const hof = JSON.parse(execFileSync(process.execPath, [path.join(__dirname, 'testhof.js')], { encoding: 'utf8' }));
+const hof = testhof();
 // Nur für die Bilder: sechs Deko-Plätze (Level 3) und Tiere belegt, ein paar Funde mehr in der Truhe.
 hof.chest = {
   items: { bench: 1, flowers: 2, telescope: 1, leaf_pile: 1, egg_basket: 1, birdbath: 1 },
@@ -22,24 +20,12 @@ hof.chest = {
 };
 const THEMES = ['', 'wald', 'herbst', 'frost', 'meer', 'kirschbluete', 'pergament', 'jahreszeit'];
 
-async function session(port, hour, minute, theme) {
-  const prof = fs.mkdtempSync(path.join(os.tmpdir(), 'lag-shot-'));
-  const ch = spawn(CHROME, ['--headless=new', '--remote-debugging-port=' + port, '--user-data-dir=' + prof, '--no-first-run', '--hide-scrollbars', 'about:blank'], { stdio: 'ignore' });
-  let list; for (let i = 0; i < 50 && !list; i++) { try { list = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json(); } catch (e) { await sleep(200); } }
-  const ws = new WebSocket(list.find(t => t.type === 'page').webSocketDebuggerUrl); await new Promise(r => { ws.onopen = r; });
-  let id = 0; const pend = {}; ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id && pend[m.id]) { pend[m.id](m); delete pend[m.id]; } };
-  const send = (method, params = {}) => new Promise(r => { const i = ++id; pend[i] = r; ws.send(JSON.stringify({ id: i, method, params })); });
-  const ev = async expr => { const r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }); if (r.result.exceptionDetails) throw new Error(JSON.stringify(r.result.exceptionDetails).slice(0, 400)); return r.result.result.value; };
-  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true });
-  await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-  await send('Page.addScriptToEvaluateOnNewDocument', { source: `(()=>{ const R = Date, n = new R(); n.setHours(${hour}, ${minute}, 0, 0); const off = n - R.now();
-    class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off); } static now() { return R.now() + off; } } window.Date = D; })();` });
-  await send('Page.enable'); await send('Page.navigate', { url }); await sleep(1500);
-  await ev(`(async()=>{ await LAGStore.save(${JSON.stringify(Object.assign({}, hof, theme ? { theme } : {}))}); })()`); await send('Page.reload'); await sleep(2200);
-  await ev(`(async()=>{ const ci = document.querySelector('[data-act=ci-skip]'); if (ci) ci.click(); window.scrollTo(0, 0); await new Promise(r => setTimeout(r, 600)); })()`);
-  const shot = async (name, clip) => { const p = await send('Page.captureScreenshot', Object.assign({ format: 'png' }, clip ? { clip: Object.assign({ scale: 1 }, clip), captureBeyondViewport: true } : {})); fs.writeFileSync(path.join(OUT, name), Buffer.from(p.result.data, 'base64')); };
-  const close = async () => { ws.close(); ch.kill(); await sleep(300); fs.rmSync(prof, { recursive: true, force: true }); };
-  return { ev, shot, close };
+async function session(port, hour, minute, theme) {   // 8.2.1: Chrome-Steuerung aus tools/ux/chrome.js (port bleibt nur der Lesbarkeit halber)
+  const s = await open({ width: 390, height: 844, dpr: 3, hour, minute });
+  await s.loadHof(url, Object.assign({}, hof, theme ? { theme } : {}), { seen: false });
+  const shot = (name, clip) => clip ? s.send('Page.captureScreenshot', { format: 'png', clip: Object.assign({ scale: 1 }, clip), captureBeyondViewport: true }).then(p => fs.writeFileSync(path.join(OUT, name), Buffer.from(p.data, 'base64')))
+    : s.shot(path.join(OUT, name));
+  return { ev: s.ev, shot, close: s.close };
 }
 const scene3x = `(()=>{ const s = document.querySelector('#scene'), w = Math.round(s.width * 160 / s.height), c = document.createElement('canvas'); c.width = w * 3; c.height = 480; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(s, 0, 0, c.width, c.height); return c.toDataURL(); })()`;
 const firstCheck = `(()=>{ const c = document.querySelector('#p-today .chk'), b = c.getBoundingClientRect(); return { top: Math.round(b.top + scrollY), sichtbar: b.bottom <= innerHeight }; })()`;

@@ -1,27 +1,16 @@
-/* Life's a Game · Aufgaben des Testleitfadens (docs/ux-testleitfaden-v6.md) in Headless-Chrome (390 × 844) mit dem Test-Hof, Wege ab v8c:
+/* Life's a Game · Aufgaben des Testleitfadens (docs/ux-testleitfaden-v6.md) in Headless-Chrome (390 × 844, 12 Uhr) mit dem Test-Hof, Wege ab v8c:
  * Anlegen über „+ Gewohnheit“, Bearbeiten und Pausieren über das Info-Blatt der Karte, Nachtragen über „Eintragen“, To-do über „+ To-do“.
  * Prüft danach, dass ein v6-Hof unverändert geladen wird. Taps auf Elemente unter 44 pt werden gemeldet.
- *   npm start, dann: node tools/ux/testhof.js > hof.json; NOON=1 node tools/ux/aufgaben-v8c.js <tmp-ordner> hof.json [url]
+ *   node tools/ux/aufgaben-v8c.js [url]   (ohne url: baut dist/ und startet einen eigenen Server)
+ * 8.2.1: Chrome-Steuerung aus tools/ux/chrome.js (gemeinsam mit tools/abnahme.js).
  */
-const { spawn } = require('child_process'), fs = require('fs'), path = require('path');
-const [dir, hofFile, url = 'http://localhost:8000/'] = process.argv.slice(2);
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const prof = fs.mkdtempSync(path.join(dir, 'chrome-'));
-const ch = spawn(CHROME, ['--headless=new', '--remote-debugging-port=9335', '--user-data-dir=' + prof, '--no-first-run', 'about:blank'], { stdio: 'ignore' });
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+'use strict';
+const path = require('path'), { open, testhof } = require('./chrome');
 (async () => {
-  let list; for (let i = 0; i < 50; i++) { try { list = await (await fetch('http://127.0.0.1:9335/json/list')).json(); break; } catch { await sleep(200); } }
-  const ws = new WebSocket(list.find(t => t.type === 'page').webSocketDebuggerUrl); await new Promise(r => ws.onopen = r);
-  let id = 0; const pend = {}; ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id && pend[m.id]) { pend[m.id](m); delete pend[m.id]; } };
-  const send = (method, params = {}) => new Promise(r => { const i = ++id; pend[i] = r; ws.send(JSON.stringify({ id: i, method, params })); });
-  const ev = async expr => { const r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }); if (r.result.exceptionDetails) throw new Error(JSON.stringify(r.result.exceptionDetails).slice(0, 500)); return r.result.result.value; };
-  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
-  await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-  if (process.env.NOON) await send('Page.addScriptToEvaluateOnNewDocument', { source: `(()=>{ const R = Date, n = new R(); n.setHours(12, 0, 0, 0); const off = n - R.now();
-    class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off); } static now() { return R.now() + off; } } window.Date = D; })();` });
-  await send('Page.enable'); await send('Page.navigate', { url }); await sleep(1500);
-  const hof = fs.readFileSync(hofFile, 'utf8');
-  await ev(`(async()=>{ await LAGStore.save(${hof}); })()`); await send('Page.reload'); await sleep(1500);
+  let url = process.argv[2], server = null;
+  if (!url) { require('../build').build(); server = await require('../serve').serveDir(path.resolve(__dirname, '..', '..', 'dist'), 0, '127.0.0.1'); url = `http://127.0.0.1:${server.address().port}/`; }
+  const s = await open({ width: 390, height: 844, dpr: 2 }), ev = s.ev, hof = JSON.stringify(testhof());
+  await s.loadHof(url, JSON.parse(hof), { seen: false });
   const out = await ev(`(async()=>{
     const w = ms => new Promise(r => setTimeout(r, ms)), $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
     const T = LAG.dkey(new Date()), Y = LAG.addDays(T, -1), res = {}, state = async () => await LAGStore.load();
@@ -82,9 +71,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   console.log(JSON.stringify(out, null, 1));
   // v6-Daten laden unverändert
   const v6 = JSON.parse(hof); v6.habits[0].lateLogs = { [v6.habits[0].createdAt]: true }; v6.textScale = 1.15;
-  await ev(`(async()=>{ await LAGStore.save(${JSON.stringify(v6)}); })()`); await send('Page.reload'); await sleep(1500);
+  await ev(`(async()=>{ await LAGStore.save(${JSON.stringify(v6)}); })()`); await s.reload();
   const same = await ev(`(async()=>JSON.stringify(await LAGStore.load()))()`);
   const a = JSON.parse(same), strip = o => { o.skills.forEach(x => delete x.buildingType); o.habits.forEach(h => delete h.plantType); return JSON.stringify(o); };
   console.log('Alte Daten geladen, nur Gebäude-/Pflanzentyp ergänzt:', strip(a) === strip(JSON.parse(JSON.stringify(v6))), a.skills.map(x => x.buildingType).join(','));
-  ws.close(); ch.kill(); await sleep(300); fs.rmSync(prof, { recursive: true, force: true });
-})().catch(e => { console.error(e); ch.kill(); process.exit(1); });
+  await s.close(); if (server) server.close();
+  if (s.errors.length) console.log('Konsolenfehler:', s.errors);
+})().catch(e => { console.error(e); process.exit(1); });
