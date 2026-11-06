@@ -21,6 +21,7 @@
     darstellung: ['Darstellung', '„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. Das Thema ändert nur die Farben der Oberfläche, nicht den Hof; „Passend zur Jahreszeit“ wechselt mit ihr. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind, und passt zu jedem Thema.'],
     akzent: ['Akzentfarbe', 'Die Akzentfarbe gilt für Überschriften, Anker, aktive Tabs und Hervorhebungen. „Thema“ nimmt die Farbe des Farbthemas. Alle Farben sind in jedem Thema gut lesbar.'],
     daten: ['Daten & Sicherung', 'Alles bleibt auf diesem Gerät. Eine Sicherung ist eine Textdatei mit allen Daten, mit der du deinen Hof später wiederherstellen kannst.'],
+    hofchronik: ['Hofchronik', 'Ein Hof-Tag ist jeder Tag, an dem du mindestens eine Gewohnheit geschafft hast, auch als Mini oder nachgetragen. Mit der Zeit entdeckst du dabei Neues auf deinem Hof. Nichts davon geht verloren, nichts läuft ab.'],
     beta: ['Beta-Zahlen', 'Diese Zahlen bleiben auf dem Gerät. Sie helfen dir und uns, wenn du sie freiwillig weitergibst, zu prüfen, ob der Hof beim Dranbleiben hilft. „Gehalten“ heißt: in den 14 Tagen bis dahin mindestens die Hälfte der geplanten Termine geschafft.']
   };
   const words = s => String(s).trim().split(/\s+/).filter(Boolean).length;

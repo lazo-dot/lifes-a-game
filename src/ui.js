@@ -81,7 +81,31 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
   root.addEventListener('pagehide', flush);
 
-  const derive = () => (D = L.derive(S, today()));
+  const derive = () => { D = L.derive(S, today()); D.ent = L.entdeckungen(S, today()); return D; };
+  /* ---------- v9: Hof-Tage und Entdeckungen ---------- */
+  /** Bild je Entdeckung (Platzhalter-Sheets), ohne Sheet leer. */
+  const ENT_IMG = { schmetterlinge: ['hof-besucher', 'schmetterling'], steg: ['hof-entdeckungen', 'steg'], bienenwiese: ['hof-entdeckungen', 'bienenstock'], eichhoernchen: ['hof-besucher', 'eichhoernchen'],
+    obstwiese: ['hof-entdeckungen', 'obstbaum-fruechte'], gemuesegarten: ['hof-entdeckungen', 'gemuesebeet'], erntefest: ['hof-entdeckungen', 'festtisch'], ruheecke: ['hof-entdeckungen', 'bank-laterne'], hofschild: ['hof-entdeckungen', 'hofschild'] };
+  const entImg = (id, k = 2) => { const x = ENT_IMG[id]; return x ? sheetImg(x[0], x[1], k) : ''; };
+  /** Auf dem Hof sichtbar: Gesehenes immer, Erreichtes erst, wenn die Farm wach ist (nachts taucht nichts Neues auf). */
+  const entOnFarm = () => (D && D.ent ? D.ent : []).filter(e => e.gesehenAm || (e.erreicht && !L.farmSleeps(hour()))).map(e => e.id);
+  const entNew = () => (S.demo || L.farmSleeps(hour()) || !D.ent) ? [] : D.ent.filter(e => e.neu);
+  /** Info-Blatt zu einer oder mehreren Entdeckungen: Name, ein Satz, Datum. Öffnen gilt als gesehen (hofGesehen). */
+  function entSheet(ids, trigger) {
+    const t = today(), list = D.ent.filter(e => ids.includes(e.id));
+    if (!S.demo && L.markHofGesehen(S, list.filter(e => e.neu).map(e => e.id), t).length) { derive(); save(); }
+    const dated = list.map(e => Object.assign({}, e, { am: (S.hofGesehen || {})[e.id] || t }));
+    const title = dated.length === 1 ? dated[0].name : 'Neu auf deinem Hof';
+    openSheet(title, `<div class="ent-list">${dated.map(e => `<div class="ent">${entImg(e.id) ? `<span class="pv">${entImg(e.id)}</span>` : ''}<div>${dated.length > 1 ? `<b>${esc(e.name)}</b>` : ''}<p>${esc(e.satz)}</p><p class="ctx">Entdeckt am ${fmt(e.am, { day: 'numeric', month: 'long', year: 'numeric' })} · ${esc(e.ort)}</p></div></div>`).join('')}</div>`, trigger, { refocus: '#npc .hd2, #scene' });
+    R.npc(); scene.refresh();
+  }
+  /** Hofchronik: alle sichtbaren Entdeckungen mit Datum. Noch nicht Entdecktes erscheint nicht, die nächste Schwelle nirgends. */
+  function chronikSheet(trigger) {
+    const vis = D.ent.filter(e => e.sichtbar), n = L.hofTage(S, today());
+    openSheet('Hofchronik', `<p class="ctx">${n} ${n === 1 ? 'Hof-Tag' : 'Hof-Tage'} · ${vis.length} ${vis.length === 1 ? 'Entdeckung' : 'Entdeckungen'}</p>
+      ${vis.length ? `<div class="ent-list">${vis.map(e => `<button type="button" class="ent ent-b" data-act="ent-open" data-ids="${e.id}">${entImg(e.id) ? `<span class="pv">${entImg(e.id)}</span>` : '<span class="pv"></span>'}<span><b>${esc(e.name)}</b><span class="ctx">${e.gesehenAm ? fmt(e.gesehenAm, { day: 'numeric', month: 'long', year: 'numeric' }) : 'neu'}</span></span></button>`).join('')}</div>`
+        : '<p>Noch ist alles ruhig. Wenn du deine Gewohnheiten pflegst, tut sich hier mit der Zeit etwas.</p>'}`, trigger, { refocus: '#chronikBtn' });
+  }
   const weather = () => L.currentWeather(S, today(), preview);
   function phase() { const hr = hour(); if (L.farmSleeps(hr)) return 'night'; if (L.journalOn(S, today())) return hr >= 20 ? 'night' : 'evening'; return hr < 9 ? 'morning' : hr < 18 ? 'day' : 'evening'; }
 
@@ -366,6 +390,7 @@
     if (S.accent && S.accent !== 'thema') de.dataset.accent = S.accent; else delete de.dataset.accent;
     if (S.readableFont) de.dataset.font = 'lesbar'; else delete de.dataset.font;
     if (S.palette === 'cb') de.dataset.palette = 'cb'; else delete de.dataset.palette;
+    gearIcon();
   }
   /* ---------- Beta-Metriken (H5) ---------- */
   function metricsHTML() {
@@ -450,6 +475,8 @@
       let done = 0, tiny = 0, grown = 0; S.habits.forEach(x => { const d = D.H[x.id]; done += d.month; tiny += d.monthTiny; if (d.stage > d.stageMonthStart) grown++; });
       const grads = S.habits.filter(x => D.H[x.id].graduated), jm = S.journal.filter(j => j.date.startsWith(ym)).length;
       let h = head('h2', 'Fortschritt', 'fortschritt');
+      const ht = L.hofTage(S, t), ne = D.ent.filter(e => e.sichtbar).length;
+      h += `<div class="hd2"><h3>Hofchronik</h3>${qBtn('hofchronik')}</div><button type="button" class="chronik" id="chronikBtn" data-act="chronik"><span><b>${ht}</b> ${ht === 1 ? 'Hof-Tag' : 'Hof-Tage'} · <b>${ne}</b> ${ne === 1 ? 'Entdeckung' : 'Entdeckungen'}</span><span class="vh">, Liste öffnen</span><span class="go" aria-hidden="true">›</span></button>`;
       h += `<div class="hd2"><h3>Erntekalender</h3>${qBtn('kalender')}</div>${calendarHTML()}
         <h3>Monatsrückblick ${mName}</h3><div class="badges month">${[['gem', done, 'erledigt', 'erledigte Termine'], ['boot', tiny, 'Mini', 'davon Mini-Versionen'], ['p2', grown, 'gewachsen', 'Pflanzen gewachsen'], ['flower', grads.length, 'gemeistert', 'gemeistert'], ['book', jm, 'Logbuch', 'Logbuch-Einträge']].map(([ic, n, w, sr]) => `<span class="bdg">${img(ic, 2, '')}<b>${n}</b> <span aria-hidden="true">${w}</span><span class="vh">${sr}</span></span>`).join('')}</div>`;
       h += `<div class="hd2"><h3>Gemeistert</h3>${qBtn('gemeistert')}</div>` + (grads.length ? `<div class="hall">${grads.map(g => `<div>${img('gem', 3, '')}<span>${esc(g.title)} · gemeistert am ${fmt(D.H[g.id].gradDate, { day: 'numeric', month: 'long' })}</span></div>`).join('')}</div>` : '<p class="ctx">Noch keine gemeisterte Gewohnheit.</p>');
@@ -473,8 +500,11 @@
       const x = hint(); U.hint = x; $('#npcFace').innerHTML = img('wilma', 3, ''); $('#npcText').textContent = x.text;
       const a = { late: () => `<button class="btn sm" type="button" data-act="late-open" data-id="${x.item.id}" data-k="${x.item.k}">Eintragen</button>`,
         checkin: () => `<button class="btn sm" type="button" data-act="ci-open">Check-in</button><button class="btn ghost" type="button" data-act="ci-later">Später</button>`,
+        entdeckt: () => `<button class="btn sm" type="button" data-act="ent-open" data-ids="${x.items.map(e => e.id).join(',')}">Ansehen</button>`,
         milestone: () => x.item.acts || '', spruch: () => x.more ? `<button class="btn ghost" type="button" data-act="npc-next" aria-label="Nächster Hinweis von Wilma">Mehr</button>` : '' }[x.kind]();
       $('#npcAct').innerHTML = a; $('#npcAct').hidden = !a;
+      // v9: Neu Entdecktes funkelt einmal je Sitzung an seiner Stelle
+      if (x.kind === 'entdeckt' && scene) { U.sparkled = U.sparkled || new Set(); const ids = x.items.map(e => e.id).filter(id => !U.sparkled.has(id)); if (ids.length) { ids.forEach(id => U.sparkled.add(id)); setTimeout(() => scene.sparkle(ids), 600); } }
     },
     /** v8c: Einstellungen als eigener Bildschirm (Zahnrad in der Kopfzeile). */
     settings() {
@@ -536,8 +566,8 @@
     if (h.archivedAt) b += `<span class="bdg">Pausiert</span>`;
     return b;
   }
-  /** Kontextzeile: zuerst Uhrzeit bzw. Wochenstand, dann der Anker (wird bei Platzmangel am Ende gekürzt; vollständig im Info-Blatt). */
-  const habitCtx = (h, d) => d.weekly ? `${d.weekCnt} von ${d.N} diese Woche · nach ${esc(h.anchor)}` : `${h.anchorTime ? timeText(h.anchorTime) + ' · ' : ''}nach ${esc(h.anchor)}`;
+  /** v9: Kontextzeile beginnt mit dem Anker, Uhrzeit bzw. Wochenstand danach; sie darf auf zwei Zeilen umbrechen, nichts wird abgeschnitten (feedback.md 02.11.). */
+  const habitCtx = (h, d) => `nach ${esc(h.anchor)}${d.weekly ? ` · ${d.weekCnt} von ${d.N} diese Woche` : h.anchorTime ? ` · <span class="nw">${timeText(h.anchorTime)}</span>` : ''}`;
   /** v8c Regel 2: kompakte Karte, höchstens zwei Textzeilen und eine Reihe Abzeichen. Antippen (außer Haken und Mini) öffnet das Info-Blatt. */
   function habitRow(h, opt = {}) {
     const d = D.H[h.id], st = styleOf(skillById(h.skillId)), done = d.doneToday === 'done', tiny = d.doneToday === 'tiny', check = opt.check !== false;
@@ -615,7 +645,7 @@
   function hint() {
     const t = today(), sleep = L.farmSleeps(hour());
     const late = sleep ? [] : lateRows().filter(([h, x]) => !x.late && !x.repairOnly && lateState(h, x) === 'offen').map(([h, x]) => ({ id: h.id, k: x.k, title: h.title, day: dayName(x.k) }));
-    return HX.pickHint({ late, checkin: !sleep && !S.demo && !S.checkins[t] && hour() >= 5 && !U.ciLater, milestones: sleep ? [] : milestones(), sayings: sayings(), idx: U.npcIdx });
+    return HX.pickHint({ late, checkin: !sleep && !S.demo && !S.checkins[t] && hour() >= 5 && !U.ciLater, neu: entNew(), milestones: sleep ? [] : milestones(), sayings: sayings(), idx: U.npcIdx });
   }
 
   /* ---------- Einstellungen (v8c, eigener Bildschirm) ---------- */
@@ -715,6 +745,8 @@
         case 'late-open': lateSheet(habit(), el.dataset.k, el); break;
         case 'ssheet': skillSheet(S.skills.find(x => x.id === el.dataset.sid), el); break;
         case 'odds': oddsSheet(el); break;
+        case 'ent-open': closeSheet(); entSheet(el.dataset.ids.split(','), el); break;
+        case 'chronik': chronikSheet(el); break;
         case 'npc-next': U.npcIdx++; au.sfx.page(); R.npc(); break;
         case 'ci-later': U.ciLater = true; au.sfx.soft(); R.npc(); break;
         case 'settings-close': closeSettings(); break;
@@ -839,8 +871,10 @@
   function tabIcons() {
     const ic = { today: 'sonnig', habits: 'p3', journal: 'book', progress: 'gem', chest: 'crate' };
     $$('.tab .ti').forEach(sp => { sp.innerHTML = img(ic[sp.dataset.icon], 3, ''); });
-    $('#gearBtn').innerHTML = img('gear', 4, '');
+    gearIcon();
   }
+  /** v9: Zahnrad in der Farbe --text-soft des Themas, damit es überall ≥ 3 : 1 hat (vorher fest hellgrau, im Pergament-Thema blass). */
+  function gearIcon() { const g = $('#gearBtn'); if (!g) return; const c = getComputedStyle(document.documentElement).getPropertyValue('--text-soft').trim(); g.innerHTML = img('gear', 4, '', c ? { W: c } : undefined); }
 
   /** 8.2.1: Band „Vorschau · Branch · Version“, nur in der Vorschau unter …/preview/. */
   function previewBand() {
@@ -855,8 +889,9 @@
     sheets = root.LAGSheet.createSheets(document, { reduce, raf: f => requestAnimationFrame(() => requestAnimationFrame(f)) });
     au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
     derive();
-    scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
-    tabIcons(); layout(); sizeScene(); if (narrowMQ) narrowMQ.addEventListener('change', () => { layout(); sizeScene(); }); root.addEventListener('resize', () => { layout(); sizeScene(); });
+    scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), entdeckt: entOnFarm, onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
+    tabIcons(); layout(); sizeScene();
+    if (root.MutationObserver) new MutationObserver(gearIcon).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-palette'] });   // v9: Zahnrad folgt dem Thema if (narrowMQ) narrowMQ.addEventListener('change', () => { layout(); sizeScene(); }); root.addEventListener('resize', () => { layout(); sizeScene(); });
     bind(); refresh(); scene.start(assets);
     if (assets) Promise.resolve(assets).then(() => refresh(), () => {});   // Vorschaubilder und Hinweis „Vorläufige Grafiken“
     if (!S.onboarded) showOnboarding('welcome');

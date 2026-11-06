@@ -118,7 +118,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 .add{display:flex;flex-wrap:wrap;gap:8px}
 .add .in{flex:1 1 200px}
-.in{background:var(--panel-in);border:2px solid var(--panel-3);box-shadow:inset 2px 2px 0 var(--edge);padding:7px 10px;font-size:1.3125rem;min-width:0;color:var(--text)}
+.in{background:var(--panel-in);border:2px solid var(--text-soft);box-shadow:inset 2px 2px 0 var(--edge);padding:7px 10px;font-size:1.3125rem;min-width:0;color:var(--text)}
 .in:focus{border-color:var(--wood);outline:none}
 select.in,input[type=date].in,input[type=time].in{flex:0 1 auto;cursor:pointer}
 textarea.in{width:100%;min-height:120px;resize:vertical;line-height:1.2}
@@ -145,12 +145,12 @@ textarea.in{width:100%;min-height:120px;resize:vertical;line-height:1.2}
 .meta span{display:inline-flex;align-items:center;gap:5px}
 .side{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
 .chk{width:34px;height:34px;padding:0;border:2px solid var(--edge);background:var(--panel-dk);box-shadow:inset 0 0 0 2px var(--text-soft);cursor:pointer;display:grid;place-items:center}   /* 8.1.1: Rand in text-soft, ≥ 3:1 im Ruhezustand */
-.chk:hover{box-shadow:inset 0 0 0 2px var(--wood-dk)}
+.chk:hover{box-shadow:inset 0 0 0 2px var(--wood-lt)}   /* v9: Hover-Ring ≥ 3 : 1 */
 .chk[aria-pressed="true"]{background:var(--leaf);box-shadow:inset -3px -3px 0 var(--leaf-dk),inset 3px 3px 0 var(--leaf-hi)}
 .chk.tiny[aria-pressed="true"]::after{width:10px;height:8px}
 .chk.tiny[aria-pressed="true"]{background:var(--water);box-shadow:inset -3px -3px 0 #3a6a90,inset 3px 3px 0 #bfe0f6}
 .chk::after{content:"";width:18px;height:14px;background:var(--text-soft);opacity:.4;clip-path:var(--tick)}   /* angedeutet, damit „leer“ nicht wie „erledigt“ aussieht */
-.chk:hover::after{background:var(--wood-dk)}
+.chk:hover::after{background:var(--wood-lt)}
 .chk[aria-pressed="true"]::after{content:"";width:18px;height:14px;background:var(--edge);clip-path:polygon(0 43%,22% 43%,22% 64%,33% 64%,33% 79%,44% 79%,44% 64%,56% 64%,56% 43%,67% 43%,67% 21%,78% 21%,78% 0,100% 0,100% 21%,89% 21%,89% 43%,78% 43%,78% 64%,67% 64%,67% 86%,56% 86%,56% 100%,33% 100%,33% 86%,22% 86%,22% 79%,11% 79%,11% 64%,0 64%)}
 .minib{font-family:var(--f-display);font-size:0.8125rem;padding:3px 7px;background:var(--panel-dk);color:var(--water);border:2px solid var(--water-dk);cursor:pointer;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .minib[aria-pressed="true"]{background:var(--water-dk);color:#fff}
@@ -535,8 +535,8 @@ html.noscroll,html.noscroll body{overflow:hidden}
 .npc-text{font-size:1.1875rem;line-height:1.1}
 .npc-act{margin-top:4px;gap:6px}
 .npc-act .btn{min-height:44px}
-.hrow .ctx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hrow .badges{margin-top:2px}
+.hrow .ctx{overflow-wrap:anywhere;line-height:1.1} .hrow .ctx .nw{white-space:nowrap}   /* v9: Anker zuerst, darf auf zwei Zeilen umbrechen, nichts wird abgeschnitten */
+.hrow .badges{margin-top:1px}
 .list{gap:6px}
 .late1 .btn{flex:none}
 .late1>span{min-width:0}
@@ -552,3 +552,15 @@ html.noscroll,html.noscroll body{overflow:hidden}
 .screen h3{margin:0;font-family:var(--f-display);font-weight:600}
 /* 8.2.1: Band nur in der Vorschau (…/preview/) */
 .preview-band{position:sticky;top:0;z-index:89;margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 8px;padding:4px 12px;background:#5a3a96;color:#fff;font-family:var(--f-display);font-size:.8125rem;letter-spacing:.04em;text-align:center}
+
+/* ---------- v9: Hofchronik und Entdeckungen ---------- */
+.chronik{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:48px;padding:8px 12px;background:var(--panel-in);border:2px solid var(--panel-3);color:var(--text);font:inherit;font-size:1.25rem;text-align:left;cursor:pointer}
+.chronik b{font-family:var(--f-display);color:var(--accent)}
+.chronik .go{font-family:var(--f-display);font-size:1.5rem;color:var(--text-soft)}
+.chronik:hover{border-color:var(--text-soft)}
+.ent-list{display:grid;gap:8px}
+.ent{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;padding:8px 10px;background:var(--panel-in);border:2px solid var(--panel-3);color:var(--text);font:inherit;text-align:left}
+.ent p{margin:0}
+.ent .pv{min-width:64px;display:grid;place-items:center}
+.ent-b{width:100%;min-height:48px;cursor:pointer}
+.ent-b>span:last-child{display:grid;gap:2px}

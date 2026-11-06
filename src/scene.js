@@ -9,6 +9,8 @@
  * (Randzonen der Karte, nur Natur). Ohne Karte bleibt es bei 256 px Breite.
  * v8b: Truhengegenstände (Sheet deko), Tiere (Sheet tiere, 2 Frames Leerlauf an festen Plätzen), Wohnhaus und Bauer (Sheets wohnhaus, bauer;
  *   Richtung nach Bewegung, Gehen-Animation nur beim Gehen). Bei reduzierter Bewegung steht alles still. Fehlt ein Sheet: bisherige Zeichnung.
+ * v9: Entdeckungen (Hof-Tage, logic.js) als Bereiche (Sheet hof-entdeckungen, Plätze in hof-karte.json „entdeckungen“) und Besucher
+ *   (Sheet hof-besucher: Schmetterlinge über der Wiese, Bienen am Stock, Frösche am Ufer). Neu Entdecktes funkelt kurz an seiner Stelle.
  */
 (function (root) {
   'use strict';
@@ -43,6 +45,14 @@
   const SEASONGROUND = { Frühling: null, Sommer: null, Herbst: ['#a08a40', .35], Winter: ['#e8eef4', .75] };
   const TINT = { morning: '#ffe8d6', day: null, evening: '#b59bd0', night: '#4a4f8a' };   // Multiplizieren je Tageszeit
   const SHADOW = { color: PAL.nacht[1], alpha: .3 };
+  /* v9: Plätze der Entdeckungen (Fußpunkt, Kern-Koordinaten), überschreibbar in hof-karte.json „entdeckungen“. Ränder: x < 0 bzw. ≥ 256. */
+  const ENT_POS = { steg: [198, 133], bienenstock: [10, 150], obst1: [-14, 62], obst2: [-34, 98], gemuese: [278, 92], ruheecke: [158, 140], hofschild: [118, 101], festtisch: [150, 74],
+    eichhoernchen: [90, 18], wiese: [14, 118, 96, 32], frosch1: [236, 124], frosch2: [190, 150] };
+  /** Welche Teile eine Entdeckung als feste Dinge zeigt: [Tag im Sheet hof-entdeckungen, Platz]. */
+  const ENT_STATIC = { steg: [['steg', 'steg']], bienenwiese: [['bienenstock', 'bienenstock']], obstwiese: [['obstbaum', 'obst1'], ['obstbaum', 'obst2']],
+    gemuesegarten: [['gemuesebeet', 'gemuese']], ruheecke: [['bank-laterne', 'ruheecke']], hofschild: [['hofschild', 'hofschild']] };
+  /** Stelle zum Funkeln je Entdeckung. */
+  const ENT_SPOT = { schmetterlinge: 'wiese', steg: 'steg', bienenwiese: 'bienenstock', eichhoernchen: 'eichhoernchen', obstwiese: 'obst1', gemuesegarten: 'gemuese', ruheecke: 'ruheecke', hofschild: 'hofschild', erntefest: 'festtisch' };
   const BLD = Lv => { const i = Math.min(Lv, 5); return { w: [0, 0, 16, 20, 24, 28][i], rh: [0, 0, 6, 8, 9, 10][i], wh: [0, 0, 6, 7, 8, 9][i] }; };
 
   function createScene(canvas, deps) {
@@ -56,7 +66,9 @@
     const core = (c, on) => c.setTransform(1, 0, 0, 1, on ? OX : 0, 0);
     let env = null, envKey = '', lights = [], parts = [], shadows = [], smoke = [], frame = 0, flash = 0, nextBolt = 0, animals = [], glints = [];
     const walker = { i: 0, x: 90, y: 60, pause: 0, flip: false, dir: 'unten', walked: 0 };
-    let animalSpots = [];
+    let animalSpots = [], visitors = [], sparkles = [];
+    const entIds = () => ((deps.entdeckt && deps.entdeckt()) || []);
+    const entPos = key => { const p = Object.assign({}, ENT_POS, (M && M.entdeckungen) || {})[key]; return p || null; };
     function setMode() {
       M = SH && SH.map(); mode = M ? 'sprites' : 'legacy';
       lay = M ? { way: M.wanderweg, deko: M.deko, foot: M.dekoFuss || M.deko.map(([x, y]) => [x + 4, y + 8]), chick: M.huehner, z: M.schlafZ } : LEGACY;
@@ -70,7 +82,8 @@
       const S = deps.state(), D = deps.D(), season = L.seasonOf(new Date().getMonth()), weather = deps.weather(), phase = deps.phase();
       const beds = activeHabits().map(h => { const x = D.H[h.id], s = skillById(h.skillId); return [h.id, x.stage, s ? s.st : 0, x.graduated ? 1 : 0, h.plantType].join(':'); }).join(',');
       const blds = S.skills.map(s => s.st + ':' + D.levels[s.id].l + ':' + s.icon + ':' + s.buildingType).join(','), pl = S.chest.placed.map(p => p.itemId + (p.slot ?? '')).join(',');
-      return { season, weather, phase, key: [mode, season, weather, phase, beds, blds, pl].join('|') };
+      const ent = entIds().join(','), fruit = new Date().getMonth() >= 7 && new Date().getMonth() <= 9;
+      return { season, weather, phase, ent, fruit, key: [mode, season, weather, phase, beds, blds, pl, ent, fruit].join('|') };
     }
     function drawTree(c, x, y, r, kind, P, night) {
       const [d, m, l] = P.tree.map(t => mix(t, '#0e1a2a', night ? .35 : 0));
@@ -222,6 +235,12 @@
         occ.push([x - 2, y - 2, spr.width + 4, spr.height + 4]);
         items.push({ fy: y + spr.height, draw: cc => { cc.fillStyle = 'rgba(27,22,48,.3)'; cc.fillRect(x + 1, y + spr.height - 1, spr.width, 2); cc.drawImage(spr, x, y); if (p.itemId === 'lantern' && lit) lights.push([x + 3, y + 2, 14]); } });
       });
+      // v9: Entdeckungen (Bereiche) vor der Streuung, damit dort nichts gestreut wird
+      const es = SH.get('hof-entdeckungen'), ids = e.ent ? e.ent.split(',') : [];
+      ids.forEach(id => (ENT_STATIC[id] || []).forEach(([tag, key]) => {
+        const p = entPos(key), t = tag === 'obstbaum' && e.fruit ? 'obstbaum-fruechte' : tag; if (!p || !es || !es.rect('base', t)) return;
+        occ.push(tag === 'obstbaum' ? [p[0] - 14, p[1] - 30, 28, 32] : [p[0] - 16, p[1] - 14, 32, 16]); items.push({ fy: p[1], fx: p[0], sh: es, tag: t, glow: lit && t === 'bank-laterne' });
+      }));
       // Tierplätze: freie Plätze (nicht auf Gebäuden, Beeten, Deko) für die aufgestellten Landtiere freihalten, damit dort nichts gestreut wird
       const nLand = S.chest.placed.filter(p => L.ITEMS[p.itemId].animal && p.itemId !== 'duck').length;
       animalSpots = (M.tiere || []).filter(([x, y]) => !occ.some(o => overlaps(o, [x - 8, y - 12, 16, 12])));
@@ -286,12 +305,42 @@
       else if (e.season === 'Winter') for (let i = 0; i < 30; i++) parts.push({ t: 'snow', x: rr() * FW, y: rr() * H, v: .2 + rr() * .2 });
       if (e.phase === 'night' && !wet && e.season !== 'Winter') for (let i = 0; i < 14; i++) parts.push({ t: 'fly', x: rr() * FW, y: rr() * H, p: rr() * 6.28 });
       if (!wet && (e.season === 'Herbst' || e.season === 'Frühling')) for (let i = 0; i < 8; i++) parts.push({ t: 'leaf', x: rr() * FW, y: rr() * H, p: rr() * 6.28, c: e.season === 'Herbst' ? pick(rr, SEASONPAL.Herbst.tree) : SEASONPAL.Frühling.blossom });
-      animals = makeAnimals();
+      animals = makeAnimals(); makeVisitors(e);
       deps.state().chest.placed.filter(p => p.itemId === 'beehive').forEach(p => { const [x, y] = mode === 'sprites' && SH.get('deko') ? (([fx, fy]) => [fx - 3, fy - 14])(lay.foot[p.slot] || [0, 0]) : lay.deko[p.slot] || [0, 0]; for (let i = 0; i < 3; i++) parts.push({ t: 'bee', cx: x + 3, cy: y + 2, p: rr() * 6.28 }); });
       nextBolt = frame + 60 + Math.floor(rr() * 90); flash = 0;
     }
+    /** v9: Besucher der Entdeckungen. Tagsüber Schmetterlinge (nicht bei Regen, nicht im Winter) und Bienen; Frösche am Ufer außer im Winter. */
+    function makeVisitors(e) {
+      visitors = []; const vs = mode === 'sprites' && SH.get('hof-besucher'); if (!vs) return;
+      const ids = e.ent ? e.ent.split(',') : [], night = e.phase === 'night', wet = e.weather === 'regen' || e.weather === 'gewitter', winter = e.season === 'Winter', rr = Math.random;
+      if (ids.includes('schmetterlinge') && !night && !wet && !winter) { const [x0, y0, w, h] = entPos('wiese'); for (let i = 0; i < 3; i++) visitors.push({ tag: 'schmetterling', x: x0 + rr() * w, y: y0 + rr() * h, tx: 0, ty: 0, v: .35, area: [x0, y0, w, h], off: i * 90, fly: true }); }
+      if (ids.includes('bienenwiese') && !night && !wet && !winter) { const [hx, hy] = entPos('bienenstock'); for (let i = 0; i < 3; i++) visitors.push({ tag: 'biene', cx: hx, cy: hy - 10, p: rr() * 6.28, r: 9 + i * 5, off: i * 60, orbit: true }); }
+      if (ids.includes('steg') && !winter) ['frosch1', 'frosch2'].forEach((k, i) => { const p = entPos(k); if (p) visitors.push({ tag: 'frosch', x: p[0], y: p[1], off: i * 700, sit: true }); });
+      if (ids.includes('eichhoernchen') && !night && !winter) { const p = entPos('eichhoernchen'); visitors.push({ tag: 'eichhoernchen', x: p[0], y: p[1], off: 300, sit: true }); }
+      visitors.forEach(v => { if (v.fly) { v.tx = v.x; v.ty = v.y; } });
+    }
+    function tickVisitors() {
+      for (const v of visitors) {
+        if (v.fly) { const dx = v.tx - v.x, dy = v.ty - v.y, d = Math.hypot(dx, dy); if (d < 1) { const [x0, y0, w, h] = v.area; v.tx = x0 + Math.random() * w; v.ty = y0 + Math.random() * h; } else { v.x += dx / d * v.v; v.y += dy / d * v.v + Math.sin((frame + v.off) * .3) * .25; } }
+        else if (v.orbit) v.p += .09;
+      }
+      for (let i = sparkles.length - 1; i >= 0; i--) if (--sparkles[i].l <= 0) sparkles.splice(i, 1);
+    }
+    function drawVisitors(night) {
+      const vs = SH.get('hof-besucher'); if (!vs) return; const now = frame * STEP;
+      for (const v of visitors) {
+        const an = vs.anim(v.tag), i = deps.reduce || !an ? 0 : SH.frameAt(an.n, an.dir, now + v.off, v.fly ? 130 : v.orbit ? 90 : an.ms);
+        const x = v.orbit ? Math.round(v.cx + Math.cos(v.p) * v.r) : Math.round(v.x), y = v.orbit ? Math.round(v.cy + Math.sin(v.p * 1.3) * v.r * .5) : Math.round(v.y);
+        if (v.sit) drawDyn(vs, v.tag, i, x, y, night); else SH.draw(g, vs, 'base', v.tag, x, y + 6, i);
+      }
+    }
+    function drawSparkles() {
+      const cols = ['rgba(255,243,196,', 'rgba(255,210,122,'];
+      for (const s of sparkles) { if (s.l > 30) continue; const a = Math.min(1, s.l / 12), k = (s.l >> 2) % 2, r = 2 + ((30 - s.l) >> 3);
+        g.fillStyle = cols[k] + a + ')'; g.fillRect(s.x - r, s.y, 2 * r + 1, 1); g.fillRect(s.x, s.y - r, 1, 2 * r + 1); g.fillStyle = 'rgba(255,255,255,' + a + ')'; g.fillRect(s.x, s.y, 1, 1); }
+    }
     function tick() {
-      frame++;
+      frame++; tickVisitors();
       shadows.forEach(s => { s.x += s.v; s.y += s.v * .3; if (s.x - s.r > FW) { s.x = -s.r; s.y = Math.random() * H; } });
       for (const p of parts) {
         if (p.t === 'rain') { if (p.life > 0) { if (--p.life === 0) { p.y = -Math.random() * 20; p.x = Math.random() * (FW + 20); } } else { p.y += p.v; p.x -= p.v * .2; if (p.y > H || Math.random() < .012) p.life = 3; } }
@@ -336,6 +385,7 @@
         g.drawImage(SP.sprite(walker.pause === 0 && step ? 'farmerB' : 'farmerA', null, walker.flip), Math.round(walker.x) - 4, Math.round(walker.y) - 7); } });
       dyn.sort((a, b) => a.fy - b.fy).forEach(d => d.f());
       animals.forEach(a => { if (a.t === 'chicken') { g.fillStyle = 'rgba(10,20,30,.25)'; g.fillRect(Math.round(a.x), Math.round(a.y) + 4, 5, 1); g.drawImage(SP.sprite('chicken', null, a.dx < 0), Math.round(a.x), Math.round(a.y)); } });
+      drawVisitors(night); drawSparkles();
       for (const p of parts) if (p.t === 'bee') rect(g, Math.round(p.cx + Math.cos(p.p) * 6), Math.round(p.cy + Math.sin(p.p * 1.3) * 4), 1, 1, '#ffd84a');
       core(g, false);                                    // Wolken, Partikel und Tönung über die ganze Breite
       if (shadows.length) { g.fillStyle = e.weather === 'gewitter' ? 'rgba(8,12,24,.16)' : 'rgba(10,20,30,.12)'; shadows.forEach(s => oval(g, Math.round(s.x), Math.round(s.y), Math.round(s.r), Math.round(s.r * .6))); }
@@ -393,6 +443,13 @@
       view, unview(cv) { views.delete(cv); applyViews(); },
       mode: () => mode,
       refresh(force) { update(force); if (deps.reduce) draw(); },
+      /** v9: Neu Entdecktes funkelt kurz an seiner Stelle (mehrere Funken nacheinander). Bei reduzierter Bewegung kein Funkeln. */
+      sparkle(ids) {
+        if (deps.reduce) return;
+        ids.forEach(id => { const p = entPos(ENT_SPOT[id] || ''); if (!p) return; const [x, y] = p.length > 2 ? [p[0] + (p[2] >> 1), p[1] + (p[3] >> 1)] : [p[0], p[1] - 10];
+          for (let k = 0; k < 5; k++) sparkles.push({ x: x + Math.round((Math.random() - .5) * 16), y: y + Math.round((Math.random() - .5) * 10), l: 30 + k * 9 }); });
+        if (!running) draw();
+      },
       /** Kurzes Leuchten über einem Beet, z. B. bei einer Ernte. */
       glowBed(habitId) {
         const i = activeHabits().findIndex(h => h.id === habitId); if (i < 0) return;
