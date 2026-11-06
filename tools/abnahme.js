@@ -16,12 +16,7 @@ const OUT_MD = path.join(ROOT, 'docs', 'abnahme-ergebnis.md'), SHOTS = path.join
 const args = process.argv.slice(2), opt = n => args.includes(n), argVal = n => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : null; };
 
 /** Heute schon bekannte Verletzungen: Prüfung + Muster auf den Fund + Quelle. Steht ein Fund nicht hier, ist der Lauf rot. */
-const BEKANNT_OFFEN = [
-  { pruefung: 'kontextzeile_ohne_abschneiden', fund: /anker/i, quelle: 'docs/feedback.md · 02.11. · Heute · Anker wird in der Kontextzeile abgeschnitten → v9' },
-  { pruefung: 'kontrast_nichttext_min', fund: /pergament.*Einstellungen \(Symbol\)/i, quelle: 'docs/feedback.md · 02.11. · Einstellungen · Zahnrad im Pergament-Thema blass → v9' },
-  { pruefung: 'kontrast_nichttext_min', fund: /\(Eingabefeld\)/, quelle: 'docs/feedback.md · 02.11. · Eingabefelder: Rand zu schwach (Abnahme 8.2.1)' },
-  { pruefung: 'kontrast_nichttext_min', fund: / · hover: .*\(Abhak-Kasten\)/, quelle: 'docs/feedback.md · 02.11. · Abhak-Kasten beim Überfahren zu schwach (Abnahme 8.2.1)' }
-];
+const BEKANNT_OFFEN = [];   // v9: leer (die vier Punkte aus 8.2.1 sind behoben, docs/feedback.md → Zugeordnet)
 // Schlüssel, die nur Einstellungen für andere Prüfungen sind
 const CONFIG_KEYS = new Set(['tapflaeche_ausnahmen', 'kontrast_pruefen_in']);
 const TABS = { heute: 'today', gewohnheiten: 'habits', logbuch: 'journal', fortschritt: 'progress', truhe: 'chest' };
