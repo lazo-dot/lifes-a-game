@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Hof-Testrunde</title>
+<style>
+@font-face{font-family:"Pixelify Sans";font-weight:400 700;font-display:swap;src:url(fonts/pixelify-sans-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Pixelify Sans";font-weight:400 700;font-display:swap;src:url(fonts/pixelify-sans-latin-ext.woff2) format("woff2");unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+/* Layout: eine schmale Spalte wie ein Feldbuch; oben eine Fortschrittsleiste aus Beeten, darunter ein Abschnitt zur Zeit. */
+:root{
+  --bg:#edf1e8; --panel:#f8faf5; --ink:#1d2a20; --soft:#4d5d50; --line:#c4cfbf;
+  --moss:#3b7136; --moss-ink:#ffffff; --wood:#7d5124; --sky:#2f6690; --warn:#9a3d12;
+  --sel:#dcead6;
+  --f-pixel:"Pixelify Sans",system-ui,sans-serif;
+  --f-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131a15; --panel:#1b241d; --ink:#e3ebdd; --soft:#a8b6a6; --line:#34433a;
+  --moss:#7cc46f; --moss-ink:#102012; --wood:#d39a5c; --sky:#7fb6e0; --warn:#f0a070; --sel:#26382a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131a15; --panel:#1b241d; --ink:#e3ebdd; --soft:#a8b6a6; --line:#34433a;
+  --moss:#7cc46f; --moss-ink:#102012; --wood:#d39a5c; --sky:#7fb6e0; --warn:#f0a070; --sel:#26382a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:17px/1.55 var(--f-body);margin:0}
+.wrap{max-width:680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 64px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px 12px;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--f-pixel);font-weight:700;font-size:1.05rem;letter-spacing:.02em;color:var(--moss);display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.brand small{font-family:var(--f-body);font-weight:400;color:var(--soft);font-size:.85rem}
+.beds{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}
+.bed{height:12px;border:2px solid var(--wood);background:transparent}
+.bed.done{background:var(--moss);border-color:var(--moss)}
+.bed.now{background:repeating-linear-gradient(90deg,var(--moss) 0 4px,transparent 4px 8px)}
+h1{font-family:var(--f-pixel);font-size:1.9rem;line-height:1.15;margin:28px 0 10px;text-wrap:balance}
+h2{font-family:var(--f-pixel);font-size:1.4rem;line-height:1.2;margin:26px 0 6px;text-wrap:balance}
+h3{font-size:1.05rem;margin:0 0 4px}
+p{margin:0 0 12px;max-width:65ch}
+.lead{font-size:1.08rem}
+.ctx{color:var(--soft);font-size:.92rem}
+.stack{display:grid;gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);padding:16px;border-radius:6px}
+.task{border-left:6px solid var(--wood)}
+.task .say{font-size:1.08rem;font-weight:700;margin-bottom:6px}
+.tag{display:inline-block;font-family:var(--f-body);font-weight:700;font-size:.78rem;color:var(--wood);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{font-weight:700;padding:0;margin-bottom:6px}
+label{display:block}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:6px;min-height:44px;cursor:pointer;background:var(--bg)}
+.opt:has(input:checked){border-color:var(--moss);background:var(--sel)}
+.opt input{margin-top:4px;accent-color:var(--moss);width:18px;height:18px;flex:none}
+.scale{display:grid;gap:6px}
+.scale .row{display:grid;grid-template-columns:repeat(var(--n,5),1fr);gap:6px}
+.scale .row label{position:relative}
+.scale .row input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.scale .row span{display:grid;place-items:center;min-height:44px;border:1px solid var(--line);border-radius:6px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--bg)}
+.scale .row input:checked+span{background:var(--moss);color:var(--moss-ink);border-color:var(--moss)}
+.scale .row input:focus-visible+span{outline:3px solid var(--sky);outline-offset:2px}
+.scale .ends{display:flex;justify-content:space-between;gap:12px;font-size:.85rem;color:var(--soft)}
+textarea,input[type=text]{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--soft);border-radius:6px;padding:10px 12px;min-height:44px}
+textarea{min-height:84px;resize:vertical}
+textarea:focus,input[type=text]:focus,.opt:focus-within{outline:3px solid var(--sky);outline-offset:2px}
+.nav{display:flex;gap:10px;justify-content:space-between;margin-top:26px;flex-wrap:wrap}
+button{font:700 1rem var(--f-body);min-height:48px;padding:0 20px;border-radius:6px;cursor:pointer;border:2px solid var(--moss)}
+button.go{background:var(--moss);color:var(--moss-ink)}
+button.back{background:transparent;color:var(--moss)}
+button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+button[disabled]{opacity:.5;cursor:not-allowed}
+.url{font-family:ui-monospace,Menlo,monospace;font-size:.92rem;word-break:break-all;background:var(--bg);border:1px dashed var(--soft);padding:8px 10px;border-radius:6px;display:block;margin-block:6px}
+a{color:var(--sky)}
+.err{color:var(--warn);font-weight:700;margin-top:10px}
+.note{border:1px dashed var(--wood);padding:12px 14px;border-radius:6px}
+ol.steps{padding-left:1.3em;margin:0 0 12px}
+ol.steps li{margin-bottom:6px}
+.sus{display:grid;gap:16px}
+.res{display:grid;gap:10px}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--sel);font-weight:700;font-size:.9rem}
+table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl{overflow-x:auto}
+@media (prefers-reduced-motion:no-preference){section{animation:in .25s ease-out}@keyframes in{from{transform:translateY(6px)}to{transform:none}}}
+html{-webkit-text-size-adjust:100%}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span>Hof-Testrunde</span><small id="stepLbl">Schritt 1 von 7</small></div>
+    <div class="beds" id="beds" aria-hidden="true"></div>
+  </header>
+
+  <form id="f" novalidate>
+
+  <!-- 1 Start -->
+  <section data-step="1">
+    <h1>Probier meine Gewohnheits-App aus</h1>
+    <p class="lead">Ich entwickle eine App, mit der man Gewohnheiten pflegt, und dazu wächst ein kleiner Pixel-Hof. Bevor ich weiterbaue, will ich wissen, ob Menschen ohne Vorwissen damit zurechtkommen.</p>
+    <p>Du probierst ein paar Dinge in der App aus und beantwortest danach Fragen. Das dauert etwa <b>20 Minuten</b>. Getestet wird die App, nicht du: Wenn etwas nicht klappt, ist genau das die wichtigste Antwort.</p>
+    <div class="card stack">
+      <div>
+        <h3>Was du brauchst</h3>
+        <p class="ctx">Ein Smartphone (iPhone oder Android) mit Internet. Am besten zwischen 6 und 22 Uhr, denn nachts „schläft“ der Hof.</p>
+      </div>
+      <div>
+        <h3>Was mit deinen Antworten passiert</h3>
+        <p class="ctx">Ich frage weder Namen noch Gesundheitsdaten ab. Diese Seite speichert nichts auf einem Server: Am Ende schickst du mir deine Antworten selbst per Nachricht. Ich nutze sie nur, um die App zu verbessern, werte sie anonym aus und lösche sie danach. Du kannst jederzeit aufhören.</p>
+      </div>
+      <label class="opt"><input type="checkbox" id="consent" name="consent"><span>Ich mache freiwillig mit und bin mit der Auswertung wie oben beschrieben einverstanden.</span></label>
+    </div>
+  </section>
+
+  <!-- 2 Über dich -->
+  <section data-step="2" hidden>
+    <h2>Kurz zu dir</h2>
+    <p class="ctx">Damit ich die Antworten einordnen kann.</p>
+    <div class="stack">
+      <fieldset class="card"><legend>Wie alt bist du?</legend><div class="opts" data-radio="alter" data-opts="unter 25|25–39|40–59|60 oder älter"></div></fieldset>
+      <fieldset class="card"><legend>Welches Handy benutzt du für den Test?</legend><div class="opts" data-radio="geraet" data-opts="iPhone|Android|anderes"></div></fieldset>
+      <fieldset class="card"><legend>Nutzt du schon eine App für Gewohnheiten, To-dos oder Tagebuch?</legend><div class="opts" data-radio="habitapp" data-opts="nein|ja, früher|ja, aktuell"></div>
+        <label class="ctx" for="habitappName" style="margin-top:10px">Wenn ja: welche?</label><input type="text" id="habitappName" name="habitappName"></fieldset>
+      <fieldset class="card"><legend>Spielst du Videospiele?</legend><div class="opts" data-radio="spiele" data-opts="nie|selten|regelmäßig"></div>
+        <label class="ctx" for="spieleArt" style="margin-top:10px">Wenn ja: was zum Beispiel?</label><input type="text" id="spieleArt" name="spieleArt"></fieldset>
+      <fieldset class="card"><legend>Wie sicher fühlst du dich mit dem Smartphone?</legend><div class="scale" data-scale="sicherheit" data-n="5" data-l="sehr unsicher" data-r="sehr sicher"></div></fieldset>
+    </div>
+  </section>
+
+  <!-- 3 App öffnen -->
+  <section data-step="3" hidden>
+    <h2>App öffnen</h2>
+    <p>Öffne diese Adresse im Browser deines Handys (Safari oder Chrome) – am besten in einem neuen Tab, damit du zwischen App und Fragebogen wechseln kannst:</p>
+    <span class="url" id="appUrl">https://lazo-dot.github.io/lifes-a-game/</span>
+    <p><button type="button" class="back" id="copyUrl">Adresse kopieren</button> <a href="https://lazo-dot.github.io/lifes-a-game/" target="_blank" rel="noopener">Im neuen Tab öffnen</a></p>
+    <div class="note">
+      <ol class="steps">
+        <li>Du musst die App <b>nicht</b> installieren und dich nirgends anmelden. Alles bleibt auf deinem Handy.</li>
+        <li>Die Grafiken sind vorläufige Platzhalter. Bitte bewerte die Bedienung, nicht die Optik.</li>
+        <li>Schreib bei jeder Aufgabe ruhig auf, was du gedacht hast – auch Kleinigkeiten wie „Ich habe zuerst oben gesucht“.</li>
+        <li>Wenn du bei einer Aufgabe nicht weiterkommst: nach etwa 2 Minuten aufhören und „nicht geschafft“ wählen. Das ist eine wertvolle Antwort.</li>
+      </ol>
+    </div>
+    <fieldset class="card" style="margin-top:18px"><legend>Hat sich die App geöffnet?</legend><div class="opts" data-radio="geoeffnet" data-opts="ja|nein, da kommt eine Fehlermeldung|nein, etwas anderes"></div></fieldset>
+  </section>
+
+  <!-- 4 Aufgaben -->
+  <section data-step="4" hidden>
+    <h2>Aufgaben in der App</h2>
+    <p class="ctx">Mach die Aufgaben der Reihe nach in der App und beantworte nach jeder die drei kurzen Fragen.</p>
+    <div class="stack" id="tasks"></div>
+  </section>
+
+  <!-- 5 Verständnis -->
+  <section data-step="5" hidden>
+    <h2>Was hast du verstanden?</h2>
+    <p>Bitte <b>ohne in der App nachzusehen</b> beantworten, in eigenen Worten. „Weiß ich nicht“ ist eine gute Antwort.</p>
+    <div class="stack">
+      <div class="card"><label for="v1"><h3>Was bedeuten die Prozentzahl und die Pflanze bei einer Gewohnheit?</h3></label><textarea id="v1" name="v1"></textarea></div>
+      <div class="card"><label for="v2"><h3>Was passiert, wenn du einen Tag auslässt? Und was ist ein Regentag?</h3></label><textarea id="v2" name="v2"></textarea></div>
+      <div class="card"><label for="v3"><h3>Was ist die Mini-Version, und wann würdest du sie nutzen?</h3></label><textarea id="v3" name="v3"></textarea></div>
+      <div class="card"><label for="v4"><h3>Was zeigen die Gebäude auf dem Hof?</h3></label><textarea id="v4" name="v4"></textarea></div>
+    </div>
+  </section>
+
+  <!-- 6 SUS -->
+  <section data-step="6" hidden>
+    <h2>Dein Gesamteindruck</h2>
+    <p class="ctx">Zehn Aussagen. Wie sehr stimmst du zu? Antworte zügig nach Gefühl. (System Usability Scale)</p>
+    <div class="sus" id="sus"></div>
+  </section>
+
+  <!-- 7 Abschluss -->
+  <section data-step="7" hidden>
+    <h2>Zum Schluss</h2>
+    <div class="stack">
+      <div class="card"><label for="gut"><h3>Was hat dir gefallen?</h3></label><textarea id="gut" name="gut"></textarea></div>
+      <div class="card"><label for="schlecht"><h3>Was hat dich gestört oder verwirrt?</h3></label><textarea id="schlecht" name="schlecht"></textarea></div>
+      <fieldset class="card"><legend>Würdest du so eine App nutzen?</legend><div class="opts" data-radio="nutzen" data-opts="ja|vielleicht|nein"></div>
+        <label class="ctx" for="nutzenWarum" style="margin-top:10px">Was müsste dafür anders sein?</label><textarea id="nutzenWarum" name="nutzenWarum"></textarea></fieldset>
+      <div class="card"><label for="hof"><h3>Was würdest du gern auf deinem Hof sehen oder entdecken?</h3></label><textarea id="hof" name="hof"></textarea></div>
+      <div class="card"><label for="wort"><h3>Ein Wort, das die App für dich beschreibt</h3></label><input type="text" id="wort" name="wort"></div>
+    </div>
+    <div class="nav"><button type="button" class="back" data-prev>Zurück</button><button type="submit" class="go" id="send">Fertig</button></div>
+    <div class="err" id="sendErr" hidden></div>
+  </section>
+
+  <!-- Danke -->
+  <section data-step="8" hidden>
+    <h1>Danke!</h1>
+    <p class="lead" id="thanksMsg">Ein letzter Schritt: Bitte schick mir deine Antworten.</p>
+    <div class="card stack" id="copyBox">
+      <p>Tippe auf „Antworten senden“ und wähle WhatsApp, Signal, E-Mail o. Ä. – oder kopiere den Text und füge ihn in eine Nachricht an mich ein. Deine Antworten werden nirgends sonst gespeichert.</p>
+      <p style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="go" id="shareAns" hidden>Antworten senden</button><button type="button" class="back" id="copyAns">Antworten kopieren</button></p>
+      <textarea id="ansTxt" readonly aria-label="Deine Antworten als Text" style="min-height:160px"></textarea>
+    </div>
+    <p class="ctx">Danach kannst du beide Tabs schließen. Was du in der App angelegt hast, bleibt nur in deinem Browser.</p>
+  </section>
+
+  <div class="nav" id="nav"><button type="button" class="back" data-prev>Zurück</button><button type="button" class="go" data-next>Weiter</button></div>
+  <div class="err" id="navErr" hidden></div>
+  </form>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+const TASKS=[
+ {id:'a1',tag:'Anlegen',say:'Du möchtest dir angewöhnen, jeden Morgen ein Glas Wasser zu trinken. Leg das als neue Gewohnheit an.',extra:{id:'a1anker',q:'Was hast du bei „Wann genau?“ bzw. beim Anker eingetragen?'}},
+ {id:'a2',tag:'Abhaken',say:'Du hast heute schon ein Glas Wasser getrunken. Trag das ein.'},
+ {id:'a3',tag:'Mini-Version',say:'Leg eine zweite Gewohnheit an, z. B. „10 Minuten lesen“. Heute hast du nur eine Seite geschafft. Trag das passend ein.'},
+ {id:'a4',tag:'Ändern',say:'Lesen klappt nicht jeden Tag. Ändere die Gewohnheit auf dreimal pro Woche.'},
+ {id:'a5',tag:'Pausieren',say:'Du fährst nächste Woche in den Urlaub und willst mit dem Wassertrinken-Ritual so lange aussetzen. Was machst du?',extra:{id:'a5wie',q:'Was hast du gemacht?'}},
+ {id:'a6',tag:'Hof',say:'Schau dir deinen Hof an. Wo ist die Pflanze, die zu „Wasser trinken“ gehört?'},
+ {id:'a7',tag:'Logbuch',say:'Schreib einen kurzen Eintrag für heute.'}
+];
+const SUS=['Ich denke, dass ich diese App gerne häufig benutzen würde.','Ich fand die App unnötig komplex.','Ich fand die App einfach zu benutzen.','Ich glaube, ich würde die Hilfe einer technisch versierten Person brauchen, um die App benutzen zu können.','Ich fand, die verschiedenen Funktionen in dieser App waren gut integriert.','Ich denke, die App enthielt zu viele Ungereimtheiten.','Ich kann mir vorstellen, dass die meisten Menschen den Umgang mit dieser App sehr schnell lernen.','Ich fand die App sehr umständlich zu nutzen.','Ich fühlte mich bei der Benutzung der App sehr sicher.','Ich musste eine Menge lernen, bevor ich anfangen konnte, mit dieser App zu arbeiten.'];
+const ERFOLG=['ohne Hilfe geschafft','geschafft, aber mit Umwegen','nicht geschafft'];
+const STEPS=7, DRAFT='hof-testrunde-entwurf';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function radios(el){const name=el.dataset.radio;el.innerHTML=el.dataset.opts.split('|').map((o,i)=>`<label class="opt"><input type="radio" name="${name}" id="${name}-${i}" value="${esc(o)}"><span>${esc(o)}</span></label>`).join('');}
+function scale(el){const n=+el.dataset.n,name=el.dataset.scale;el.style.setProperty('--n',n);
+  el.innerHTML=`<div class="row" role="radiogroup">${Array.from({length:n},(_,i)=>`<label><input type="radio" name="${name}" id="${name}-${i+1}" value="${i+1}" aria-label="${i+1}"><span>${i+1}</span></label>`).join('')}</div><div class="ends"><span>${esc(el.dataset.l)}</span><span>${esc(el.dataset.r)}</span></div>`;}
+
+$('#tasks').innerHTML=TASKS.map((t,i)=>`<div class="card task stack" style="gap:12px">
+  <div><span class="tag">Aufgabe ${i+1} · ${t.tag}</span><p class="say">${esc(t.say)}</p></div>
+  <fieldset><legend>Hat es geklappt?</legend><div class="opts" data-radio="${t.id}e" data-opts="${ERFOLG.join('|')}"></div></fieldset>
+  <fieldset><legend>Wie leicht oder schwer war das?</legend><div class="scale" data-scale="${t.id}s" data-n="7" data-l="sehr schwer" data-r="sehr leicht"></div></fieldset>
+  ${t.extra?`<div><label for="${t.extra.id}"><b>${esc(t.extra.q)}</b></label><input type="text" id="${t.extra.id}" name="${t.extra.id}"></div>`:''}
+  <div><label for="${t.id}k"><b>Was hast du gedacht, gesucht oder erwartet?</b> <span class="ctx">(optional)</span></label><textarea id="${t.id}k" name="${t.id}k"></textarea></div>
+</div>`).join('');
+$('#sus').innerHTML=SUS.map((q,i)=>`<fieldset class="card"><legend>${i+1}. ${esc(q)}</legend><div class="scale" data-scale="sus${i+1}" data-n="5" data-l="stimme gar nicht zu" data-r="stimme voll zu"></div></fieldset>`).join('');
+$$('[data-radio]').forEach(radios); $$('[data-scale]').forEach(scale);
+
+const form=$('#f');
+function collect(){const o={};new FormData(form).forEach((v,k)=>{o[k]=v});o.consent=$('#consent').checked;return o;}
+function restore(o){Object.entries(o||{}).forEach(([k,v])=>{const els=form.elements[k];if(!els)return;
+  if(els instanceof RadioNodeList){[...els].forEach(e=>{if(e.value===v)e.checked=true});}else if(els.type==='checkbox'){els.checked=!!v}else{els.value=v}});}
+function susScore(o){let s=0;for(let i=1;i<=10;i++){const v=+o['sus'+i];if(!v)return null;s+=(i%2?v-1:5-v);}return s*2.5;}
+
+let step=1;
+function show(n){step=n;$$('section[data-step]').forEach(s=>s.hidden=+s.dataset.step!==n);
+  $('#nav').hidden=n>=STEPS; $('#nav [data-prev]').style.visibility=n===1?'hidden':'visible';
+  $('#navErr').hidden=true; $('#stepLbl').textContent=n<=STEPS?`Schritt ${n} von ${STEPS}`:'Fertig';
+  $('#beds').innerHTML=Array.from({length:STEPS},(_,i)=>`<div class="bed ${i+1<n?'done':i+1===n?'now':''}"></div>`).join('');
+  window.scrollTo({top:0});}
+form.addEventListener('click',e=>{
+  if(e.target.closest('[data-next]')){
+    if(step===1&&!$('#consent').checked){const er=$('#navErr');er.textContent='Bitte bestätige zuerst, dass du mitmachen möchtest.';er.hidden=false;return;}
+    show(step+1);}
+  if(e.target.closest('[data-prev]'))show(step-1);});
+form.addEventListener('input',()=>{try{localStorage.setItem(DRAFT,JSON.stringify({step,data:collect()}))}catch(e){}});
+
+$('#copyUrl').addEventListener('click',()=>copy($('#appUrl').textContent,$('#copyUrl'),'Adresse kopiert'));
+function copy(txt,btn,ok){const done=()=>{const t=btn.textContent;btn.textContent=ok;setTimeout(()=>btn.textContent=t,1800)};
+  const fallback=()=>{const ta=$('#ansTxt');if(btn.id==='copyAns'){ta.focus();ta.select();}};
+  try{navigator.clipboard.writeText(txt).then(done,fallback)}catch(e){fallback()}}
+
+function asText(o){const L=[];const v=k=>o[k]||'–';
+  L.push('Hof-Testrunde · Antworten','Datum: '+new Date().toLocaleDateString('de-DE'),'');
+  L.push('Alter: '+v('alter'),'Gerät: '+v('geraet'),'Habit-App: '+v('habitapp')+(o.habitappName?' ('+o.habitappName+')':''),'Spiele: '+v('spiele')+(o.spieleArt?' ('+o.spieleArt+')':''),'Smartphone-Sicherheit (1–5): '+v('sicherheit'),'App geöffnet: '+v('geoeffnet'),'');
+  TASKS.forEach((t,i)=>{L.push(`Aufgabe ${i+1} ${t.tag}: ${v(t.id+'e')} · Leichtigkeit ${v(t.id+'s')}/7`);if(t.extra)L.push('  '+t.extra.q+' '+v(t.extra.id));if(o[t.id+'k'])L.push('  Gedanken: '+o[t.id+'k']);});
+  L.push('','Verständnis','1 Prozent/Pflanze: '+v('v1'),'2 Ausfall/Regentag: '+v('v2'),'3 Mini-Version: '+v('v3'),'4 Gebäude: '+v('v4'),'');
+  const sc=susScore(o);L.push('SUS: '+[...Array(10)].map((_,i)=>v('sus'+(i+1))).join(' ')+(sc!=null?' → '+sc:''),'');
+  L.push('Gefallen: '+v('gut'),'Gestört: '+v('schlecht'),'Nutzen: '+v('nutzen')+' – '+v('nutzenWarum'),'Hof-Wünsche: '+v('hof'),'Ein Wort: '+v('wort'));
+  return L.join('\n');}
+
+form.addEventListener('submit',e=>{e.preventDefault();
+  const o=collect();$('#ansTxt').value=asText(o);
+  try{localStorage.removeItem(DRAFT)}catch(err){}
+  show(8);});
+if(navigator.share){const b=$('#shareAns');b.hidden=false;b.addEventListener('click',()=>{navigator.share({title:'Hof-Testrunde',text:$('#ansTxt').value}).catch(()=>{})});}
+$('#copyAns').addEventListener('click',()=>copy($('#ansTxt').value,$('#copyAns'),'Kopiert'));
+
+try{const d=JSON.parse(localStorage.getItem(DRAFT)||'null');if(d){restore(d.data);show(Math.min(d.step||1,STEPS));}else show(1);}catch(e){show(1)}
+
+})();
+</script>
+</body>
+</html>

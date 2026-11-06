@@ -1,13 +1,24 @@
 # Life's a Game – Testleitfaden Usability-Test (Prototyp v6)
 
-Stand: 02.11.2026 · Durchführung auf **Prototyp v8a** (Bedienbarkeit aus v7 plus Hof in Stil B mit Gebäuden je Fähigkeit, Pflanzensorten, Großansicht; Grafiken sind vorläufige Platzhalter) · Bezug: [Heuristische Evaluation v6](ux-heuristische-evaluation-v6.md) · Durchführung: Lars
+Stand: 02.11.2026 · Durchführung auf **Prototyp 8.2.1** (Wege aus v8c: Karte antippen öffnet das Info-Blatt mit Bearbeiten/Pausieren, Sicherung im Bildschirm Einstellungen; Grafiken sind vorläufige Platzhalter) · **Kurztest jetzt (Abschnitt 0), voller Test auf v10** · Bezug: [Heuristische Evaluation v6](ux-heuristische-evaluation-v6.md) · Durchführung: Lars
+
+## 0. Kurztest jetzt (8.2.1, 1–2 Personen, ca. 20 Minuten)
+
+Zweck: früh prüfen, ob die Grundbegriffe (Anker, Mini, Nachtragen, Regentag, Stärke) verstanden werden, bevor v9 die Welt komplexer macht. Nicht auf den vollen Test warten.
+
+- **Personen:** 1–2 aus dem Umfeld, die die App noch nicht gesehen haben; möglichst T1 (60+, spielt kaum) oder T4 (nutzt eine Habit-App).
+- **Vorbereitung:** wie Abschnitt 3 (Sicherung deiner Daten, Test-Hof im Safari-Tab auf der Hauptadresse, nicht in der installierten App).
+- **Ablauf:** Einleitungstext und Einverständnis (Abschnitt 4) · Aufgaben **1, 2, 3, 7** (Abschnitt 5) · Verständnisfragen **1–3** (Abschnitt 7) · Abschlussfragen „Was hat dich verwirrt?“ und „Würdest du sie nutzen?“. SUS entfällt (bei 1–2 Personen ohne Aussagekraft).
+- **Notieren:** Beobachtungsbogen (Abschnitt 8) nur für diese Zeilen, wörtliche Zitate.
+- **Ergebnis:** Bögen oder Stichpunkte hier in den Chat oder in `docs/feedback.md`. Funde, die v9 betreffen (Begriffe, Hof-Verständnis), fließen direkt in den v9-Auftrag.
+- **Unbegleitete Ergänzung:** Fragebogen „Hof-Testrunde“ zum Weiterleiten, https://lazo-dot.github.io/lifes-a-game-test/ (ohne Anmeldung; Start mit leerem Hof, Aufgaben Anlegen/Abhaken/Mini/Ändern/Pausieren/Hof/Logbuch, Verständnisfragen, SUS). Ersetzt den begleiteten Kurztest nicht: Lautes Denken, Nachtragen und Regentag fehlen dort.
 
 ## 1. Ziel und Rahmen
 
 - **Ziel:** Prüfen, ob Menschen ohne Vorwissen die Kernabläufe schaffen, die Spielregeln verstehen und den Hof lesen können. Im Fokus stehen die Funde U1, U8, U12, U13, U14 und U17 der heuristischen Evaluation sowie die v8a-Neuerungen (Gebäudewahl, Pflanzensorte, Großansicht).
 - **Methode:** moderierter Test mit lautem Denken, danach SUS-Fragebogen und Verständnisfragen.
 - **Umfang:** 5 Personen, je ca. 35 Minuten.
-- **Ergebnisse:** Erfolgsquote, Zeit und Fehler je Aufgabe, SUS-Wert, Verständnis, Liste der Probleme mit Schweregrad. Sie fließen zusammen mit Selbsttest und Simulation in die Entscheidung über v8b.
+- **Ergebnisse:** Erfolgsquote, Zeit und Fehler je Aufgabe, SUS-Wert, Verständnis, Liste der Probleme mit Schweregrad. Sie fließen zusammen mit Selbsttest und Simulation in v10.
 
 ## 2. Teilnehmende
 
@@ -24,13 +35,13 @@ Fünf Personen, möglichst gemischt nach den Simulations-Personas. Niemand sollt
 ## 3. Vorbereitung
 
 **Wichtig: deine eigenen Selbsttest-Daten schützen.**
-1. Vor der ersten Sitzung in deiner installierten App unter Fortschritt → „Sicherung erstellen“.
+1. Vor der ersten Sitzung in deiner installierten App: Zahnrad (Einstellungen) → Daten & Sicherung → „Sicherung erstellen“.
 2. Getestet wird **nicht in der installierten App**, sondern in einem **normalen Safari-Tab** auf `https://lazo-dot.github.io/lifes-a-game/`. Auf dem iPhone speichert ein Tab getrennt von der App vom Home-Bildschirm, deine Daten bleiben also unberührt. Wenn möglich: ein zweites Gerät oder das Gerät der Testperson.
 
 **Test-Hof vor jeder Sitzung neu erzeugen** (passt sich ans heutige Datum an):
 1. Im Repo: `node tools/ux/testhof.js > testhof.json`
 2. Inhalt der Datei aufs iPhone bringen (z. B. per AirDrop oder Notiz) und kopieren.
-3. Im Safari-Tab: Willkommen → „Sicherung importieren“ → Text einfügen → „Wiederherstellen“. Bei einem bereits benutzten Tab: Fortschritt → „Sicherung importieren“.
+3. Im Safari-Tab: Willkommen → „Sicherung importieren“ → Text einfügen → „Wiederherstellen“. Bei einem bereits benutzten Tab: Zahnrad → Daten & Sicherung → „Oder Sicherungstext einfügen“ → Text einfügen → „Prüfen“ → „Wiederherstellen“.
 
 **Hinweis an die Testperson (beim Einleitungstext):** Die Grafiken sind vorläufig und werden noch ersetzt. Bewertet wird die Bedienung, nicht die Optik.
 
@@ -79,11 +90,11 @@ Lies jeweils nur den Aufgabentext vor, nicht die Hinweise. Starte bei jeder Aufg
 |---|---|---|---|---|
 | 1 | „Du möchtest dir angewöhnen, jeden Morgen ein Glas Wasser zu trinken. Leg das als neue Gewohnheit an.“ | Gewohnheit angelegt **mit eigenem, sinnvollem Anker** und echter Mini-Version | Wird der Anker verstanden („Nach welcher Routine“)? Wird eine Vorlage genutzt? Abbrüche im langen Formular? Erwartung bei „Erinnerung“? Wird die Pflanzensorte bemerkt oder bewusst gewählt? Sucht die Person die neue Pflanze danach auf dem Hof? | U11, U14, U18, v8a |
 | 2 | „Du hast heute schon gedehnt. Trag das ein. Beim Lesen hast du heute nur eine Seite geschafft. Trag auch das ein.“ | „Dehnen“ voll erledigt, „Lesen“ als Mini | Zeit bis zum ersten Haken, Scrollen, Fehlgriffe (Kasten vs. Mini-Knopf) | U1, U12, U13 |
-| 3 | „Gestern Abend hast du doch gelesen, aber vergessen, es einzutragen. Hol das nach.“ | „Lesen“ für gestern nachgetragen | Wird „Gestern und vorgestern“ gefunden? Kommentar zum Regentag? | U8, U9 |
-| 4 | „Spazieren gehen klappt nicht dreimal pro Woche. Ändere das auf zweimal pro Woche.“ | Frequenz auf 2× pro Woche geändert und gespeichert | Wird „Bearbeiten“ gefunden? Wird der Hinweis „gilt ab heute“ verstanden? | Heuristik 3, 6 |
+| 3 | „Gestern Abend hast du doch gelesen, aber vergessen, es einzutragen. Hol das nach.“ | „Lesen“ für gestern nachgetragen | Wird die Zeile „Gestern“ mit „Eintragen“ gefunden? Kommentar zum Regentag? | U8, U9 |
+| 4 | „Spazieren gehen klappt nicht dreimal pro Woche. Ändere das auf zweimal pro Woche.“ | Frequenz auf 2× pro Woche geändert und gespeichert | Wird die Karte angetippt (Info-Blatt) und dort „Bearbeiten“ gefunden? Wird der Hinweis „gilt ab heute“ verstanden? | Heuristik 3, 6 |
 | 5 | „Schau nach: An wie vielen Tagen hast du in den letzten Wochen gelesen?“ | Antwort aus Erntekalender oder Gewohnheitsdetails, ungefähr richtig (± 2) | Wird der Kalender gefunden und gelesen? Versucht die Person, auf Kacheln zu tippen? | U17 |
 | 6 | „In deiner Truhe liegt etwas für den Hof. Stell einen Gegenstand auf deinen Hof.“ | Gegenstand aufgestellt und auf dem Hof sichtbar | Ist klar, woher Funde kommen? Wird der Gegenstand auf dem Hof gefunden? Wird die Großansicht (Antippen der Szene) entdeckt und gewischt? | Heuristik 6, v8a |
-| 7 | „Du fährst nächste Woche eine Woche in den Urlaub und willst mit dem Dehnen so lange aussetzen. Was machst du?“ | Gewohnheit pausiert, **nicht** gelöscht | Wird „Pausieren“ gefunden? Gibt es Sorge, dass die Pflanze leidet? | Heuristik 3 |
+| 7 | „Du fährst nächste Woche eine Woche in den Urlaub und willst mit dem Dehnen so lange aussetzen. Was machst du?“ | Gewohnheit pausiert, **nicht** gelöscht | Wird „Pausieren“ im Info-Blatt der Karte gefunden? Gibt es Sorge, dass die Pflanze leidet? | Heuristik 3 |
 | 8 | „Zu deiner Fähigkeit ‚Geist‘ passt eher eine Scheune als das Archiv. Ändere das.“ | Gebäudetyp der Fähigkeit auf Scheune geändert, auf dem Hof sichtbar | Wo wird zuerst gesucht (Gewohnheit, Hof, Fortschritt)? Wird „Ändern“ bei der Fähigkeit gefunden? Wird das Raster verstanden? | v8a (Abweichung 10) |
 | (9) | *Nur wenn Zeit bleibt:* „Schreib einen kurzen Eintrag für heute und schließ den Tag ab.“ | Logbuch-Eintrag gespeichert | Wird die Wetterwahl verstanden? | Heuristik 2 |
 
@@ -157,7 +168,7 @@ Ohne die App anzusehen beantworten lassen und die Antworten wörtlich notieren.
 3. **Verständnis:** Anteil richtiger Antworten je Frage.
 4. **Probleme zusammenführen:** Gleiche Probleme bündeln und zählen, wie viele Personen betroffen waren. Den Schweregrad als höchsten beobachteten Wert ansetzen, bei 3 oder mehr Betroffenen +1.
 5. **Abgleich mit der heuristischen Evaluation:** Für jeden Fund U1–U18 festhalten, ob er bestätigt, nicht beobachtet oder widerlegt wurde. Neue Probleme ergänzen.
-6. **Ergebnis hierher bringen:** Beobachtungsbögen bzw. die zusammengefasste Liste. Der Koordinations-Chat erstellt daraus die UX-Punkte für v8b.
+6. **Ergebnis hierher bringen:** Beobachtungsbögen bzw. die zusammengefasste Liste. Der Koordinations-Chat erstellt daraus die UX-Punkte für die nächste Version.
 
 **Hinweise für die Moderation:**
 - Nicht erklären, nicht bestätigen („gut so“).

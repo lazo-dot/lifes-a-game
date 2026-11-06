@@ -1,0 +1,300 @@
+# Life's a Game – Abgleich-Checkliste (Archiv: v2 bis 8.2.1)
+
+> Archiviert am 02.11.2026. Aktuelle Fassung: [abgleich-checkliste.md](../abgleich-checkliste.md). Die Tabellen A–H und die Ergebnisse v3–8.2.1 bleiben hier unverändert als Verlauf.
+
+Stand: 02.11.2026 (8.2.1 abgeglichen) · Wird für jede Prototyp-Version ergänzt. Referenz: [Entwicklungsleitfaden v1.9](habit-tracker-entwicklungsleitfaden.md) · Messbare Punkte (erster Haken, Tap-Flächen, Kontraste, Textmenge, Skalierung, Migration) prüft ab 8.2.1 `npm run abnahme` gegen `docs/abnahme.json`; hier stehen Ergebnis, Abweichungen und Beobachtungen.
+
+Die Spalten v2–v5 in A–H halten den frühen Stand fest. Spätere Regeländerungen (z. B. Ausschleichen ab Stärke 0,6 + 12/14 und „Gemeistert“ mit 70 % seit v6) stehen in den Ergebnis-Abschnitten und im Leitfaden.
+
+Bewertung: ✅ erfüllt · 🟡 teilweise · ❌ fehlt · ⚠️ widerspricht Leitfaden · — bewusst verschoben
+Priorität (Spalte „Prio“, für Selbsttest und Flutter): **H** muss · **M** sollte · **N** kann
+
+---
+
+## A. Kernmechanik (Phase 1)
+
+| # | Prüfpunkt | Leitfaden | v2 | v3 | v4 | v5 | Prio | Notiz |
+|---|---|---|---|---|---|---|---|---|
+| A1 | Anker „Nach ___ werde ich ___“ ist Pflichtfeld beim Anlegen | 3, 5.1 | ❌ | ✅ | ✅ | ✅ |  |  |
+| A2 | Mini-Version pro Gewohnheit, zählt voll für Stärke/Streak, 50 % XP | 4.1 | ❌ | ✅ | ✅ | ✅ |  |  |
+| A3 | Frequenz: täglich, x-mal pro Woche, Wochentage | 3 | ❌ | ✅ | ✅ | ✅ |  |  |
+| A4 | Aufwand 1–3 → XP `10 × effort` | 4.1 | 🟡 S/M/L 10/25/50 | ✅ | ✅ | ✅ |  |  |
+| A5 | Anti-Farming: XP max. 1× pro geplantem Termin | 4.1 | | ✅ | ✅ | ✅ |  | pro Termin, aus Log berechnet |
+| A6 | XP-Text mit echter Fortschrittsinfo („12× diesen Monat“) | 4.1 | | ✅ | ✅ | ✅ |  |  |
+| A7 | Level-Kurve `round(100 × L^1.5)` | 4.1 | 🟡 linear | ✅ | ✅ | ✅ |  | Skills 50 × L^1.5 – in Leitfaden übernommen |
+| A8 | „Noch X bis Level Y“ sichtbar | 4.1 | | ✅ | ✅ | ✅ |  |  |
+| A9 | Rückgängig ohne rote Minus-Animation | 4.1 | ⚠️ Minus-Anzeige | ⚠️ | ✅ | ✅ |  | Minus-Anzeige entfernt |
+| A10 | Gewohnheitsstärke `a = 0.044` pro geplantem Termin | 4.2 | ❌ | ✅ | ✅ | ✅ |  |  |
+| A11 | Wöchentliche Gewohnheiten pro Termin, nicht pro Tag berechnet | 4.2 | ❌ | 🟡 | ✅ | ✅ |  | angebrochene Wochen anteilig (Leitfaden v1.7) |
+| A12 | Streak pro Gewohnheit ein/aus, Standard aus bei wöchentlich | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
+| A13 | Mini-Version verlängert Streak | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
+| A14 | Regentag-Token: 1 pro 7 Termine, max. 2, automatisch eingesetzt | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
+| A15 | Reparatur-Quest innerhalb 48 h | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
+| A16 | Nach Bruch „X Tage dieses Jahr“ statt „0“ | 4.3 | ❌ | ✅ | ✅ | ✅ |  |  |
+| A17 | To-dos mit Aufwand, optional Skill, Fälligkeit ohne Countdown | 5.2 | ✅ | ✅ | ✅ | ✅ |  | im Tab „Heute“ |
+| A18 | Skills frei benennbar, eigene Level | 3 | 🟡 5 feste Skills | ✅ | ✅ | ✅ |  | frei benennbar, max. 6 |
+
+## B. Belohnungsökonomie
+
+| # | Prüfpunkt | Leitfaden | v2 | v3 | v4 | v5 | Prio | Notiz |
+|---|---|---|---|---|---|---|---|---|
+| B1 | Kein fester Gold-Lohn pro Aufgabe | 4.4 | ⚠️ 5/12/25 Gold | ✅ | ✅ | ✅ |  | gar keine Währung mehr |
+| B2 | Gold aus Ernte bei neuer Wachstumsstufe | 4.4 | ❌ | ❌ | ✅ | ✅ |  | Ernte einmal pro Wachstumsstufe |
+| B3 | Überraschungs-Drops 10–15 %, seltene Items seltener | 4.4 | ❌ | ✅ | ✅ | ✅ |  | 12 %, davon 20 % selten |
+| B4 | Gold bei Meilensteinen (Skill-Level, Gemeistert) | 4.4 | | 🟡 | ✅ | ✅ |  | seltener Fund bei „Gemeistert“ |
+| B5 | Laden nur Kosmetik, nie XP/Wachstum/Streak-Schutz | 4.4 | ✅ | — | — | — |  | kein Laden mehr (Leitfaden v1.7) |
+| B6 | Nur eine Währung | 4.4, 7 | ✅ | ✅ | ✅ | ✅ |  |  |
+
+## C. Spielwelt & Atmosphäre (Phase 2)
+
+| # | Prüfpunkt | Leitfaden | v2 | v3 | v4 | v5 | Prio | Notiz |
+|---|---|---|---|---|---|---|---|---|
+| C1 | Jede Gewohnheit = eigene Pflanze/Beet, wächst mit Stärke | 4.2, 5.4 | 🟡 Hof wächst gesamt | ✅ | ✅ | ✅ |  | max. 12 Beete sichtbar |
+| C2 | Pflanzen sterben nie, werden nur kleiner/blasser | 4.2, Prinzip 8 | | ✅ | ✅ | ✅ |  |  |
+| C3 | Skills als Gebäude/Bereiche, wachsen mit Level | 5.4 | | 🟡 | ✅ | ✅ |  | v3 war bereits erfüllt (Gebäude pro Skill) – Bewertung korrigiert |
+| C4 | NPC reagiert auf echten Fortschritt, ohne Schuldton | 4.5, 5.4 | ✅ Wilma | ✅ | ✅ | ✅ |  |  |
+| C5 | Tageszeit, Wetter, Jahreszeit, Musik je Wetter | 5.4 | ✅ | ✅ | ✅ | ✅ |  |  |
+| C6 | Musik und Effekte getrennt schaltbar | 5.4 | ✅ | ✅ | ✅ | ✅ |  |  |
+| C7 | Keine Spielaktionen ohne echte Erledigung | Prinzip 6 | ✅ | ✅ | ✅ | ✅ |  |  |
+| C8 | „Farm schläft nachts“ (spät keine Spielaktionen) | 5.4 | | ✅ | ✅ | ✅ |  | 22–6 Uhr |
+| C9 | Schrittweise Freischaltung über die ersten Wochen | 5.4 | ❌ | ❌ | ❌ | ❌ | N | braucht erst Festlegung der Inhalte (Koordinations-Chat) |
+| C10 | Performance: statische Ebenen gecacht, Pause im Hintergrund | 5.4 | ✅ | ✅ | ✅ | ✅ |  |  |
+
+## D. Rituale, Statistik, Onboarding
+
+| # | Prüfpunkt | Leitfaden | v2 | v3 | v4 | v5 | Prio | Notiz |
+|---|---|---|---|---|---|---|---|---|
+| D1 | Morgen-Check-in (< 30 s, überspringbar) | 4.6 | ❌ | 🟡 | ✅ | ✅ |  | Check-in öffnet 5–14 Uhr von selbst, sonst per Knopf |
+| D2 | Logbuch schließt den Tag ab, kleine XP 1×/Tag | 4.6, 5.3 | ✅ | ✅ | ✅ | ✅ |  |  |
+| D3 | Wechselnde Reflexionsfragen | 5.3 | | ✅ | ✅ | ✅ |  |  |
+| D4 | Erntekalender (Jahres-Kachelraster) | 5.5 | 🟡 7-Tage-Leiste | ❌ | ✅ | ✅ |  | Jahres-Kachelraster fehlt |
+| D5 | Skill-Verlaufsgraph | 5.5 | ❌ | ✅ | ✅ | ✅ |  | 30 Tage |
+| D6 | Onboarding mit NPC, max. 3 Gewohnheiten zum Start | 5.1 | ❌ Beispieldaten | ❌ | ✅ | ✅ |  | max. 3 aktive Gewohnheiten in den ersten 7 Tagen |
+| D7 | Keine Beispieldaten im echten Profil | 5.1 | ⚠️ | ⚠️ | ✅ | ✅ |  | Demo-Hof als eigener, nicht gespeicherter Modus |
+
+## E. Nudges (Phase 3 – im Prototyp nur vorbereiten)
+
+| # | Prüfpunkt | Leitfaden | v2 | v3 | v4 | v5 | Prio | Notiz |
+|---|---|---|---|---|---|---|---|---|
+| E1 | Nudge-Text = Plan des Nutzers („Nach dem Kaffee: dehnen“) | 4.5 | ❌ | ✅ | ✅ | ✅ |  | über Wilma |
+| E2 | Max. 1 Nudge pro Gewohnheit/Tag zur Ankerzeit | 4.5 | | 🟡 | 🟡 | 🟡 | — | ohne Push-Server nicht machbar → Flutter (lokale Notifications) |
+| E3 | Ausschleichen-Vorschlag ab Stärke ≥ 0,8 und 14 Terminen | 4.5 | ❌ | ✅ | ✅ | ✅ |  |  |
+| E4 | Graduierung „Gemeistert“ nach 30 Tagen ohne Erinnerung | 4.5 | ❌ | ✅ | ✅ | ✅ |  | „Gemeistert“ jetzt dauerhaft (Leitfaden v1.7) |
+| E5 | Installationshinweis für iOS-Web-Push | 4.5 | ❌ | ❌ | ✅ | ✅ |  |  |
+
+## F. Technik & Daten
+
+| # | Prüfpunkt | Leitfaden | v2 | v3 | v4 | v5 | Prio | Notiz |
+|---|---|---|---|---|---|---|---|---|
+| F1 | Datenmodell entspricht Leitfaden 3 | 3 | ❌ | ✅ | ✅ | ✅ |  | weitgehend |
+| F2 | Spiellogik als UI-freies Modul (portierbar nach Dart) | 2 | ❌ Einzeldatei | ❌ | ✅ | ✅ |  | Module LAG (Logik), Store, Scene, Sprites, Audio, UI, Demo – klassische Skripte mit Namensraum |
+| F3 | Tests für Formeln (Stärke, Streak, Tokens, XP) | 2 | ❌ | ❌ | 🟡 | ✅ |  | 42 Node-Tests grün, im Koordinations-Chat nachgeprüft |
+| F4 | Manifest + Service Worker (installierbar, offline) | 2 | ❌ | ❌ | 🟡 | ✅ |  | Auf dem iPhone installiert, läuft offline (01.11.2026) |
+| F5 | IndexedDB statt localStorage | 2 | ❌ | ❌ | ✅ | ✅ |  | IndexedDB |
+| F6 | Export/Import aller Daten | 5.6 | ❌ | 🟡 | ✅ | ✅ |  | Export, Import, Löschen |
+| F7 | Pausieren/Archivieren statt Löschen, Löschen ohne Hürde | 5.6 | | ❌ | ✅ | ✅ |  | Bearbeiten (ab Datum, ohne Rückwirkung), Pausieren, Archivieren; Löschen mit Rückgängig |
+| F8 | Reduzierte Bewegung respektiert | 5.6 | ✅ | ✅ | ✅ | ✅ |  |  |
+
+## G. Ausschlüsse (dürfen nicht vorkommen)
+
+| # | Prüfpunkt | v2 | v3 | v4 | v5 |
+|---|---|---|---|---|---|
+| G1 | Countdowns / „läuft ab“ | ✅ keine | ✅ keine | ✅ keine | ✅ keine |
+| G2 | Ranglisten, Gruppen-Schaden | ✅ keine | ✅ keine | ✅ keine | ✅ keine |
+| G3 | Verdorren, HP-Verlust, Schuld-Pushs | ✅ keine | ✅ keine | ✅ keine | ✅ keine |
+| G4 | Confirmshaming beim Pausieren/Löschen | | ✅ keine |
+| G5 | Bezahlter Streak-Schutz, Premiumwährung | ✅ keine | ✅ keine | ✅ keine | ✅ keine |
+---
+
+## H. Neu ab v5 (aus Marketingkonzept und Technik)
+
+| # | Prüfpunkt | Quelle | v4 | v5 | Prio | Notiz |
+|---|---|---|---|---|---|---|
+| H1 | App ist gehostet (HTTPS, eigene Adresse) und auf dem iPhone installierbar, läuft offline | Leitfaden 2 | ❌ | ✅ |  | GitHub Pages live, auf dem iPhone installiert und offline geprüft (01.11.2026) |
+| H2 | Formeln (Stärke, Streak, Tokens, XP, Wochenziel) mit automatischen Tests abgesichert, Tests laufen grün | Leitfaden 2 | 🟡 | ✅ |  | 42 Tests, alle Formeln |
+| H3 | Fundchancen in der App offen einsehbar (12 %, davon 20 % selten) | Marketing 5, Kritik 3 | ❌ | ✅ |  | Truhe → „Wie Funde entstehen“, Werte direkt aus der Logik |
+| H4 | Barrierefreiheit: skalierbare Schrift, Symbole zusätzlich zur Farbe im Erntekalender, VoiceOver-Labels | Marketing 5, Kritik 7 | ❌ | ✅ |  | Schrift in 3 Stufen, Okabe-Ito-Palette, Muster im Erntekalender, ARIA geprüft; iOS-Dynamic-Type erst in Flutter |
+| H5 | Beta-Metriken lokal erfasst (gehaltene/gemeisterte Gewohnheiten nach 30/66 Tagen, Mini-Nutzung, Rückkehr nach Bruch, Check-in-Quote) und exportierbar | Leitfaden 9 | ❌ | ✅ |  | Fortschritt → „Selbsttest · Beta-Zahlen“, Export als JSON |
+| H6 | Akkuverbrauch von Musik und Animation auf dem iPhone gemessen | Marketing 5, Kritik 9 | ❌ | ❌ | M | im Selbsttest messen |
+| H7 | Teilbare Karten (Woche, Erntekalender, Gemeistert) als Bild | Marketing Phase 3 | ❌ | ❌ | N |  |
+
+## Ergebnis v3 (01.11.2026)
+
+- **Erfüllt:** 35 von 54 Prüfpunkten (plus alle 5 Ausschlüsse eingehalten). Die komplette Kernmechanik steht: Anker, Mini-Version, Frequenzen, Stärke als Pflanze, verzeihende Serien mit Regentagen und Reparatur, Funde statt Gold, Ausschleichen und Graduierung, Wilma, Rückblicke, Export. Keine Ausschlüsse verletzt.
+- **Muss in v4 (H):**
+  1. Onboarding mit NPC, max. 3 Gewohnheiten, ohne Beispieldaten (D6, D7)
+  2. Gewohnheiten bearbeiten und archivieren (F7)
+  3. Erntekalender als Jahresraster (D4)
+  4. Code in Module trennen: Logik / Szene / Musik / UI, mit Tests für die Formeln (F2, F3) – Voraussetzung für den Flutter-Port
+  5. Echte PWA: Manifest + Service Worker, damit v4 auf dem iPhone installierbar ist und sich selbst testen lässt (F4)
+- **Sollte in v4 (M):** Minus-Anzeige beim Rückgängig entfernen (A9) · Morgen-Check-in (D1) · Ernte als garantierter Fund (B2) · IndexedDB und Import (F5, F6) · Installationshinweis iOS (E5) · Stärke bei Wochen-Gewohnheiten pro Termin prüfen (A11)
+- **Kann (N):** Fund bei „Gemeistert“ (B4) · Skills als Gebäude (C3) · schrittweise Freischaltung (C9) · Push außerhalb der App (E2)
+- **Leitfaden angepasst (v1.2):** Gold und Laden entfallen zugunsten von Funden, Truhe und Deko-Plätzen; Hof in Draufsicht; Skill-Kurve 50 × L^1.5.
+
+---
+
+## Ergebnis v4 (01.11.2026)
+
+- **Erfüllt:** 49 von 54 Prüfpunkten aus A–F (v3: 35), einer bewusst entfallen (Laden), alle Ausschlüsse eingehalten. Alle Muss-Punkte aus dem Abgleich v3 sind umgesetzt oder so weit vorbereitet, wie es im Artifact möglich ist: Onboarding mit Demo-Hof, Bearbeiten/Pausieren/Archivieren, Erntekalender, Code in Modulen, IndexedDB, Import, Morgen-Check-in, Ernte.
+- **Offen, weil im Artifact nicht machbar:** Hosting und Installation als PWA (F4, H1), Push außerhalb der App (E2), Verifikation der Tests im Repo (F3, H2).
+- **Muss in v5 (H):** H1 Hosting + Installation · H2 Tests im Repo prüfen und ergänzen.
+- **Sollte in v5 (M):** H3 Fundchancen anzeigen · H4 Barrierefreiheit · H5 Beta-Metriken für den Selbsttest · E2 echte Erinnerungen über die installierte PWA prüfen.
+- **Kann (N):** C9 schrittweise Freischaltung · H6 Akku messen · H7 teilbare Karten.
+- **Leitfaden angepasst (v1.3):** 9 der 10 Abweichungen aus v4 übernommen (abgeleitete Werte, Zusatzfelder, Regentag = erledigt, anteilige Wochen, 5 Wetter, harte Onboarding-Grenze, Check-in-Fenster, Demo-Hof, Löschen mit Rückgängig). Die Technikwahl „klassische Skripte“ gilt für den Prototyp; über ES-Module entscheidet v5.
+
+---
+
+## Ergebnis v5 (01.11.2026)
+
+Umgesetzt mit Claude Code im Repo `lifes-a-game-v4` (GitHub: lazo-dot/lifes-a-game).
+
+- **Erfüllt:** 51 von 54 Punkten aus A–F (v4: 49), einer bewusst entfallen (Laden), dazu H2–H5. Alle Ausschlüsse eingehalten. Die 42 Tests wurden im Koordinations-Chat nachgeprüft: alle grün.
+- **Muss vor dem Selbsttest (H):** F4/H1 – erledigt am 01.11.2026: auf dem iPhone installiert, läuft offline.
+- **Im Selbsttest (M):** H6 Akkuverbrauch messen.
+- **Bewusst nach Flutter verschoben:** E2 echte Erinnerungen (Web Push auf iOS braucht einen Server; lokale Notifications gehen erst nativ), iOS-Dynamic-Type.
+- **Kann (N):** C9 schrittweise Freischaltung (erst Inhalte festlegen), H7 teilbare Karten.
+- **Leitfaden angepasst (v1.4):** alle 4 Abweichungen übernommen – Kopier-Build nach `dist/`, keine externen Anfragen (Schriften lokal), „Gemeistert“ dauerhaft, Definitionen der Beta-Metriken – plus Push-Entscheidung für Flutter.
+
+---
+
+## Ergebnis v6 (01.11.2026)
+
+Umgesetzt mit Claude Code nach Leitfaden v1.5; Prüfpunkte A–H unverändert gegenüber v5 (51/54), dazu:
+
+| # | Prüfpunkt (neu in v6) | v6 | Notiz |
+|---|---|---|---|
+| V1 | Nachtragen gestern/vorgestern (erledigt, Mini, zurücknehmen); Grenzen eingehalten | ✅ | Tab „Heute“ → „Gestern und vorgestern“, ohne Schuldton |
+| V2 | Nachgetragenes zählt voll, würfelt keinen Fund | ✅ | `dropAllowed` in der Logik |
+| V3 | Nachtragen vor der Extra-Runde | ✅ | zweistufig |
+| V4 | Erntekalender markiert Nachgetragenes mit Form, nicht nur Farbe | ✅ | abgeschrägte Ecke, Legende |
+| V5 | Ausschleichen ab Stärke 0,6 + 12/14 | ✅ | Wochen: zwei abgeschlossene Wochen |
+| V6 | „Gemeistert“ = 30 Tage ohne Erinnerung + ≥ 70 % | ✅ | gleitende Spanne, dauerhaft |
+| V7 | Regentag/nachgeholt setzen keinen Zähler zurück | ✅ | |
+| V8 | v5-Daten überstehen das Update unverändert | ✅ | gleiches Schema, nur `rulesV6Since` ergänzt; per Test und lokal geprüft |
+| V9 | Beta-Zahlen trennen vor/nach Update | ✅ | `rulesSince` |
+| V10 | Simulation erreicht Referenz | ✅ | Koordinations-Chat nachgerechnet: „Gemeistert“ 51 % (Ref. 49 %), „gehalten“ Tag 66 89 %, 1,63 Abschaltungen je Person, erstes „Gemeistert“ Tag ~60 |
+| V11 | Update auf dem iPhone: Hinweis „Neue Version“, Daten erhalten, Nachtragen funktioniert | ⬜ | durch Lars prüfen |
+
+Tests: 65/65 grün (im Koordinations-Chat nachgeprüft). Alle 5 Abweichungen in Leitfaden v1.7 übernommen. Kleinigkeit offen: Fußzeile und `package.json` zeigen noch „V5“ / 5.0.0.
+
+---
+
+## Ergebnis v7 – Bedienbarkeit (02.11.2026)
+
+Umgesetzt mit Claude Code nach `CLAUDE.md` (Arbeitsliste v7) und UX-Evaluation. Spielregeln, Speicherschema und bestehende Tests unverändert; A–H und V1–V10 bleiben erfüllt.
+
+| Fund | Schwere | v7 | Notiz |
+|---|---|---|---|
+| U1 Abhaken unter dem Falz | 3 | ✅ | erster Haken 1.700 → 468 pt (im Koordinations-Chat nachgemessen) |
+| U2 Hinweise verdecken Inhalt | 1 | ✅ | |
+| U3 Zahlen nur mit Symbol | 2 | ✅ | |
+| U4 „Tag 1“ | 2 | ✅ | „2. November · Herbst · Montag“ |
+| U5 „Tag 93 von etwa 66“ | 2 | ✅ | |
+| U6 „Einheiten“ | 2 | ✅ | |
+| U7 Viele Begriffe | 2 | ❌ | nicht in v7; teilweise entschärft durch U3, U9, U17 |
+| U8 Regentag/Nachtragen | 3 | 🟡 | Hinweis „Regentag wieder frei“ (nachgeprüft); Verbrauchsregel unverändert – nach Usability-Test entscheiden |
+| U9 Ähnliche Zustände | 2 | ✅ | „Extra-Runde“ einheitlich |
+| U10 Version | 1 | ✅ | v7.0.0 |
+| U11 Schalter „Erinnerung“ | 2 | ✅ | |
+| U12 Tap-Flächen | 2 | ✅ | 0 Flächen unter 44 pt in allen Tabs (nachgemessen); Ausnahme Kalenderkacheln |
+| U13 Haken unklar | 2 | ✅ | |
+| U14 Langes Formular | 2 | ✅ | Schritte 5–6 eingeklappt |
+| U15 Tabs zweizeilig | 1 | ✅ | |
+| U16 Pixel-Schrift im Fließtext | 2 | ✅ | als Option „Lesbare Schrift“ |
+| U17 Tooltips | 3 | ✅ | |
+| U18 Wenige Vorlagen | 1 | — | bewusst nicht in v7 |
+
+Tests: 68/68 grün (nachgeprüft). Alle 8 Aufgaben des Testleitfadens mit Test-Hof lösbar (Claude Code), Nachtragen mit Regentag-Hinweis nachgeprüft. Alle 6 Abweichungen in Leitfaden v1.7 übernommen bzw. als offen vermerkt (U8).
+
+**Neu beobachtet:** In der Pixel-Schrift ist das große „B“ kaum vom „G“ zu unterscheiden („NOVEMGER“, „NACHGARIN“) – betrifft Großbuchstaben in Überschriften; im Usability-Test beobachten.
+
+---
+
+## Ergebnis v8a – Sprite-Sheets, Stil B (8.0.0, 02.11.2026, auf main)
+
+Umgesetzt mit Claude Code nach `CLAUDE.md` (Arbeitsliste v8a) und Pixel-Style-Guide. Spielregeln unverändert, A–H bleiben erfüllt; Speicherschema `4` mit zwei optionalen Feldern.
+
+| Punkt | v8a | Notiz |
+|---|---|---|
+| 1 Sprite-System (Loader, Ebenen, Build, Service Worker, Rückfall) | ✅ | 56 Dateien im Build, alle Sheets aus `art/platzhalter/` |
+| 2 Ganzzahlige Skalierung | ✅ | kompakt 256 × 160 pt, Canvas 768 × 480 px bei 3× (nachgemessen) |
+| 3 Gebäude je Fähigkeit | ✅ | Auswahl beim Bearbeiten der Fähigkeit (Abweichung 10) |
+| 4 Pflanzen und Beete | ✅ | bis zu 4 Beete × 3 Pflanzen |
+| 5 Hof als Karte | ✅ | Zonen und Seed wie in `hof.py` |
+| Sollte: Leuchten abends, Hinweis „Vorläufige Grafiken“ | ✅ | |
+| Erster Haken ohne Scrollen | ✅ | 478 pt (v7: 468) |
+| Tap-Flächen ≥ 44 pt | ✅ | |
+
+Tests: 79/79 grün, Build läuft (nachgeprüft). Abweichungen 1 und 3 in Leitfaden v1.8 übernommen, 4 nach dem Selbsttest entscheiden, 7 und 8 sind v8b/v9.
+
+**Im Koordinations-Chat beobachtet (Screenshots 390 × 844):**
+- **Kompakte Szene wirkt klein:** 256 pt von 390 pt Breite, links und rechts dunkle Streifen; Beete und Pflanzen sind bei 1 px = 1 pt winzig.
+- **Großansicht nutzt den Platz schlecht:** im Hochformat 2× (512 × 320 pt) mit großen leeren Flächen darüber und darunter; 3× (768 × 480 pt) passt in der Höhe und wäre besser lesbar.
+- **Gebäude in Stufe 1 (Baustelle) lesen sich als leere Rahmen;** im Test-Hof stehen fast nur Stufe-1-Gebäude. Gerade am Anfang sieht man diese Stufe am längsten.
+- **Stilbruch:** Wohnhaus, Bauer und Deko sind noch im alten Stil (bekannt, Abweichung 7).
+
+**Nacharbeit v8a.1 (02.11.2026, nachgeprüft):** Kompakte Szene ohne Seitenstreifen (390 pt: 344 × 160 pt, 430 pt: 384 × 160 pt, Ränder nur Natur) ✅ · Großansicht 3× (768 × 480 pt), verschiebbar, Hinweis „Zum Umsehen wischen“ ✅ · erster Haken 478 pt ✅ · 80/80 Tests ✅. Neue Abweichungen 11 (breitere Szene nur mit Hof-Karte) und 12 (Wisch-Hinweis im Browser gemerkt) übernommen. Stufe-1-Gebäude im Koordinations-Chat neu gezeichnet: Das Erkennungszeichen steht schon auf der Baustelle (Turmstumpf und Flügelkreuz, Säulen, Glasrahmen, Esse mit Amboss, Bank mit Lichterkette, Bühne mit Notenständer, halber Ofen, Fachwerk mit Waage-Schild, rote Wand mit Heuballen); Stufe 2 behält diese Teile. Über der Großansicht bleibt im Hochformat noch Leerraum (480 von ca. 700 pt) – unkritisch.
+
+---
+
+## Ergebnis v8b – Truhe und Personalisierung (8.1.0, 02.11.2026, auf main)
+
+| Punkt | v8b | Notiz |
+|---|---|---|
+| H1 Katalog 42 Gegenstände, Saison-Ziehung | ✅ | 50 000 Ziehungen im Test: 12 % Funde, 20 % selten, nichts außerhalb der Jahreszeit; Regeln unverändert |
+| H2 Sammelalbum | ✅ | Gruppen mit „x von y“, Silhouetten, „Findbar im …“, keine Fristen oder Prozente (nachgesehen) |
+| H3 Deko und Tiere als Sprites | ✅ | Tiere stehen bis v9 an festen Plätzen (Abweichung 8) |
+| H4 Wohnhaus und Bauer | ✅ | Kaminrauch fehlt bis v9 (Abweichung 10) |
+| H5 7 Farbthemen + Jahreszeit | ✅ | Kontraste je Thema in V8B-ZUSAMMENFASSUNG; Pergament-Statusfarben dunkler (Abweichung 11, in `farbthemen.json` übernommen) |
+| Erster Haken ohne Scrollen | ✅ | 478 pt in allen Themen |
+| Migration v8-Export | ✅ | im Test |
+
+Tests: 95/95 grün (nachgeprüft). Abweichungen 1–11 übernommen; 5 (`theme` auf oberster Ebene) im Leitfaden-Datenmodell ergänzt.
+
+**Im Koordinations-Chat gefunden:** Der **leere Abhak-Kasten** hat zu wenig Kontrast für ein Bedienelement (WCAG 1.4.11 verlangt 3:1): Innenrand `panel-3` auf `panel-dk` 2,05:1 im Standardthema, 1,49:1 in Pergament; Außenrand `edge` 1,14:1 bzw. 2,25:1. Im Pergament-Thema ist der Kasten kaum zu sehen. Fix für 8.1.1: Innenrand und Haken-Andeutung in `text-soft` (≥ 6,4:1 in allen Themen). Außerdem wirkt der Titel-Schatten in Pergament verwaschen.
+
+---
+
+## Ergebnis v8c – Ruhiger Bildschirm (8.2.0, 02.11.2026, auf main)
+
+| Ziel (Konzept 6) | v8.1 | v8c | |
+|---|---|---|---|
+| Wörter auf Heute | 220 | 86 | ✅ |
+| Karten im ersten Bildschirm | 2 | 3 | ✅ |
+| Seitenhöhe Heute / Fortschritt | 2.311 / 4.120 pt | 1.085 / 1.546 pt | ✅ |
+| Wörter in allen Tabs | 1.430 | 453 | ✅ (−68 %) |
+| Ebenen | – | 2 | ✅ |
+| Erster Haken | 478 pt | 469 pt | ✅ |
+| Tap-Flächen, Kontraste | | ≥ 44 pt, AA, Akzente ≥ 4,98:1 | ✅ |
+
+Alle Muss-Punkte H1–H9 und 8.1.1 umgesetzt, Text-Inventar vollständig (entfallen nur wörtliche Doppelungen). Tests 105/105 grün (nachgeprüft). Abweichungen 1–11 übernommen (Leitfaden v1.9), Ausnahme 3 (siehe unten).
+
+**Im Koordinations-Chat beobachtet:**
+- **Anker wird abgeschnitten:** Die Kontextzeile beginnt mit der Uhrzeit, der Anker endet mit „…“ („8 Uhr · nach dem ersten Ka…“, Abweichung 3). Der Anker ist das Alleinstellungsmerkmal (Prinzip 4) und sollte vollständig lesbar sein: Anker zuerst, Uhrzeit danach, Kontextzeile darf auf zwei Zeilen umbrechen. → mit v9 gebündelt.
+- Zahnrad im Pergament-Thema blass (von Claude Code selbst benannt). → mit v9.
+- Beim ersten Besuch liegt der erste Haken bei 686 pt, weil die Erklärung zu „Heute“ einmal offen steht – vertretbar, einmalig.
+
+---
+
+## Ergebnis 8.2.1 – Arbeitsablauf (02.11.2026, auf main)
+
+Keine Änderung an Regeln, Oberfläche oder Daten; in der App nur Speicher-Präfix, Band und Service Worker für die Vorschau.
+
+| Punkt | 8.2.1 | Notiz |
+|---|---|---|
+| `npm run abnahme` (17 Prüfungen, 2 Geräte, Kontraste 7 Themen × 4 Zustände × 7 Ansichten) | ✅ | im Koordinations-Chat selbst gelaufen: grün, 2 bekannt offen, Werte identisch mit `docs/abnahme-ergebnis.md` |
+| Vorschau `/preview/` mit eigenem Speicher | ✅ lokal / ⬜ online | lokal nachgestellt: DB `preview-lifes-a-game`, eigener Service-Worker-Scope, Band, Daten von main unverändert. Online erst ab dem ersten Branch-Push nach dem Merge (beim v9-Push prüfen) |
+| Hooks pre-commit / pre-push | ✅ | `git config core.hooksPath .githooks` je Klon |
+| Schlanke `CLAUDE.md`, Archiv | ✅ | 54 Zeilen, `docs/archiv/arbeitslisten.md` |
+| Speicher von main unverändert | ✅ | `lifes-a-game`, `lag4:`; Cache-Präfix `lag-` wie bisher |
+
+Tests 105/105 grün (nachgeprüft). Abweichungen 1–9 zur Kenntnis, keine Leitfaden-Änderung nötig; Vorschlag `kontrast_ausnahmen` (Abweichung 3) beim v9-Abschnitt von `abnahme.json` prüfen.
+
+**Bekannt offen → v9:** Anker abgeschnitten (390 pt: 3 von 3) · Zahnrad Pergament 1,05 : 1 · **neu:** Rand der Eingabefelder 1,6–1,9 : 1 · Hover-Ring des Abhak-Kastens 2,25 : 1 (nur Maus/Trackpad).
+
+---
+
+## Ergebnis Selbsttest / Flutter (später ausfüllen)
+
+- **Erkenntnisse aus dem Selbsttest:** …
+- **Leitfaden anpassen:** …

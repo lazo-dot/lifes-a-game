@@ -10,8 +10,9 @@ Kurz: Auftrag lesen → auf einem Branch arbeiten → `npm test` und `npm run ab
 
 ## Quellen der Wahrheit
 
-- `docs/habit-tracker-entwicklungsleitfaden.md` – **verbindlich** für Mechaniken, Formeln, Datenmodell und Prinzipien (aktuell v1.9).
+- `docs/habit-tracker-entwicklungsleitfaden.md` – **verbindlich** für Mechaniken, Formeln, Datenmodell und Prinzipien (aktuell v1.10).
 - `docs/auftraege/<auftrag>.md` – was jetzt zu tun ist.
+- `docs/rolle-spieleentwickler.md` – Rolle und Arbeitsweise (gepflegt im Koordinations-Chat).
 - `docs/abnahme.json` – Grenzwerte für `npm run abnahme` (Abschnitt `immer` plus Abschnitt der Version).
 - `docs/feedback.md` – Lars' Beobachtungen; offene Punkte, die die Abnahme schon kennt, stehen dort.
 - `docs/ux-verschlankung-v8c.md` (Regeln 1–8), `docs/pixel-styleguide-stil-b.md` (Raster, Licht-Ebenen, Lieferformat), `docs/farbthemen.json` (Themen und Akzente, Test auf Übereinstimmung).

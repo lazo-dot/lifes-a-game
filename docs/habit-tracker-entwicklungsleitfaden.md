@@ -1,9 +1,19 @@
 # Life's a Game – Entwicklungsleitfaden Habit Tracker (forschungs- und marktbasiert)
 
-Version 1.9 · Stand: 02.11.2026
-Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp v7 (Repo `lifes-a-game`, GitHub Pages), v8a auf Branch `v8a` · [Pixel-Style-Guide](pixel-styleguide-stil-b.md) · [UX-Evaluation](ux-heuristische-evaluation-v6.md) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
+Version 1.10 · Stand: 02.11.2026
+Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp 8.2.1 (Repo `lifes-a-game`, GitHub Pages; Vorschau für Branches unter `/preview/`) · [Pixel-Style-Guide](pixel-styleguide-stil-b.md) · [UX-Evaluation](ux-heuristische-evaluation-v6.md) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
 
 Dieses Dokument übersetzt die Forschung zu Motivation, Gamification und Gewohnheitsbildung sowie die Erkenntnisse aus der Marktanalyse in konkrete Entwicklungsentscheidungen. Zahlenwerte (XP, Kurven, Wahrscheinlichkeiten) sind begründete Startwerte, die im Prototyp getestet und angepasst werden.
+
+### Änderungen in v1.10 (Kritische Durchsicht 02.11.2026, Projektstatus Entscheidungen 10–15)
+
+| Bereich | Änderung | Grund |
+|---|---|---|
+| Freischaltungen | **Hof-Tage zählen nur Tage mit mindestens einer erledigten Gewohnheit** (voll, Mini oder nachgetragen; Regentag und Extra-Runde zählen nicht als neuer Hof-Tag). To-dos und Logbuch zählen nicht. Hof-Tage gehen nie verloren | Ein triviales To-do darf keinen Hof freischalten (Prinzip 6); Freischaltung soll Gewohnheitspflege belohnen |
+| Plattform | **PWA-Grenze:** Nach v10 und dem Usability-Test wird die PWA eingefroren (nur noch Fehlerbehebungen); danach wächst nur Flutter. Erster Flutter-Meilenstein: Logik + Tests nach Dart **und lokale Erinnerungen zur Ankerzeit mit Ausschleichen**, erst dann Szene | Das Alleinstellungsmerkmal (Ausschleichen → „Gemeistert“) ist ohne echte Erinnerungen nicht prüfbar; doppelte Arbeit an PWA und Flutter vermeiden |
+| Grafik | Bis zur Entscheidung, wer die echten Grafiken zeichnet, keine neuen großen Platzhalter-Pakete; v9 nur die Platzhalter, die Freischaltungen und Animationen zwingend brauchen | KI-Platzhalter werden vor dem Launch ersetzt; Aufwand begrenzen |
+| Messen | Abnahme (`abnahme.json`) ist technischer Mindeststandard, kein Qualitätsbeleg. Verständnis und Motivation werden mit Menschen geprüft (Kurztest, Usability-Test) und im Selbsttest nach vorab festgelegten Kriterien ([Selbsttest-Plan](selbsttest-plan.md)) | Messwerte nicht mit Zielen verwechseln |
+| Selbsttest | Ersatz-Erinnerungen über iOS-Erinnerungen zur Ankerzeit; beim Ausschleichen in App und iOS abschalten | Macht das Ausschleichen im PWA-Prototyp prüfbar |
 
 ### Änderungen in v1.9 (Abgleich mit Prototyp v8c – Ruhiger Bildschirm)
 
@@ -133,6 +143,7 @@ Legende Ist-Stand: ✅ im Prototyp v5 umgesetzt · 🟡 teilweise · ⬜ offen
 
 - **Prototyp:** PWA im Browser zum Testen der Mechanik. Bis v4 als Artifact im Chat, **ab v5 mit Claude Code** im git-Repo `lifes-a-game` (GitHub: lazo-dot/lifes-a-game), veröffentlicht über GitHub Pages (HTTPS). Klassische Skripte mit Namensraum, ein Kopier-Build nach `dist/`, kein Bundler. Tests mit `node --test`.
 - **Produkt:** **Flutter** (iOS zuerst auf dem MacBook Pro M4, danach Android aus derselben Codebasis). Pixel-Szene mit **Flame**, Listen und Formulare als Flutter-Widgets, Notifications, Widgets und Haptik über Plugins.
+- **PWA-Grenze (ab v1.10):** Die PWA bleibt Prototyp für Selbsttest und Usability-Test und wird nach v10 eingefroren. Flutter beginnt mit Logik, Tests und lokalen Erinnerungen (Ausschleichen prüfbar machen), danach Szene mit Flame und Home-Screen-Widget mit dem Hof.
 - **Portierbarkeit:** Spiellogik (Formeln, Streak-Regeln, Datenmodell) im Prototyp als eigenes, UI-freies Modul halten und mit Tests absichern. Sie wird 1:1 nach Dart übertragen; Szene und Musik (Ebenen-System, Wetter-Musik-Logik) ebenfalls getrennt halten.
 - **Daten:** lokal zuerst (IndexedDB im Prototyp ✅, SQLite/Isar o. ä. in Flutter), Sync später optional.
 - **Keine externen Anfragen:** Schriften, Grafiken und Musik liegen in der App bzw. werden erzeugt. Keine Tracking-, Werbe- oder Analyse-Dienste ✅.
@@ -327,7 +338,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 - **Nur echte Handlungen treiben die Welt an.** Funde kommen ausschließlich aus Erledigungen. Keine eigenständigen Minispiele (Paschmann 2025).
 - **Begleiter/NPC (Phase 2, vorgezogen):** reagiert auf Fortschritte („Du warst diese Woche jeden Tag laufen!“), überbringt Nudges und Check-in. Deckt Verbundenheit ab, solange es keine sozialen Features gibt (Sailer 2017; Finch). v3: Wilma ✅. Später optional ein Farm-Tier als zweiter Begleiter.
 - **Atmosphäre:** Tageszeit, Wetter, Jahreszeiten, wetterabhängige Klaviermusik ✅. Musik und Effekte getrennt schaltbar.
-- **Schrittweise Freischaltung:** neue Bereiche, Jahreszeiten-Inhalte, Crafting über die ersten Wochen verteilt (Neuheitseffekt-Abfall nach ca. 3–8 Wochen, Koivisto & Hamari 2019).
+- **Schrittweise Freischaltung:** neue Bereiche, Jahreszeiten-Inhalte, Crafting über die ersten Wochen verteilt (Neuheitseffekt-Abfall nach ca. 3–8 Wochen, Koivisto & Hamari 2019; U-Verlauf mit Tief ab Woche 4, Rodrigues et al. 2022). **Ab v9 über Hof-Tage:** Tage mit mindestens einer erledigten Gewohnheit (voll, Mini oder nachgetragen; nicht To-dos, Logbuch, Regentag oder Extra-Runde), aufsummiert, nie verloren. Etwa alle 5–7 Hof-Tage bis Woche 10, in Woche 3–8 dichter: neue Randbereiche, umherlaufende Tiere, kleine Hof-Ereignisse. Farbthemen und Bedienfunktionen bleiben frei.
 - **Saisonale Events** pro Jahreszeit als Inhalts-Rhythmus (Habitica-Prinzip), ohne Zeitdruck und ohne verpassbare Exklusiv-Belohnungen.
 - **„Die Farm schläft nachts“ ✅ (22–6 Uhr):** spätabends keine Spielaktionen – kurze Sessions, kein Grinding (Allcott et al. 2022).
 - **Grafik ab v8a:** Sprite-Sheets nach [Pixel-Style-Guide](pixel-styleguide-stil-b.md) (Stil B), Hof als Karte, Szene ganzzahlig skaliert, Licht über Ebenen (Tönung multiplizieren, Leuchten addieren, Schatten 30 %). Gebäude je Fähigkeit in 4 Ausbaustufen (Skill-Level 1–2/3–5/6–9/ab 10), Pflanzen in 5 Stufen plus „Gemeistert“, bis zu 3 Pflanzen je Beet. Grafiken bis zum Launch sind Platzhalter; veröffentlicht werden nur handgezeichnete Grafiken.
@@ -386,13 +397,17 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 | 4 – Langzeit | Jahreszeiten-Inhalte, Freischaltungen, NPC-Story, saisonale Events, Monatsrückblicke, Widgets, Apple Health | Flutter (iOS) | 🟡 Jahreszeiten-Optik, Monatsrückblick |
 | 5 – Sozial (optional) | Kooperatives Dorf mit Freunden, Teilen von Wochenkarten | Flutter (iOS, dann Android) | ⬜ |
 
-**Nächster Schritt:** v7 auf dem iPhone prüfen, Usability-Test mit 5 Personen auf v7 (Testleitfaden), Selbsttest fortsetzen. Danach Entscheidung über die übrigen Simulations-Kandidaten, dann Flutter-Grundgerüst: Logik und Tests 1:1 nach Dart, Szene mit Flame, lokale Notifications.
+**Nächster Schritt:** Selbsttest auf main fortsetzen; v9 (Welt und Freischaltungen, ohne Regeländerung), Kurz-Vortest auf v9; v10 (Regeln nach dem Selbsttest), danach Usability-Test mit 5 Personen. Dann Flutter-Grundgerüst: Logik und Tests 1:1 nach Dart, Szene mit Flame, lokale Notifications.
+
+**Prüfung jeder Version (ab 8.2.1):** `npm test` und `npm run abnahme` (Grenzwerte in `docs/abnahme.json`, bekannt offene Punkte mit Verweis auf `docs/feedback.md`), Branch-Vorschau unter `/preview/` mit eigenem Speicher; Merge nach main erst nach Freigabe.
 
 ---
 
 ## 9. Erfolg messen (Selbst- und Beta-Test)
 
+- **Selbsttest 8.2.1:** Messung und Erfolgskriterien vorab festgelegt im [Selbsttest-Plan](selbsttest-plan.md) (03.–23.11.2026, main eingefroren, Ersatz-Erinnerungen über iOS).
 - **Hauptmetrik:** Anzahl gehaltener und gemeisterter Gewohnheiten nach 30/66 Tagen – nicht Zeit in der App.
+- **Abgrenzung:** `npm run abnahme` sichert technische Mindeststandards (Bedienbarkeit, Kontrast, Textmenge). Ob die App verstanden wird und motiviert, zeigen nur Tests mit Menschen und der Selbsttest.
 - **Nebenmetriken:** Anteil der Gewohnheiten mit Anker, Nutzung der Mini-Version, Rückkehr nach einem Streak-Bruch, Check-in-Quote. In v5 lokal berechnet (Fortschritt → „Selbsttest · Beta-Zahlen“) und als JSON exportierbar, keine Übertragung ✅.
 - **Definitionen:**
   - *Gehalten nach 30/66 Tagen:* In den 14 Tagen bis Tag 30 bzw. 66 wurde mindestens die Hälfte der geplanten Termine erledigt (Mini, nachgeholt und Regentag zählen mit; Wochen-Gewohnheiten gegen das Wochenziel).
