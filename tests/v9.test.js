@@ -167,3 +167,24 @@ test('Erntekalender: Satzzeile zählt Hof-Tage des Jahres nach der Hof-Tage-Rege
   const g = L.yearGrid(s, L.derive(s, T), null, '2026', T);
   assert.equal(g.cells.filter(c => typeof c.v === 'number' && c.v > 0).length, 4, 'Färbung der Kacheln bleibt wie bisher');
 });
+
+test('Hof-Ereignisse: Regenbogen nach Regen, Erntefest am ersten Hof-Tag der Jahreszeit, Glühwürmchen im Sommer, Laternen im Winter', () => {
+  const s = st([hab('a', {})]);
+  // Regenbogen: gestern Regen (Logbuch), heute heiter (Check-in)
+  s.journal.push({ date: '2026-07-09', weather: 'regen', text: 'x' }); s.checkins['2026-07-10'] = { weather: 'heiter', todos: [] };
+  assert.equal(L.hofEreignisse(s, '2026-07-10', ['regenbogen'], []).regenbogen, true);
+  assert.equal(L.hofEreignisse(s, '2026-07-10', [], []).regenbogen, false, 'nur wenn entdeckt');
+  s.checkins['2026-07-10'].weather = 'regen';
+  assert.equal(L.hofEreignisse(s, '2026-07-10', ['regenbogen'], []).regenbogen, false, 'nicht bei Regen');
+  assert.equal(L.hofEreignisse(s, '2026-07-10', ['regenbogen'], [{ id: 'regenbogen', erreichtAm: '2026-07-10' }]).regenbogen, true, 'am Tag der Entdeckung immer');
+  // Erntefest
+  const h = hab('b', { '2026-06-01': 'done', '2026-09-02': 'done', '2026-09-03': 'done' }), f = st([h]), ent = [{ id: 'erntefest', erreichtAm: '2026-06-01' }];
+  assert.equal(L.hofEreignisse(f, '2026-06-01', ['erntefest'], ent).erntefest, true);
+  assert.equal(L.hofEreignisse(f, '2026-09-02', ['erntefest'], ent).erntefest, true, 'erster Hof-Tag im Herbst');
+  assert.equal(L.hofEreignisse(f, '2026-09-03', ['erntefest'], ent).erntefest, false);
+  assert.equal(L.hofEreignisse(f, '2026-09-01', ['erntefest'], ent).erntefest, false, 'ohne Erledigung kein Fest');
+  // Glühwürmchen / Laternen
+  assert.equal(L.hofEreignisse(s, '2026-07-10', ['gluehwuermchen'], []).gluehwuermchen, true);
+  assert.equal(L.hofEreignisse(s, '2026-11-10', ['gluehwuermchen'], []).gluehwuermchen, false);
+  assert.equal(L.hofEreignisse(s, '2026-12-10', ['gluehwuermchen'], []).laternen, true);
+});

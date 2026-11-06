@@ -81,7 +81,7 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
   root.addEventListener('pagehide', flush);
 
-  const derive = () => { D = L.derive(S, today()); D.ent = L.entdeckungen(S, today()); return D; };
+  const derive = () => { D = L.derive(S, today()); D.ent = L.entdeckungen(S, today()); D.ev = L.hofEreignisse(S, today(), D.ent.filter(e => e.sichtbar).map(e => e.id), D.ent); return D; };
   /* ---------- v9: Hof-Tage und Entdeckungen ---------- */
   /** Bild je Entdeckung (Platzhalter-Sheets), ohne Sheet leer. */
   const ENT_IMG = { schmetterlinge: ['hof-besucher', 'schmetterling'], steg: ['hof-entdeckungen', 'steg'], bienenwiese: ['hof-entdeckungen', 'bienenstock'], eichhoernchen: ['hof-besucher', 'eichhoernchen'],
@@ -876,6 +876,8 @@
     document.body.append(el);
     const sc = el.querySelector('.big-scroll'), cv = el.querySelector('canvas'), k = SH.largeScale(sc.clientWidth, sc.clientHeight);
     scene.view(cv, k, SH.sceneWidth(sc.clientWidth, k)); el.querySelector('.big-bar span').textContent = `Dein Hof · ${k}×`; scene.refresh();
+    // v9: Antippen einer Entdeckung öffnet ihr Info-Blatt
+    cv.addEventListener('click', e => { const id = scene.hitEnt(cv, e.clientX, e.clientY); if (id && D.ent.some(x => x.id === id && x.sichtbar)) entSheet([id], cv); });
     sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2; sc.scrollTop = (sc.scrollHeight - sc.clientHeight) / 2;
     // Hinweis „Zum Umsehen wischen“, bis man einmal gewischt hat (gemerkt nur auf diesem Gerät)
     const hint = el.querySelector('.big-hint');
@@ -908,7 +910,7 @@
     sheets = root.LAGSheet.createSheets(document, { reduce, raf: f => requestAnimationFrame(() => requestAnimationFrame(f)) });
     au = root.LAGAudio.createAudio({ soundOn: () => !!(S && S.sound), musicOn: () => !!(S && S.music), isNight: () => phase() === 'night' });
     derive();
-    scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), entdeckt: entOnFarm, onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
+    scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), entdeckt: entOnFarm, ereignisse: () => (D && D.ev) || {}, onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
     tabIcons(); layout(); sizeScene();
     if (root.MutationObserver) new MutationObserver(gearIcon).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-palette'] });   // v9: Zahnrad folgt dem Thema if (narrowMQ) narrowMQ.addEventListener('change', () => { layout(); sizeScene(); }); root.addEventListener('resize', () => { layout(); sizeScene(); });
     bind(); refresh(); scene.start(assets);

@@ -484,6 +484,23 @@
     return ENTDECKUNGEN.map(e => { const erreicht = n >= e.schwelle, gesehenAm = typeof seen[e.id] === 'string' ? seen[e.id] : null;
       return Object.assign({}, e, { erreicht, erreichtAm: erreicht ? tage[e.schwelle - 1] : null, gesehenAm, sichtbar: erreicht || !!gesehenAm, neu: erreicht && !gesehenAm }); });
   }
+  /** v9: Hof-Ereignisse eines Tages (nur Darstellung). ids = auf dem Hof sichtbare Entdeckungen, ent = entdeckungen(state, heute).
+   *  Regenbogen: am Tag der Entdeckung, am ersten trockenen Tag nach einem Regentag (Wetter aus Logbuch, Check-in oder Tageswetter), sonst gelegentlich (etwa jeder 12. heitere Tag).
+   *  Erntefest: am Tag der Entdeckung und am ersten Hof-Tag jeder späteren Jahreszeit (also immer an einem Tag mit echter Erledigung, nichts ist verpassbar).
+   *  Glühwürmchen: Juni bis September abends; im Winter (Dezember bis Februar) stattdessen Laternen am Weg. */
+  function hofEreignisse(state, heute, ids, ent) {
+    const has = id => ids.includes(id), at = id => ((ent || []).find(e => e.id === id) || {}).erreichtAm, m = parseKey(heute).getMonth();
+    const wx = k => currentWeather(state, k), dry = w => w === 'sonnig' || w === 'heiter', wet = w => w === 'regen' || w === 'gewitter';
+    const regenbogen = has('regenbogen') && (at('regenbogen') === heute || (dry(wx(heute)) && (wet(wx(addDays(heute, -1))) || hashStr(heute + 'rb') % 12 === 0)));
+    let erntefest = false;
+    if (has('erntefest')) {
+      const seit = at('erntefest');
+      if (seit === heute) erntefest = true;
+      else { const tage = hofTagListe(state, heute), first = tage.find(k => seasonKey(k) === seasonKey(heute) && daysBetween(k, heute) < 100);
+        erntefest = first === heute && (!seit || seasonKey(seit) !== seasonKey(heute) || daysBetween(seit, heute) > 100); }
+    }
+    return { regenbogen, erntefest, gluehwuermchen: has('gluehwuermchen') && m >= 5 && m <= 8, laternen: has('gluehwuermchen') && (m === 11 || m <= 1) };
+  }
   /** Markiert Entdeckungen als gesehen (nur fehlende Einträge; ein gesetztes Datum bleibt). Gibt die neu markierten IDs zurück. */
   function markHofGesehen(state, ids, heute) {
     const g = state.hofGesehen && typeof state.hofGesehen === 'object' ? state.hofGesehen : (state.hofGesehen = {}), out = [];
@@ -563,7 +580,7 @@
     dayWeather, journalOn, currentWeather, needsCheckin, farmSleeps, yearGrid,
     emptyState, migrateV3, importState,
     BUILDINGS, PLANTS, PLANT_FRAMES, suggestBuilding, suggestPlant, buildingStage, plantFrame, migrateV8a,
-    ENTDECKUNGEN, hofTagListe, hofTage, hofTageImJahr, entdeckungen, markHofGesehen, EFFECTS, effectsOf, rueckmeldung
+    ENTDECKUNGEN, hofTagListe, hofTage, hofTageImJahr, entdeckungen, hofEreignisse, markHofGesehen, EFFECTS, effectsOf, rueckmeldung
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = LAG; else root.LAG = LAG;
 })(typeof self !== 'undefined' ? self : this);
