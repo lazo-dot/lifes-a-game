@@ -1,7 +1,7 @@
 /* Life's a Game · Erklärtexte und Wilmas Vorrang (v8c „Ruhiger Bildschirm“)
  * DOM-frei, läuft im Browser (window.LAGHilfe) und in Node (Tests).
  * Erklärungen stehen hinter einem „?“ und öffnen ein Info-Blatt: ein Thema, höchstens 60 Wörter (Konzept v8c, Regel 3).
- * Wilma zeigt immer nur einen Hinweis, nach Vorrang: offener Nachtrag, Check-in, Meilenstein, Hof- oder Wetterspruch (Regel 5).
+ * Wilma zeigt immer nur einen Hinweis, nach Vorrang: offener Nachtrag, Check-in, Neu entdeckt (v9), Meilenstein, Hof- oder Wetterspruch (Regel 5).
  */
 (function (root) {
   'use strict';
@@ -30,12 +30,17 @@
   const ACCENTS = [['thema', 'Thema'], ['gold', 'Gold'], ['mint', 'Mint'], ['himmel', 'Himmel'], ['rose', 'Rose'], ['lavendel', 'Lavendel'], ['weiss', 'Weiß']];
 
   /**
-   * Wilmas eine Nachricht. c = { late: [{ title, day }], checkin: bool, milestones: [{ id, text, ... }], sayings: [text], idx }
-   * Vorrang: Nachtrag, Check-in, Meilenstein, Spruch (Sprüche wechseln mit idx). Die übrigen kommen später dran.
+   * Wilmas eine Nachricht. c = { late: [{ title, day }], checkin: bool, neu: [{ id, name, satz }], milestones: [{ id, text, ... }], sayings: [text], idx }
+   * Vorrang: Nachtrag, Check-in, Neu entdeckt, Meilenstein, Spruch (Sprüche wechseln mit idx). Die übrigen kommen später dran.
+   * v9: Mehrere neue Entdeckungen zugleich ergeben eine gebündelte Meldung.
    */
   function pickHint(c) {
     if (c.late && c.late.length) { const x = c.late[0]; return { kind: 'late', text: `${x.day[0].toUpperCase() + x.day.slice(1)} ist bei „${x.title}“ noch nichts eingetragen.`, item: x }; }
     if (c.checkin) return { kind: 'checkin', text: 'Magst du kurz auf deinen Tag schauen? Der Check-in dauert keine halbe Minute.' };
+    if (c.neu && c.neu.length) {
+      const n = c.neu.length;
+      return { kind: 'entdeckt', items: c.neu, text: n === 1 ? 'Schau mal: ' + c.neu[0].satz : `Auf deinem Hof gibt es ${n} neue Dinge zu entdecken.` };
+    }
     if (c.milestones && c.milestones.length) { const m = c.milestones[0]; return { kind: 'milestone', text: m.text, item: m }; }
     const s = c.sayings && c.sayings.length ? c.sayings : ['Schön, dass du da bist.'];
     return { kind: 'spruch', text: s[(c.idx || 0) % s.length], more: s.length > 1 };

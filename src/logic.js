@@ -449,6 +449,58 @@
     return changed;
   }
 
+  /* ---------- v9: Hof-Tage und Entdeckungen (Leitfaden 5.4, Auftrag v9 Abschnitt 2) ----------
+   * Hof-Tag = Kalendertag, an dem mindestens eine Gewohnheit (aktiv, pausiert oder archiviert) im Log „done“ oder „tiny“ hat,
+   * auch nachgetragen. Nicht: „repaired“ (Extra-Runde), Regentag, To-dos, Logbuch, Check-in. Abgeleitet, nicht gespeichert.
+   * Gespeichert wird nur, was schon gesehen wurde: hofGesehen { id: 'YYYY-MM-DD' } (optional, oberste Ebene). Gesehenes bleibt sichtbar,
+   * auch wenn später eine Gewohnheit gelöscht wird. Keine Spielregel: Stärke, XP und Funde bleiben unberührt.
+   */
+  const ENTDECKUNGEN = [
+    ['schmetterlinge', 3, 'Schmetterlinge', 'Über der Wiese tanzen jetzt Schmetterlinge.', 'besucher', 'Wiese'],
+    ['steg', 7, 'Steg am Teich', 'Am Teich steht jetzt ein Steg, und am Ufer quaken Frösche.', 'bereich', 'Teichufer'],
+    ['bienenwiese', 12, 'Bienenwiese', 'Auf der Wiese steht ein Bienenstock, die Bienen summen über den Blumen.', 'bereich', 'Wiese'],
+    ['regenbogen', 15, 'Regenbogen', 'Nach einem Regen spannt sich ab und zu ein Regenbogen über den Hof.', 'ereignis', 'Himmel'],
+    ['eichhoernchen', 19, 'Eichhörnchen', 'Am Waldrand wohnt jetzt ein Eichhörnchen.', 'besucher', 'Waldrand'],
+    ['obstwiese', 23, 'Obstwiese', 'Am linken Rand wachsen zwei Obstbäume, im Spätsommer und Herbst mit Früchten.', 'bereich', 'linker Rand'],
+    ['gluehwuermchen', 27, 'Glühwürmchen', 'An Sommerabenden leuchten Glühwürmchen am Weg, im Winter Laternen.', 'ereignis', 'Wegsäume'],
+    ['gemuesegarten', 31, 'Gemüsegarten', 'Am rechten Rand ist ein kleiner Gemüsegarten entstanden.', 'bereich', 'rechter Rand'],
+    ['erntefest', 36, 'Erntefest', 'Vor dem Wohnhaus hängen Lampions, einmal in jeder Jahreszeit wird gefeiert.', 'ereignis', 'vor dem Wohnhaus'],
+    ['ruheecke', 42, 'Ruheecke', 'In der Ruheecke stehen eine Bank und eine Laterne. Wilma sitzt manchmal dort.', 'bereich', 'Ruheecke'],
+    ['hofschild', 50, 'Hofschild', 'Wilma hat dir ein Hofschild mit dem Gründungsdatum geschenkt.', 'abschluss', 'am Weg']
+  ].map(([id, schwelle, name, satz, art, ort]) => ({ id, schwelle, name, satz, art, ort }));
+  /** Tagesschlüssel aller Hof-Tage bis heute (aufsteigend). */
+  function hofTagListe(state, heute) {
+    const set = new Set();
+    (state.habits || []).forEach(h => { const lg = h.logs || {}; for (const k in lg) if (isDoneStatus(lg[k]) && (!heute || k <= heute)) set.add(k); });
+    return [...set].sort();
+  }
+  const hofTage = (state, heute) => hofTagListe(state, heute).length;
+  /** Alle Entdeckungen mit Stand: erreicht (Schwelle erreicht), gesehenAm (Datum aus hofGesehen oder null), sichtbar (erreicht oder gesehen), neu (erreicht, noch nicht gesehen). */
+  function entdeckungen(state, heute) {
+    const n = hofTage(state, heute), seen = (state && state.hofGesehen && typeof state.hofGesehen === 'object') ? state.hofGesehen : {};
+    return ENTDECKUNGEN.map(e => { const erreicht = n >= e.schwelle, gesehenAm = typeof seen[e.id] === 'string' ? seen[e.id] : null;
+      return Object.assign({}, e, { erreicht, gesehenAm, sichtbar: erreicht || !!gesehenAm, neu: erreicht && !gesehenAm }); });
+  }
+  /** Markiert Entdeckungen als gesehen (nur fehlende Einträge; ein gesetztes Datum bleibt). Gibt die neu markierten IDs zurück. */
+  function markHofGesehen(state, ids, heute) {
+    const g = state.hofGesehen && typeof state.hofGesehen === 'object' ? state.hofGesehen : (state.hofGesehen = {}), out = [];
+    ids.forEach(id => { if (ENTDECKUNGEN.some(e => e.id === id) && !g[id]) { g[id] = heute; out.push(id); } });
+    return out;
+  }
+
+  /* ---------- v9: Rückmeldung beim Abhaken (nur Darstellung) ----------
+   * Stufen Mini < erledigt < Ernte < Fund (Auftrag v9 Abschnitt 3). effects: 'ruhig' | 'normal' (Feld fehlt = normal).
+   * Ruhig: halbe Funkenzahl, kein Wippen. Reduzierte Bewegung: keine Funken, kein Wippen, nur die dunklere Erde.
+   */
+  const EFFECTS = ['ruhig', 'normal'];
+  const effectsOf = state => (state && state.effects === 'ruhig' ? 'ruhig' : 'normal');
+  const RUECKMELDUNG = { mini: { funken: 3, ms: 400 }, erledigt: { funken: 6, ms: 600, erde: true }, ernte: { funken: 6, ms: 900, erde: true, wachsen: true }, fund: { funken: 6, ms: 900, erde: true, truhe: true } };
+  function rueckmeldung(stufe, o = {}) {
+    const r = RUECKMELDUNG[stufe] || RUECKMELDUNG.erledigt, ruhig = o.effects === 'ruhig', still = !!o.reduce;
+    return { stufe: RUECKMELDUNG[stufe] ? stufe : 'erledigt', ms: r.ms, funken: still ? 0 : ruhig ? Math.floor(r.funken / 2) : r.funken,
+      wippen: !still && !ruhig, erde: !!r.erde || still, wachsen: !!r.wachsen && !still, truhe: !!r.truhe && !still };
+  }
+
   /* ---------- Neuer Zustand, Migration, Import (F6) ---------- */
   function emptyState(today) {
     return {
@@ -489,6 +541,9 @@
         if (!h.id || !h.createdAt || !Array.isArray(h.history) || !h.history.length || typeof h.logs !== 'object') return { ok: false, error: `Die Gewohnheit „${h.title || '?'}“ ist unvollständig.` };
       }
       obj.checkins = obj.checkins || {}; obj.chest = obj.chest || { items: {}, placed: [] };
+      // v9: optionale Felder. Ungültige Werte fallen weg (fehlt = Standard), ältere Versionen ignorieren sie.
+      if (obj.hofGesehen !== undefined && (!obj.hofGesehen || typeof obj.hofGesehen !== 'object' || Array.isArray(obj.hofGesehen))) delete obj.hofGesehen;
+      if (obj.effects !== undefined && !EFFECTS.includes(obj.effects)) delete obj.effects;
       // v5 → v6: gleiches Schema, nur der Stichtag der neuen Regeln kommt dazu. Alle Eingaben bleiben unverändert.
       const migrated = !obj.rulesV6Since; if (migrated) obj.rulesV6Since = today;
       return { ok: true, state: obj, migrated };
@@ -504,7 +559,8 @@
     canAddHabit, validateHabitInput, cleanAnchor, newHabit, applyEdit, pause, resume,
     dayWeather, journalOn, currentWeather, needsCheckin, farmSleeps, yearGrid,
     emptyState, migrateV3, importState,
-    BUILDINGS, PLANTS, PLANT_FRAMES, suggestBuilding, suggestPlant, buildingStage, plantFrame, migrateV8a
+    BUILDINGS, PLANTS, PLANT_FRAMES, suggestBuilding, suggestPlant, buildingStage, plantFrame, migrateV8a,
+    ENTDECKUNGEN, hofTagListe, hofTage, entdeckungen, markHofGesehen, EFFECTS, effectsOf, rueckmeldung
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = LAG; else root.LAG = LAG;
 })(typeof self !== 'undefined' ? self : this);
