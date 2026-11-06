@@ -1,6 +1,6 @@
 {
   "name": "lifes-a-game",
-  "version": "8.2.1",
+  "version": "9.0.0",
   "private": true,
   "description": "Gewohnheiten, To-dos und Logbuch als kleiner Pixel-Hof (Prototyp, PWA).",
   "engines": { "node": ">=20" },

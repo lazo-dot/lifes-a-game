@@ -18,7 +18,18 @@ const args = process.argv.slice(2), opt = n => args.includes(n), argVal = n => {
 /** Heute schon bekannte Verletzungen: Prüfung + Muster auf den Fund + Quelle. Steht ein Fund nicht hier, ist der Lauf rot. */
 const BEKANNT_OFFEN = [];   // v9: leer (die vier Punkte aus 8.2.1 sind behoben, docs/feedback.md → Zugeordnet)
 // Schlüssel, die nur Einstellungen für andere Prüfungen sind
-const CONFIG_KEYS = new Set(['tapflaeche_ausnahmen', 'kontrast_pruefen_in']);
+const CONFIG_KEYS = new Set(['tapflaeche_ausnahmen', 'kontrast_pruefen_in']);   // bekannt_offen_erlaubt wird gemessen (v9)
+/* v9: Varianten des Test-Hofs. neu = gestern nachgetragen (Wilma zeigt „Neu auf deinem Hof“); gut / schwach = Screenshot-Paar für die 2-Sekunden-Prüfung. */
+const LG = require('../src/logic.js');
+function variante(hof, art) {
+  const c = JSON.parse(JSON.stringify(hof)), T = LG.dkey(new Date());
+  if (art === 'neu') c.habits.forEach(h => { const y = LG.addDays(T, -1); if (!h.logs[y] && LG.canLogLate(h, y, T)) h.logs[y] = 'done'; });
+  if (art === 'gut') { c.habits.forEach(h => { for (let d = 0; d < 7; d++) if (h.frequency.kind !== 'weekly' || d % 2 === 0) h.logs[LG.addDays(T, -d)] = 'done'; });
+    c.chest.placed = [{ itemId: 'chicken' }, { itemId: 'duck' }, { itemId: 'rabbit' }, { itemId: 'bench', slot: 0 }, { itemId: 'lantern', slot: 3 }]; }
+  if (art === 'schwach') { c.habits.forEach(h => { for (let d = 0; d < 9; d++) delete h.logs[LG.addDays(T, -d)]; }); c.chest.placed = [{ itemId: 'bench', slot: 0 }]; }
+  if (art !== 'neu') c.hofGesehen = Object.fromEntries(LG.entdeckungen(c, T).filter(e => e.erreicht).map(e => [e.id, T]));
+  return c;
+}
 const TABS = { heute: 'today', gewohnheiten: 'habits', logbuch: 'journal', fortschritt: 'progress', truhe: 'chest' };
 
 /** Grenzwerte: „immer“ plus Versionsabschnitte vom allgemeinsten zum spezifischsten. */
@@ -189,7 +200,7 @@ async function main() {
   const { L, abschnitte } = limits(), started = Date.now();
   const R = {};   // Prüfung → { grenzwert, werte: [Text], funde: [Text], gemessen: bool }
   const rec = (key, wert, funde = []) => { const r = R[key] || (R[key] = { grenzwert: L[key], werte: [], funde: [] }); if (wert !== undefined && wert !== null) r.werte.push(wert); r.funde.push(...funde); };
-  const lim = k => L[k] !== undefined && L[k] !== null && !(typeof L[k] === 'object' && !Array.isArray(L[k]) && !Object.keys(L[k]).length);
+  const lim = k => !k.startsWith('_') && L[k] !== undefined && L[k] !== null && !(typeof L[k] === 'object' && !Array.isArray(L[k]) && !Object.keys(L[k]).length);
   const log = m => process.stdout.write(m + '\n');
 
   // 1 Tests
@@ -295,6 +306,52 @@ async function main() {
         rec('migration_exporte', ok.length ? ok.join(', ') + ' laden' : '–', f);
       }
 
+      // v9: erster Haken auch mit aktiver Meldung „Neu auf deinem Hof“ (Freigabe Entwurf v9, Punkt 1)
+      if (lim('erster_haken_max_pt')) { await s.loadHof(null, variante(hof, 'neu')); await s.ev(NOANIM);
+        const r = await s.ev(`(async()=>{ document.querySelector('[data-tab=today]').click(); await __abn.w(300); window.scrollTo(0, 0); return { on: document.getElementById('npc').classList.contains('ent-on'), top: Math.round(document.querySelector('#p-today .chk').getBoundingClientRect().top + scrollY) }; })()`);
+        rec('erster_haken_max_pt', `${tag} mit Meldung: ${r.top}`, !r.on ? [`${tag}: Meldung „Neu auf deinem Hof“ nicht aktiv`] : r.top <= L.erster_haken_max_pt ? [] : [`${tag} mit Meldung: ${r.top} pt`]); }
+
+      // v9: Abhaken bleibt sofort möglich (Dauer des Klick-Handlers, nächster Haken nicht verdeckt)
+      if (lim('abhaken_wieder_moeglich_ms') && gi === 0) { await s.loadHof(null, hof); await new Promise(r => setTimeout(r, 1800));   // Audio ist dann vorab angelegt
+        const r = await s.ev(`(async()=>{ window.scrollTo(0, 0); const cs = document.querySelectorAll('#p-today .chk'), c = cs[0], b = c.getBoundingClientRect(), t0 = performance.now();
+          c.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: b.left + 20, clientY: b.top + 20 })); const ms = performance.now() - t0;
+          const n = document.querySelectorAll('#p-today .chk')[1], nb = n.getBoundingClientRect(), top = document.elementFromPoint(nb.left + nb.width / 2, nb.top + nb.height / 2);
+          return { ms: Math.round(ms), frei: n.contains(top), stufe: (LAGUI.pruefung.zuletzt() || {}).stufe }; })()`);
+        rec('abhaken_wieder_moeglich_ms', `${r.ms} ms (Stufe ${r.stufe}), nächster Haken ${r.frei ? 'frei' : 'verdeckt'}`, [...(r.ms <= L.abhaken_wieder_moeglich_ms ? [] : [`${r.ms} ms`]), ...(r.frei ? [] : ['nächster Haken verdeckt'])]); }
+
+      // v9: Dauer der Rückmeldung je Stufe (Marken lag-fb-start/-ende der Szene)
+      if (lim('rueckmeldung_dauer_ms') && gi === 0) { const v = [], f = [];
+        for (const [st, max] of Object.entries(L.rueckmeldung_dauer_ms)) {
+          const d = await s.ev(`(async()=>{ window.scrollTo(0, 0); await __abn.w(900); performance.clearMarks(); const p = LAGUI.pruefung.rueckmeldung('${st}'); if (!p) return -1;
+            for (let i = 0; i < 60 && !performance.getEntriesByName('lag-fb-ende').length; i++) await __abn.w(50);
+            const a = performance.getEntriesByName('lag-fb-start')[0], b = performance.getEntriesByName('lag-fb-ende')[0]; return a && b ? Math.round(b.startTime - a.startTime) : -1; })()`);
+          v.push(`${st} ${d}`); if (d < 0) f.push(`${st}: keine Rückmeldung am Beet`); else if (d > max) f.push(`${st}: ${d} ms > ${max}`); }
+        rec('rueckmeldung_dauer_ms', v.join(', '), f); }
+
+      // v9: Entdeckungen im Test-Hof (Hofchronik zeigt genau die erreichten, ohne nächste Schwelle)
+      if (lim('entdeckungen_test_hof') && gi === 0) { await s.loadHof(null, hof); await s.ev(NOANIM);
+        const r = await s.ev(`(async()=>{ const st = await LAGStore.load(), t = LAG.dkey(new Date()), n = LAG.hofTage(st, t), soll = LAG.ENTDECKUNGEN.filter(e => e.schwelle <= n).map(e => e.name);
+          document.querySelector('[data-tab=progress]').click(); await __abn.w(400); const karte = document.getElementById('chronikBtn').textContent.replace(/\s+/g, ' ').trim();
+          document.getElementById('chronikBtn').click(); await __abn.w(500); const ist = [...document.querySelectorAll('.sheet .ent-b b')].map(b => b.textContent);
+          const txt = document.querySelector('.sheet').textContent; document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await __abn.w(300);
+          return { n, soll, ist, karte, schwelle: /noch \d|nächste|bis zur/i.test(txt) }; })()`);
+        const f = []; if (JSON.stringify(r.soll) !== JSON.stringify(r.ist)) f.push(`Liste: ${r.ist.join(', ')} statt ${r.soll.join(', ')}`);
+        if (!r.karte.includes(`${r.n} Hof-Tage`) || !r.karte.includes(`${r.soll.length} Entdeckung`)) f.push(`Karte: „${r.karte}“`); if (r.schwelle) f.push('nächste Schwelle sichtbar');
+        rec('entdeckungen_test_hof', `${r.n} Hof-Tage → ${r.ist.length} Entdeckungen (${r.ist.join(', ')})`, f); }
+
+      // v9: Bildzeit der Szene mit 4-facher CPU-Drosselung (Hof mit Tieren und Entdeckungen, Szene sichtbar, 5 s, Mittel der Rechenzeit je Bild)
+      if (lim('bildzeit_ms') && gi === 0) { await s.loadHof(null, variante(hof, 'gut')); await s.ev(`(async()=>{ document.querySelector('[data-tab=today]').click(); window.scrollTo(0, 0); await __abn.w(800); LAGUI.pruefung.szene(true); })()`);
+        await s.send('Emulation.setCPUThrottlingRate', { rate: L.bildzeit_ms.cpu_drosselung }); await new Promise(r => setTimeout(r, 5000));
+        const st = await s.ev('LAGUI.pruefung.szene()'); await s.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+        rec('bildzeit_ms', `${st.mean.toFixed(1)} ms im Mittel (${st.n} Bilder, ${L.bildzeit_ms.cpu_drosselung}× gedrosselt)`, st.n < 20 ? [`nur ${st.n} Bilder in 5 s`] : st.mean <= L.bildzeit_ms.mittel_max ? [] : [`${st.mean.toFixed(1)} ms`]); }
+
+      // v9: Screenshot-Paar gute / schwache Woche (2-Sekunden-Prüfung, Sichtprüfung)
+      if (lim('screenshot_paar_woche') && gi === 0) {
+        if (shots) for (const [i, art] of [[0, 'gut'], [1, 'schwach']]) { await s.loadHof(null, variante(hof, art)); await new Promise(r => setTimeout(r, 1500));
+          const du = await s.ev(`document.querySelector('#scene').toDataURL('image/png')`); fs.writeFileSync(path.join(SHOTS, L.screenshot_paar_woche[i]), Buffer.from(du.split(',')[1], 'base64')); }
+        const miss = L.screenshot_paar_woche.filter(n => !fs.existsSync(path.join(SHOTS, n)));
+        rec('screenshot_paar_woche', shots ? 'neu erzeugt: ' + L.screenshot_paar_woche.join(', ') : 'vorhanden (--ohne-bilder)', miss.map(n => `fehlt: docs/screenshots/${n}`)); }
+
       // Pergament: Screenshots über den echten Weg (Thema im Hof gespeichert)
       if (shots && gi === 0) { await s.loadHof(null, Object.assign({}, hof, { theme: 'pergament' })); await s.ev(NOANIM);
         await s.shot(path.join(SHOTS, 'pergament-heute-oben.png'));
@@ -303,12 +360,13 @@ async function main() {
       errorsAll.push(...s.errors.map(e => `${tag}: ${String(e).split('\n')[0].slice(0, 160)}`));
     } finally { await s.close(); }
   }
+  if (L.bekannt_offen_erlaubt === false) rec('bekannt_offen_erlaubt', `${BEKANNT_OFFEN.length} Einträge in BEKANNT_OFFEN`, BEKANNT_OFFEN.length ? ['BEKANNT_OFFEN (tools/abnahme.js) ist nicht leer'] : []);
   if (lim('konsolenfehler')) rec('konsolenfehler', errorsAll.length, errorsAll.length <= L.konsolenfehler ? [] : errorsAll);
   if (server) server.close();
 
   // Nicht gemessene Grenzwerte (neu in abnahme.json): rot, damit das Skript ergänzt wird
   for (const k of Object.keys(L)) if (!CONFIG_KEYS.has(k) && lim(k) && !R[k]) rec(k, 'nicht gemessen', ['Prüfung fehlt in tools/abnahme.js']);
-  return report(R, abschnitte, url, Date.now() - started);
+  return report(R, abschnitte, url, Date.now() - started, L.bekannt_offen_erlaubt !== false);
 }
 
 /** Alten Export laden (wie die App beim Start bzw. bei „Übernehmen“) und prüfen: Schema 4, alle Gewohnheiten, Hof sichtbar. */
@@ -339,13 +397,13 @@ function group(funde) {
     const k = `${m[1]}: ${m[4]}`, e = g.get(k) || { min: 99, wo: [] }; e.min = Math.min(e.min, +m[5]); e.wo.push(`${m[2]}/${m[3]}`); g.set(k, e); }
   return [...[...g].sort((a, b) => a[1].min - b[1].min).map(([k, e]) => `${k} – ${e.min.toFixed(2)} (${e.wo.length > 8 ? `${e.wo.length}×, z. B. ` + e.wo.slice(0, 6).join(', ') : e.wo.join(', ')})`), ...rest];
 }
-function report(R, abschnitte, url, ms) {
+function report(R, abschnitte, url, ms, knownOk = true) {
   const rows = []; let red = 0, known = 0;
   for (const [k, r] of Object.entries(R)) {
     let status = 'ok', quelle = '';
     if (r.funde.length) {
       const rest = r.funde.filter(f => !BEKANNT_OFFEN.some(b => b.pruefung === k && b.fund.test(f)));
-      if (rest.length) { status = 'VERLETZT'; red++; } else { status = 'bekannt offen'; known++; quelle = [...new Set(BEKANNT_OFFEN.filter(b => b.pruefung === k).map(b => b.quelle))].join('; '); }
+      if (rest.length || !knownOk) { status = 'VERLETZT'; red++; } else { status = 'bekannt offen'; known++; quelle = [...new Set(BEKANNT_OFFEN.filter(b => b.pruefung === k).map(b => b.quelle))].join('; '); }
       r.rest = rest;
     } else if (BEKANNT_OFFEN.some(b => b.pruefung === k)) quelle = 'jetzt erfüllt – Eintrag in BEKANNT_OFFEN (tools/abnahme.js) streichen';
     rows.push({ k, grenz: fmtLimit(r.grenzwert), wert: r.werte.join(' · ') || '–', status, quelle, funde: k.startsWith('kontrast') ? group(r.funde) : r.funde, rest: r.rest || [] });
@@ -365,7 +423,8 @@ function report(R, abschnitte, url, ms) {
     ...rows.map(r => `| \`${r.k}\` | ${r.grenz} | ${r.wert} | ${r.status === 'ok' ? 'ja' : r.status === 'bekannt offen' ? 'bekannt offen' : '**verletzt**'} |`), ''];
   const det = rows.filter(r => r.funde.length || r.quelle);
   if (det.length) { md.push('## Funde', ''); for (const r of det) { md.push(`**\`${r.k}\`** – ${r.status}${r.quelle ? ` (${r.quelle})` : ''}`, ''); for (const f of r.funde.slice(0, 40)) md.push(`- ${f}`); if (r.funde.length > 40) md.push(`- … ${r.funde.length - 40} weitere`); md.push(''); } }
-  md.push('Screenshots: `docs/screenshots/` (390 pt, Standard und Pergament: Heute oben, alle Tabs, Info-Blatt, Einstellungen).', '');
+  md.push('Screenshots: `docs/screenshots/` (390 pt, Standard und Pergament: Heute oben, alle Tabs, Info-Blatt, Einstellungen; v9: `hof-gute-woche.png` / `hof-schwache-woche.png`).', '',
+    '`bildzeit_ms` misst die Rechenzeit je Szenenbild (update + tick + draw, die Szene läuft mit 15 Bildern/s), nicht den Abstand der Bildschirm-Bilder.', '');
   fs.writeFileSync(OUT_MD, md.join('\n'));
   return red ? 1 : 0;
 }

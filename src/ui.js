@@ -139,6 +139,13 @@
       s.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${dx * .5}px,${dy * .5 + lift}px)`, opacity: 1, offset: .5 }, { transform: `translate(${dx}px,${dy}px)`, opacity: .2 }], { duration: d, easing: 'steps(8)', fill: 'forwards' });
       setTimeout(() => s.remove(), d + 20); }
   }
+  /** v9 Baustein C: abgestufte Rückmeldung am eigenen Beet (Mini < erledigt < Ernte/Fund), nie blockierend. Gibt den Plan zurück. */
+  function feedback(h, stufe, fromStage, pt) {
+    const plan = L.rueckmeldung(stufe, { reduce, effects: L.effectsOf(S) }); U.lastFb = { stufe: plan.stufe, ms: plan.ms };
+    if (scene && scene.feedback(h.id, plan, fromStage)) { const to = scene.bedPoint(h.id, $('#scene')); if (to && plan.funken && pt) flySparks(pt, to, plan.funken, plan.ms - 100); }
+    if (plan.truhe) hopChest(plan.ms - 100);
+    return plan;
+  }
   /** v9: Truhen-Symbol im Tab hüpft einmal (Fund). */
   function hopChest(ms) { const ti = document.querySelector('#t-chest .ti'); if (!ti || !ti.animate) return; ti.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-8px)', offset: .3 }, { transform: 'translateY(0)', offset: .6 }, { transform: 'translateY(-3px)', offset: .8 }, { transform: 'translateY(0)' }], { duration: ms, easing: 'steps(6)' }); }
   const pointOf = (ev, el) => { if (ev && ev.clientX) return [ev.clientX, ev.clientY]; const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top]; };
@@ -220,12 +227,8 @@
     const harvest = L.harvestsDue(h, Hn) > 0;
     const info = `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${L.xpFor(h.effort, status)} XP</b> · ${esc(h.title)}: ${Hn.weekly ? Hn.weekCnt + ' von ' + Hn.N + ' diese Woche' : Hn.month + '× diesen Monat'}${status === 'tiny' ? ` · Mini „${esc(h.tinyVersion)}“ zählt voll für die Stärke` : ''} · noch ${units}× bis ${esc(sk.name)} Stufe ${D.levels[sk.id].l + 1}</span>`;
     let found = null; if (!prev && L.dropAllowed(h, t, t)) { h.rolled = t; found = rollDrop(pt, true); }
-    // v9 Baustein C: abgestufte Rückmeldung am eigenen Beet (Mini < erledigt < Ernte/Fund), nie blockierend
-    const plan = L.rueckmeldung(harvest ? 'ernte' : found ? 'fund' : status === 'tiny' ? 'mini' : 'erledigt', { reduce, effects: L.effectsOf(S) });
-    U.lastFb = { stufe: plan.stufe, ms: plan.ms };
     afterAction(before, h.skillId, pt, gained, info, true); refresh();
-    if (scene && scene.feedback(h.id, plan, H0.stage)) { const to = scene.bedPoint(h.id, $('#scene')); if (to && plan.funken) flySparks(pt, to, plan.funken, plan.ms - 100); }
-    if (plan.truhe) hopChest(plan.ms - 100);
+    feedback(h, harvest ? 'ernte' : found ? 'fund' : status === 'tiny' ? 'mini' : 'erledigt', H0.stage, pt);
     const row = document.querySelector(`[data-hid="${h.id}"]`); if (row) row.classList.add('pop');
   }
 
@@ -564,7 +567,7 @@
         ${U.importPending ? `<div class="banner info"><span class="sp">Die Sicherung enthält ${U.importPending.habits.length} Gewohnheiten, ${U.importPending.todos.length} To-dos und ${U.importPending.journal.length} Logbuch-Einträge. Sie ersetzt die Daten auf diesem Gerät.</span><button class="btn sm" type="button" data-act="import-apply">Wiederherstellen</button><button class="btn ghost" type="button" data-act="import-cancel">Abbrechen</button></div>` : ''}`}</div>`;
       h += metricsHTML();
       h += `<h3>Über die App</h3><div class="data"><p>Life's a Game · Prototyp v${esc(VERSION)}</p><p class="ctx">Speichert nur auf diesem Gerät. Keine Anfragen an andere Dienste.</p>
-        ${SH && SH.placeholder() ? '<p class="ctx"><b>Vorläufige Grafiken:</b> Gebäude, Pflanzen, Natur, Deko, Tiere, Wohnhaus und Bauer auf dem Hof sind Platzhalter. Sie werden vor dem Start durch handgezeichnete Grafiken ersetzt.</p>' : ''}
+        ${SH && SH.placeholder() ? '<p class="ctx"><b>Vorläufige Grafiken:</b> Gebäude, Pflanzen, Natur, Deko, Tiere, Entdeckungen, Wohnhaus und Bauer auf dem Hof sind Platzhalter. Sie werden vor dem Start durch handgezeichnete Grafiken ersetzt.</p>' : ''}
         ${isIOS() && !standalone() ? '<p class="ctx">Tipp: In Safari über „Teilen“ → „Zum Home-Bildschirm“ wird der Hof zur App, die offline läuft.</p>' : ''}</div>`;
       b.innerHTML = h;
     }
@@ -939,5 +942,8 @@
     let lastDay = today();
     setInterval(() => { if (today() !== lastDay) { lastDay = today(); U.editingJournal = false; U.selWeather = null; preview = null; derive(); refresh(); if (S.onboarded && !$('#overlay').innerHTML && L.needsCheckin(S, today(), hour())) showCheckin(); } R.cal(); R.npc(); scene.refresh(); }, 30000);
   }
-  root.LAGUI = { boot, notify: toast };
+  /** Prüf-Einstieg für tools/abnahme.js: Rückmeldung einer Stufe am ersten aktiven Beet abspielen (ohne Spielaktion) und Szenen-Messwerte. */
+  const pruefung = { rueckmeldung: stufe => { const h = active()[0]; if (!h) return null; const c = $('#p-today .chk'), r = c ? c.getBoundingClientRect() : { left: 0, top: 0 }; return feedback(h, stufe, Math.max(0, D.H[h.id].stage - 1), [r.left + 20, r.top + 20]); },
+    szene: reset => scene.stats(reset), zuletzt: () => U.lastFb || null };
+  root.LAGUI = { boot, notify: toast, pruefung };
 })(typeof self !== 'undefined' ? self : this);

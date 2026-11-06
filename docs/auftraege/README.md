@@ -20,4 +20,4 @@ Jeder Entwicklungsschritt hat hier eine Auftragsdatei, angelegt vom Koordination
 |---|---|---|
 | `arbeitsablauf.md` | Einrichtung: Abnahme-Skript, Vorschau-Adresse, Test-Hook, schlanke CLAUDE.md | erledigt (8.2.1, Branch `ablauf`) |
 | `testrunde.md` | Fragebogen „Hof-Testrunde“ als eigenes Repo `lifes-a-game-test` auf GitHub Pages (App-Repo bleibt unberührt) | erledigt (03.11.2026, https://lazo-dot.github.io/lifes-a-game-test/) |
-| `v9.md` | v9 „Hof-Tage und lebendige Welt“: Feedback-Punkte, Hof-Tage + 11 Entdeckungen, Abhak-Rückmeldung, lebendiger Hof (nur Branch `v9`, Vorschau) | bereit |
+| `v9.md` | v9 „Hof-Tage und lebendige Welt“: Feedback-Punkte, Hof-Tage + 11 Entdeckungen, Abhak-Rückmeldung, lebendiger Hof (nur Branch `v9`, Vorschau) | erledigt (9.0.0, Branch `v9`, Vorschau; Merge nach Lars' Freigabe nach dem 23.11.) |

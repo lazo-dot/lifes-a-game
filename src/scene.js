@@ -507,7 +507,9 @@
     // v9: Animation nur, solange eine Ansicht sichtbar ist (kompakte Szene im Bild oder Großansicht offen); im Hintergrund pausiert
     let onScreen = true;
     if (root.IntersectionObserver) new IntersectionObserver(es => { onScreen = es.some(x => x.isIntersecting); }).observe(canvas);
-    function loop(ts) { requestAnimationFrame(loop); if (document.hidden || (!onScreen && views.size < 2)) { last = ts; return; } acc += ts - last; last = ts; if (acc < STEP) return; acc %= STEP; update(); tick(); draw(); }
+    function loop(ts) { requestAnimationFrame(loop); if (document.hidden || (!onScreen && views.size < 2)) { last = ts; return; } acc += ts - last; last = ts; if (acc < STEP) return; acc %= STEP;
+      const t0 = nowMs(); update(); tick(); draw(); work.push(nowMs() - t0); if (work.length > 300) work.shift(); }
+    const work = [];   // v9: Rechenzeit je Szenenbild (ms) für die Abnahme bildzeit_ms
     view(canvas, 1);
     return {
       /** Startet nach dem Laden der Sprite-Sheets (assets: Promise); ohne Sheets oder bei Fehler mit dem bisherigen Zeichencode. */
@@ -517,6 +519,8 @@
       },
       view, unview(cv) { views.delete(cv); applyViews(); },
       mode: () => mode,
+      /** v9: Mittel und Anzahl der zuletzt gemessenen Rechenzeiten je Bild (update + tick + draw); reset leert die Liste. */
+      stats(reset) { const n = work.length, mean = n ? work.reduce((a, b) => a + b, 0) / n : 0; if (reset) work.length = 0; return { n, mean }; },
       refresh(force) { update(force); if (deps.reduce) draw(); },
       /** v9: Neu Entdecktes funkelt kurz an seiner Stelle (mehrere Funken nacheinander). Bei reduzierter Bewegung kein Funkeln. */
       sparkle(ids) {
