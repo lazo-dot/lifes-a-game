@@ -132,6 +132,15 @@
     for (let i = 0; i < n; i++) { const s = document.createElement('div'); s.className = 'sparkle'; s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.background = colors[i % colors.length]; document.body.appendChild(s);
       const a = Math.random() * Math.PI * 2, r = 24 + Math.random() * 36; s.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${Math.cos(a) * r}px,${Math.sin(a) * r - 20}px)`, opacity: 0 }], { duration: 650, easing: 'steps(8)', fill: 'forwards' }); setTimeout(() => s.remove(), 700); }
   }
+  /** v9 Baustein C: Funken fliegen vom Haken zum eigenen Beet (DOM, ohne Zeiger-Ereignisse, blockiert nichts). */
+  function flySparks(from, to, n, ms) {
+    for (let i = 0; i < n; i++) { const s = document.createElement('div'); s.className = 'sparkle fly'; s.style.left = from[0] + 'px'; s.style.top = from[1] + 'px'; s.style.background = ['#fff3c4', '#ffd27a', '#c8f2cc'][i % 3]; document.body.appendChild(s);
+      const dx = to[0] - from[0] + (i % 3 - 1) * 4, dy = to[1] - from[1] + ((i >> 1) % 3 - 1) * 3, lift = -18 - (i % 3) * 8, d = ms * (.75 + (i % 3) * .08);
+      s.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${dx * .5}px,${dy * .5 + lift}px)`, opacity: 1, offset: .5 }, { transform: `translate(${dx}px,${dy}px)`, opacity: .2 }], { duration: d, easing: 'steps(8)', fill: 'forwards' });
+      setTimeout(() => s.remove(), d + 20); }
+  }
+  /** v9: Truhen-Symbol im Tab hüpft einmal (Fund). */
+  function hopChest(ms) { const ti = document.querySelector('#t-chest .ti'); if (!ti || !ti.animate) return; ti.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-8px)', offset: .3 }, { transform: 'translateY(0)', offset: .6 }, { transform: 'translateY(-3px)', offset: .8 }, { transform: 'translateY(0)' }], { duration: ms, easing: 'steps(6)' }); }
   const pointOf = (ev, el) => { if (ev && ev.clientX) return [ev.clientX, ev.clientY]; const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top]; };
   let toastT = 0, toastQ = [], toastBusy = false;
   function toast(html, action, ms = 4200) { toastQ.push({ html, action, ms }); if (!toastBusy) nextToast(); }
@@ -168,29 +177,30 @@
   /* ---------- Belohnungen ---------- */
   const snapshot = () => ({ c: D.char.l, s: Object.fromEntries(S.skills.map(s => [s.id, D.levels[s.id].l])) });
   function grant(type) { S.chest.items[type] = (S.chest.items[type] || 0) + 1; }
-  function afterAction(before, skillId, pt, xp, info) {
+  function afterAction(before, skillId, pt, xp, info, quiet) {
     derive(); save();
-    if (xp > 0) { floatText('+' + xp + ' XP', pt[0], pt[1], 'xp'); sparks(pt[0], pt[1], ['#7fcf8a', '#c8f2cc', '#fffaf0'], 8); }
+    if (xp > 0) { floatText('+' + xp + ' XP', pt[0], pt[1], 'xp'); if (!quiet) sparks(pt[0], pt[1], ['#7fcf8a', '#c8f2cc', '#fffaf0'], 8); }
     if (info) toast(info);
-    checkRewards(pt);
+    checkRewards(pt, quiet);
     const sk = skillId ? skillById(skillId) : null;
     if (D.char.l > before.c) setTimeout(() => levelUp('Level ' + D.char.l, `Auf deinem Hof ist jetzt Platz für ${L.slotsFor(D.char.l)} Dekorationen.`), 450);
     else if (sk && D.levels[sk.id].l > before.s[sk.id]) setTimeout(() => levelUp(sk.name + ' · Stufe ' + D.levels[sk.id].l, 'Das Gebäude dieser Fähigkeit wächst auf deinem Hof.'), 450);
   }
-  function rollDrop(pt) {
-    const type = L.rollDrop(Math.random, today()); if (!type) return; grant(type); save();
-    setTimeout(() => { au.sfx.drop(); floatText('Fund: ' + L.ITEMS[type].name, pt[0], pt[1] - 24, 'drop'); sparks(pt[0], pt[1] - 20, ['#c99cf2', '#f4d58e', '#ffffff'], 12); }, 650);
+  function rollDrop(pt, quiet) {
+    const type = L.rollDrop(Math.random, today()); if (!type) return null; grant(type); save();
+    setTimeout(() => { au.sfx.drop(); floatText('Fund: ' + L.ITEMS[type].name, pt[0], pt[1] - 24, 'drop'); if (!quiet) sparks(pt[0], pt[1] - 20, ['#c99cf2', '#f4d58e', '#ffffff'], 12); }, quiet ? 300 : 650);
     toast(`${itemImg(type, 1)}<span><b>Fund!</b> ${L.ITEMS[type].name}${L.ITEMS[type].rare ? ' (selten)' : ''} liegt jetzt in deiner Truhe.</span>`);
+    return type;
   }
   /** B2 Ernte bei neuer Wachstumsstufe, B4 Fund bei „Gemeistert“. */
-  function checkRewards(pt) {
+  function checkRewards(pt, quiet) {
     let any = false;
     S.habits.forEach(h => {
       const d = D.H[h.id], n = L.harvestsDue(h, d);
       if (n > 0) {
         h.harvestStage = d.stage; any = true; const got = [];
         for (let i = 0; i < n; i++) { const t = L.pickItem(Math.random, Math.random() < L.C.RARE_P, today()); grant(t); got.push(L.ITEMS[t].name); }
-        if (scene) scene.glowBed(h.id); setTimeout(() => au.sfx.harvest(), 300);
+        if (scene && !quiet) scene.glowBed(h.id); setTimeout(() => au.sfx.harvest(), 300);
         toast(`${img('p' + d.stage, 4, '', { F: styleOf(skillById(h.skillId)).c, f: styleOf(skillById(h.skillId)).dk })}<span><b>Ernte!</b> „${esc(h.title)}“ ist jetzt ${L.STAGES[d.stage][1]}. In der Truhe: ${esc(got.join(', '))}.</span>`, null, 5200);
       }
       if (L.gradRewardDue(h, d)) {
@@ -198,7 +208,7 @@
         toast(`${img('gem', 3, '')}<span><b>Gemeistert!</b> „${esc(h.title)}“ hält ohne Erinnerung. Als Dank liegt ${L.ITEMS[t].name} in deiner Truhe.</span>`, null, 6000);
       }
     });
-    if (any) { save(); R.chestBadge(); if (pt && !reduce) sparks(pt[0], pt[1] - 10, ['#f4d58e', '#7fcf8a'], 10); }
+    if (any) { save(); R.chestBadge(); if (pt && !reduce && !quiet) sparks(pt[0], pt[1] - 10, ['#f4d58e', '#7fcf8a'], 10); }
   }
   function logHabit(h, status, pt) {
     const t = today(), prev = h.logs[t], H0 = D.H[h.id], before = snapshot();
@@ -207,9 +217,15 @@
     h.logs[t] = status; status === 'tiny' ? au.sfx.tiny() : au.sfx.check(); if (S.chest.placed.some(p => p.itemId === 'chicken')) au.sfx.cluck();
     derive(); const Hn = D.H[h.id], sk = skillById(h.skillId), units = L.unitsToNext(D.levels[sk.id], h.effort);
     const gained = Math.max(0, L.xpFor(h.effort, status) - (prev ? L.xpFor(h.effort, prev) : 0));
+    const harvest = L.harvestsDue(h, Hn) > 0;
     const info = `${img(sk.icon, 3, '')}<span><b>${esc(sk.name)} +${L.xpFor(h.effort, status)} XP</b> · ${esc(h.title)}: ${Hn.weekly ? Hn.weekCnt + ' von ' + Hn.N + ' diese Woche' : Hn.month + '× diesen Monat'}${status === 'tiny' ? ` · Mini „${esc(h.tinyVersion)}“ zählt voll für die Stärke` : ''} · noch ${units}× bis ${esc(sk.name)} Stufe ${D.levels[sk.id].l + 1}</span>`;
-    if (!prev && L.dropAllowed(h, t, t)) { h.rolled = t; rollDrop(pt); }
-    afterAction(before, h.skillId, pt, gained, info); refresh();
+    let found = null; if (!prev && L.dropAllowed(h, t, t)) { h.rolled = t; found = rollDrop(pt, true); }
+    // v9 Baustein C: abgestufte Rückmeldung am eigenen Beet (Mini < erledigt < Ernte/Fund), nie blockierend
+    const plan = L.rueckmeldung(harvest ? 'ernte' : found ? 'fund' : status === 'tiny' ? 'mini' : 'erledigt', { reduce, effects: L.effectsOf(S) });
+    U.lastFb = { stufe: plan.stufe, ms: plan.ms };
+    afterAction(before, h.skillId, pt, gained, info, true); refresh();
+    if (scene && scene.feedback(h.id, plan, H0.stage)) { const to = scene.bedPoint(h.id, $('#scene')); if (to && plan.funken) flySparks(pt, to, plan.funken, plan.ms - 100); }
+    if (plan.truhe) hopChest(plan.ms - 100);
     const row = document.querySelector(`[data-hid="${h.id}"]`); if (row) row.classList.add('pop');
   }
 
@@ -535,8 +551,9 @@
         <div class="ctl" role="group" aria-label="Akzentfarbe"><span class="lab">Akzent ${qBtn('akzent')}</span>${HX.ACCENTS.map(([v, l]) => `<button type="button" class="chip achip" data-act="accent" data-v="${v}" aria-pressed="${(S.accent || 'thema') === v}"><span class="apv" ${v === 'thema' ? '' : `data-accent="${v}"`} aria-hidden="true">Aa</span>${l}</button>`).join('')}</div>
         <div class="ctl" role="group" aria-label="Schriftgröße"><span class="lab">Schrift</span>${SCALES.map(([v, l]) => `<button type="button" class="chip" data-act="scale" data-v="${v}" aria-pressed="${(S.textScale || 1) === v}">${l}</button>`).join('')}</div>
         <div class="ctl" role="group" aria-label="Schriftart"><span class="lab">Schriftart</span><button type="button" class="chip" data-act="font" data-v="" aria-pressed="${!S.readableFont}">Pixel</button><button type="button" class="chip" data-act="font" data-v="1" aria-pressed="${!!S.readableFont}">Lesbare Schrift</button></div>
+        <div class="ctl" role="group" aria-label="Effekte"><span class="lab">Effekte</span>${L.EFFECTS.map(v => `<button type="button" class="chip" data-act="effects" data-v="${v}" aria-pressed="${L.effectsOf(S) === v}">${v === 'ruhig' ? 'Ruhig' : 'Normal'}</button>`).join('')}</div>
         <div class="ctl" role="group" aria-label="Farben"><span class="lab">Farben</span><button type="button" class="chip" data-act="palette" data-v="" aria-pressed="${S.palette !== 'cb'}">Standard</button><button type="button" class="chip" data-act="palette" data-v="cb" aria-pressed="${S.palette === 'cb'}">Gut unterscheidbar</button></div></div>
-        <h3>Ton</h3><div class="look"><div class="ctl" role="group" aria-label="Musik"><span class="lab">Musik</span>${onoff('music', S.music)}</div><div class="ctl" role="group" aria-label="Effekte"><span class="lab">Effekte</span>${onoff('sound', S.sound)}</div></div>`;
+        <h3>Ton</h3><div class="look"><div class="ctl" role="group" aria-label="Musik"><span class="lab">Musik</span>${onoff('music', S.music)}</div><div class="ctl" role="group" aria-label="Klänge"><span class="lab">Klänge</span>${onoff('sound', S.sound)}</div></div>`;
       h += `<div class="hd2"><h3>Daten & Sicherung</h3>${qBtn('daten')}</div><div class="data">${S.demo ? '<p class="ctx">Demo-Hof · nichts wird gespeichert. Im Demo-Hof sind Sicherung und Löschen ausgeschaltet.</p>' : `
         <p class="ctx">Speichert nur auf diesem Gerät.</p>
         <div class="row-btns"><button class="btn alt" type="button" data-act="export">${U.showExport ? 'Sicherung ausblenden' : 'Sicherung erstellen'}</button><button class="btn alt" type="button" data-act="import-open">Sicherung importieren</button><button class="btn ghost" type="button" data-act="wipe">${U.wipeArmed ? 'Wirklich alles löschen? Nochmal tippen' : 'Alles löschen'}</button></div>
@@ -630,7 +647,7 @@
       <div class="row-btns"><button class="btn" type="submit">Hinzufügen</button></div><p class="ctx">${esc(HX.explain('todo').text)}</p></form>`, trigger, { refocus: '#todoAdd' });
     const ti = $('#tTitle'); if (ti) ti.focus();
   }
-  function refresh(...parts) { if (!S) return; if (!parts.length) parts = ['cal', 'hud', 'legend', 'skills', 'today', 'habits', 'journal', 'progress', 'chest', 'npc', 'settings']; parts.forEach(p => R[p]()); }
+  function refresh(...parts) { if (!S) return; if (!parts.length) parts = ['cal', 'hud', 'legend', 'skills', 'today', 'habits', 'journal', 'progress', 'chest', 'npc', 'settings'].filter(p => p !== 'progress' || !$('#p-progress').hidden); parts.forEach(p => R[p]()); }   // v9: Fortschritt (Erntekalender) nur, wenn sichtbar; selectTab baut ihn beim Öffnen
 
   /** Wilmas Sprüche (Hof, Wetter, Tageszeit); Meilensteine und Nachträge haben Vorrang (LAGHilfe.pickHint). */
   function sayings() {
@@ -823,6 +840,7 @@
         case 'scale': S.textScale = +el.dataset.v; applyLook(); save(); R.settings(); au.sfx.tick(); break;
         case 'font': S.readableFont = !!el.dataset.v || undefined; applyLook(); save(); R.settings(); au.sfx.tick(); break;
         case 'theme': S.theme = el.dataset.v || undefined; applyLook(); save(); R.settings(); au.sfx.tick(); break;
+        case 'effects': S.effects = el.dataset.v === 'ruhig' ? 'ruhig' : undefined; save(); R.settings(); au.sfx.tick(); break;   // fehlt = normal
         case 'palette': S.palette = el.dataset.v || undefined; applyLook(); save(); R.settings(); scene.refresh(true); au.sfx.tick(); break;
         case 'metrics-save': { const a = document.createElement('a'), url = URL.createObjectURL(new Blob([metricsJSON()], { type: 'application/json' }));
           a.href = url; a.download = `lifes-a-game-beta-${t}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); break; }
@@ -913,7 +931,8 @@
     scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), entdeckt: entOnFarm, ereignisse: () => (D && D.ev) || {}, onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
     tabIcons(); layout(); sizeScene();
     if (root.MutationObserver) new MutationObserver(gearIcon).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-palette'] });   // v9: Zahnrad folgt dem Thema if (narrowMQ) narrowMQ.addEventListener('change', () => { layout(); sizeScene(); }); root.addEventListener('resize', () => { layout(); sizeScene(); });
-    bind(); refresh(); scene.start(assets);
+    bind(); R.progress(); refresh(); scene.start(assets);
+    setTimeout(() => au.warm(), 1500);   // v9: Audio vorab anlegen, der erste Haken setzt nur fort
     if (assets) Promise.resolve(assets).then(() => refresh(), () => {});   // Vorschaubilder und Hinweis „Vorläufige Grafiken“
     if (!S.onboarded) showOnboarding('welcome');
     else { checkRewards(null); if (L.needsCheckin(S, today(), hour())) showCheckin(); }

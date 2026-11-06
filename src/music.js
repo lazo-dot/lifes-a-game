@@ -13,6 +13,8 @@
       os.type = type; os.frequency.setValueAtTime(f, t); if (to) os.frequency.exponentialRampToValueAtTime(to, t + d);
       g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); os.connect(g); g.connect(a.destination); os.start(t); os.stop(t + d + .03);
     }
+    /** v9: AudioContext vorab im Leerlauf anlegen (pausiert), damit der erste Haken nicht auf ihn warten muss (Abnahme abhaken_wieder_moeglich_ms). */
+    function warm() { if (AC || !opts.soundOn()) return; try { AC = new (root.AudioContext || root.webkitAudioContext)(); } catch (e) { AC = null; } }
     const sfx = {
       check() { tone(523, .07, { to: 784 }); tone(1047, .1, { at: .07, vol: .05 }); },
       tiny() { tone(440, .07, { to: 660, type: 'triangle', vol: .06 }); tone(880, .09, { at: .07, type: 'triangle', vol: .045 }); },
@@ -96,7 +98,7 @@
       };
     })();
     root.document && root.document.addEventListener('visibilitychange', () => { if (!AC) return; if (root.document.hidden) AC.suspend(); else if (opts.soundOn() || opts.musicOn()) AC.resume(); });
-    return { sfx, thunder, Music };
+    return { sfx, thunder, Music, warm };
   }
   root.LAGAudio = { createAudio };
 })(typeof self !== 'undefined' ? self : this);

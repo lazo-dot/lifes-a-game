@@ -68,7 +68,10 @@
     const core = (c, on) => c.setTransform(1, 0, 0, 1, on ? OX : 0, 0);
     let env = null, envKey = '', lights = [], parts = [], shadows = [], smoke = [], frame = 0, flash = 0, nextBolt = 0, animals = [], glints = [];
     const walker = { i: 0, x: 90, y: 60, pause: 0, flip: false, dir: 'unten', walked: 0 };
-    let animalSpots = [], visitors = [], sparkles = [], hitBoxes = [], rainbowC = null;
+    let occHard = [], animalSpots = [], visitors = [], sparkles = [], hitBoxes = [], rainbowC = null;
+    /* v9 Baustein C: Rückmeldung am eigenen Beet. fb: habitId → { t0, d, plan, from }. Solange gewippt oder gewachsen wird, liegt die Pflanze nicht in der statischen Ebene. */
+    const fb = new Map(), slots = new Map(), nowMs = () => (root.performance ? performance.now() : Date.now());
+    const lifted = id => { const f = fb.get(id); return !!f && (f.plan.wippen || f.plan.wachsen); };
     const evts = () => ((deps.ereignisse && deps.ereignisse()) || {});
     const entIds = () => ((deps.entdeckt && deps.entdeckt()) || []);
     const entPos = key => { const p = Object.assign({}, ENT_POS, (M && M.entdeckungen) || {})[key]; return p || null; };
@@ -83,7 +86,7 @@
 
     function computeEnv() {
       const S = deps.state(), D = deps.D(), season = L.seasonOf(new Date().getMonth()), weather = deps.weather(), phase = deps.phase();
-      const beds = activeHabits().map(h => { const x = D.H[h.id], s = skillById(h.skillId); return [h.id, x.stage, s ? s.st : 0, x.graduated ? 1 : 0, h.plantType].join(':'); }).join(',');
+      const beds = activeHabits().map(h => { const x = D.H[h.id], s = skillById(h.skillId); return [h.id, x.stage, s ? s.st : 0, x.graduated ? 1 : 0, h.plantType, x.doneToday ? 1 : 0, lifted(h.id) ? 'f' : ''].join(':'); }).join(',');
       const blds = S.skills.map(s => s.st + ':' + D.levels[s.id].l + ':' + s.icon + ':' + s.buildingType).join(','), pl = S.chest.placed.map(p => p.itemId + (p.slot ?? '')).join(',');
       const ent = entIds().join(','), fruit = new Date().getMonth() >= 7 && new Date().getMonth() <= 9, ev = evts();
       const evk = ['regenbogen', 'erntefest', 'gluehwuermchen', 'laternen'].filter(k => ev[k]).join('+');
@@ -217,6 +220,10 @@
         group.forEach((h, k) => {
           const d = D.H[h.id], sh = SH.get('pflanzen-' + (h.plantType || L.suggestPlant(S.habits.indexOf(h)))), tag = L.plantFrame(d.stage, d.graduated);
           const x0 = bx + 1 + k * gap, fy = by + 16;
+          // v9 Baustein D „Heute gepflegt“: dunkle, feuchte Erde mit Glanzpunkten; offene Beete bleiben neutral (nie trocken oder welk)
+          if (d.doneToday) { c.globalAlpha = .55; rect(c, x0 + 1, by + 6, gap - 2, 11, PAL.erde[0]); c.globalAlpha = 1; [[3, 8], [9, 12], [6, 15], [12, 9]].forEach(([a, b]) => { if (a < gap - 2) rect(c, x0 + a, by + b, 1, 1, PAL.wasser[3]); }); }
+          slots.set(h.id, { x0, by, fy, sh: sh && sh.rect('base', tag) ? sh : null, tag, gap });
+          if (lifted(h.id) && sh && sh.rect('base', tag)) return;   // wird während der Rückmeldung dynamisch gezeichnet
           if (sh && sh.rect('base', tag)) items.push({ fy, fx: x0 + sh.anchor.x, sh, tag, glow: d.graduated });
           else { const st = sk ? styleOf(skillById(h.skillId) || sk) : SP.STYLES[0]; items.push({ fy, draw: cc => { cc.drawImage(SP.sprite('p' + d.stage, { F: st.c, f: st.dk }), x0 + 5, by + 8); if (d.graduated) { rect(cc, x0 + 12, by + 2, 1, 6, O); rect(cc, x0 + 13, by + 2, 3, 2, '#f4d58e'); } } }); }
         });
@@ -258,6 +265,8 @@
       if (ids.includes('steg')) ['frosch1', 'frosch2'].forEach(k => { const [x, y] = entPos(k); hitBoxes.push(['steg', [x - 8, y - 12, 16, 14]]); });
       if (ev.regenbogen) hitBoxes.push(['regenbogen', [-OX, 0, FW, 14]]);
       // Tierplätze: freie Plätze (nicht auf Gebäuden, Beeten, Deko) für die aufgestellten Landtiere freihalten, damit dort nichts gestreut wird
+      const T0 = M.boden.teich; occHard = [...occ, [WH.x - 2, WH.y, WH.b + 4, WH.dach + WH.wand + 6], [T0.cx - T0.rx, T0.cy - T0.ry, 2 * T0.rx, 2 * T0.ry]];   // v9: Hindernisse für umherlaufende Tiere (Gebäude, Beete, Deko, Entdeckungen)
+      if (whs && whs.rect('base', 'wohnhaus')) smokeAt.push([WH.x + 39, WH.y - 13]);   // v9: Kaminrauch am Wohnhaus-Sprite
       const nLand = S.chest.placed.filter(p => L.ITEMS[p.itemId].animal && p.itemId !== 'duck').length;
       animalSpots = (M.tiere || []).filter(([x, y]) => !occ.some(o => overlaps(o, [x - 8, y - 12, 16, 12])));
       animalSpots.slice(0, nLand).forEach(([x, y]) => occ.push([x - 9, y - 13, 18, 15]));
@@ -299,7 +308,26 @@
       if (!ts) return list.filter(p => p.itemId === 'duck' || p.itemId === 'chicken').map((p, i) => p.itemId === 'duck' ? { t: 'duck', y: (20 + i * 37) % 120, v: .25, p: i * 2.1 } : { t: 'chicken', x: lay.chick[0] + 6 + i * 5, y: lay.chick[1] + 4 + i * 9, dx: .4, dy: .2 });
       const land = animalSpots.length ? animalSpots : M.tiere || [], pond = M.teichTiere || []; let a = 0, d = 0;
       return list.map((p, i) => { const sp = p.itemId === 'duck' && pond.length ? pond[d++ % pond.length] : land[a++ % Math.max(1, land.length)] || [40, 130];
-        return { t: 'sheet', id: p.itemId, sh: ts, fx: sp[0], fy: sp[1], off: i * 170, flip: i % 2 === 1 }; });
+        return { t: 'sheet', id: p.itemId, sh: ts, fx: sp[0], fy: sp[1], x: sp[0], y: sp[1], tx: sp[0], ty: sp[1], wait: 20 + i * 25, off: i * 170, flip: i % 2 === 1, swim: p.itemId === 'duck' && pond.length > 0, p: i * 2.1 }; });
+    }
+    /* v9 Baustein D: Tiere laufen kurze Wege zwischen freien Punkten, mit Pausen, nie über Beete, Gebäude oder Deko; nachts schlafen sie. Ente schwimmt. */
+    const clearAt = (x, y) => !occHard.some(o => x + 4 > o[0] && x - 4 < o[0] + o[2] && y + 1 > o[1] && y - 5 < o[1] + o[3]);
+    function nextTarget(a) {
+      const pts = animalSpots.length ? animalSpots : (M && M.tiere) || [];
+      for (let k = 0; k < 10; k++) {
+        const [bx, by] = pts.length && Math.random() < .5 ? pts[Math.floor(Math.random() * pts.length)] : [a.x + (Math.random() - .5) * 60, a.y + (Math.random() - .5) * 30];
+        const x = Math.round(Math.max(-OX + 8, Math.min(FW - OX - 8, bx))), y = Math.round(Math.max(60, Math.min(H - 2, by)));
+        let ok = Math.hypot(x - a.x, y - a.y) > 6; for (let i = 1; i <= 8 && ok; i++) ok = clearAt(a.x + (x - a.x) * i / 8, a.y + (y - a.y) * i / 8);
+        if (ok) { a.tx = x; a.ty = y; return; }
+      }
+    }
+    function moveAnimal(a) {
+      if (env.phase === 'night' || deps.reduce) return;   // nachts schlafen alle
+      if (a.swim) { const T = M.boden.teich; a.p += .006; a.fx = Math.round(T.cx - 2 + Math.cos(a.p) * (T.rx - 12)); a.fy = Math.round(T.cy + 10 + Math.sin(a.p) * 3); return; }   // untere Teichhälfte, frei vom Steg
+      if (a.wait > 0) { a.wait--; return; }
+      const dx = a.tx - a.x, dy = a.ty - a.y, d = Math.hypot(dx, dy);
+      if (d < .6) { a.wait = 30 + Math.floor(Math.random() * 75); nextTarget(a); return; }
+      a.x += dx / d * .3; a.y += dy / d * .3; a.fx = Math.round(a.x); a.fy = Math.round(a.y);   // ganzzahlige Pixelschritte
     }
     /** Schatten-Ebene eines Sheets einmal in der Schattenfarbe einfärben (für bewegte Teile, die nicht in der statischen Ebene liegen). */
     const shadowImgs = new Map();
@@ -358,6 +386,20 @@
         if (v.sit) drawDyn(vs, v.tag, i, x, y, night); else SH.draw(g, vs, 'base', v.tag, x, y + 6, i);
       }
     }
+    /** Rückmeldung: Erde kurz dunkler, Pflanze wippt (ganze Pixel), bei der Ernte wächst sie sichtbar um eine Stufe. */
+    function drawFeedback() {
+      const t = nowMs();
+      for (const [id, f] of fb) {
+        const s = slots.get(id), e = t - f.t0; if (!s || e >= f.d) continue;
+        const q = e / f.d;
+        if (f.plan.erde) { g.globalAlpha = .45 * (1 - q); rect(g, s.x0 + 1, s.by + 6, s.gap - 2, 11, PAL.erde[0]); g.globalAlpha = 1; }
+        if (s.sh && lifted(id)) {
+          const off = f.plan.wippen ? [0, 1, 0, -1, 0, 1, 0, 0][Math.min(7, Math.floor(q * 8))] : 0;
+          const tag = f.plan.wachsen && q < .45 ? L.plantFrame(f.from, false) : s.tag, sh2 = s.sh.rect('base', tag) ? s.sh : null;
+          if (sh2) { drawDyn(sh2, tag, 0, s.x0 + sh2.anchor.x + off, s.fy, env.phase === 'night'); if (f.plan.wachsen && q >= .45 && q < .6) glints.push({ x: s.x0 + 8, y: s.fy - 6, l: 12 }); }
+        }
+      }
+    }
     function drawSparkles() {
       const cols = ['rgba(255,243,196,', 'rgba(255,210,122,'];
       for (const s of sparkles) { if (s.l > 30) continue; const a = Math.min(1, s.l / 12), k = (s.l >> 2) % 2, r = 2 + ((30 - s.l) >> 3);
@@ -381,7 +423,7 @@
         if (dist < .7) { walker.i = (walker.i + 1) % lay.way.length; walker.pause = Math.random() < .4 ? 30 + Math.floor(Math.random() * 40) : 0; } else { walker.x += dx / dist * .55; walker.y += dy / dist * .55; walker.walked += STEP; if (Math.abs(dx) > .3) walker.flip = dx < 0; walker.dir = Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'links' : 'rechts') : (dy < 0 ? 'oben' : 'unten'); }
       }
       const [cx0, cy0, cw, ch] = lay.chick;
-      animals.forEach(a => { if (a.t === 'duck') { a.y += a.v; a.p += .01; if (a.y > H + 4) a.y = -6; } else { a.x += a.dx; a.y += a.dy; if (a.x < cx0 || a.x > cx0 + cw) a.dx *= -1; if (a.y < cy0 || a.y > cy0 + ch) a.dy *= -1; if (Math.random() < .02) { a.dx = (Math.random() - .5) * .8; a.dy = (Math.random() - .5) * .6; } } });
+      animals.forEach(a => { if (a.t === 'sheet') moveAnimal(a); else if (a.t === 'duck') { a.y += a.v; a.p += .01; if (a.y > H + 4) a.y = -6; } else { a.x += a.dx; a.y += a.dy; if (a.x < cx0 || a.x > cx0 + cw) a.dx *= -1; if (a.y < cy0 || a.y > cy0 + ch) a.dy *= -1; if (Math.random() < .02) { a.dx = (Math.random() - .5) * .8; a.dy = (Math.random() - .5) * .6; } } });
       if (env.weather === 'gewitter' && frame >= nextBolt) { flash = 1; nextBolt = frame + 90 + Math.floor(Math.random() * 150); deps.thunder(); }
       if (flash > 0) flash = Math.max(0, flash - .16);
     }
@@ -392,6 +434,9 @@
       const wl = night ? 'rgba(170,190,255,.35)' : 'rgba(220,240,255,.5)';
       if (mode === 'sprites') { const T = M.boden.teich; for (let k = 0; k < 7; k++) { const a = k * 0.9 + (deps.reduce ? 0 : frame * .01), r2 = .35 + (k % 3) * .2; rect(g, Math.round(T.cx + Math.cos(a) * T.rx * r2) - 1, Math.round(T.cy + Math.sin(a) * T.ry * r2), 3, 1, wl); } }
       else for (let k = 0; k < 26; k++) { const y = (k * 13 + Math.floor(frame * .6)) % H, x = riverX(y) - 7 + ((k * 7) % 12); rect(g, x, y, 3, 1, wl); }
+      if (mode === 'sprites' && !deps.reduce) { const T = M.boden.teich; for (let k = 0; k < 6; k++) { const ph = ((frame >> 2) + k * 5) % 14; if (ph > 2) continue;   // v9: Wasser-Glitzern, 3 Frames je Punkt
+        const x = Math.round(T.cx + Math.cos(k * 1.7) * T.rx * (.25 + (k % 3) * .2)), y = Math.round(T.cy + Math.sin(k * 1.7) * T.ry * (.2 + (k % 2) * .3)), c = night ? 'rgba(200,210,255,.6)' : 'rgba(255,255,255,.85)';
+        rect(g, x, y, 1, 1, c); if (ph === 1) { rect(g, x - 1, y, 3, 1, c); rect(g, x, y - 1, 1, 3, c); } } }
       animals.forEach(a => { if (a.t === 'duck') { const [x, y] = duckPos(a); rect(g, x - 1, y + 4, 8, 1, 'rgba(220,240,255,.4)'); g.drawImage(SP.sprite('duck'), x, y); } });
       const s2 = S.skills[1];
       if (mode === 'legacy' && s2 && D.levels[s2.id].l >= 4) {
@@ -409,7 +454,7 @@
         g.drawImage(SP.sprite(walker.pause === 0 && step ? 'farmerB' : 'farmerA', null, walker.flip), Math.round(walker.x) - 4, Math.round(walker.y) - 7); } });
       dyn.sort((a, b) => a.fy - b.fy).forEach(d => d.f());
       animals.forEach(a => { if (a.t === 'chicken') { g.fillStyle = 'rgba(10,20,30,.25)'; g.fillRect(Math.round(a.x), Math.round(a.y) + 4, 5, 1); g.drawImage(SP.sprite('chicken', null, a.dx < 0), Math.round(a.x), Math.round(a.y)); } });
-      drawVisitors(night); drawSparkles();
+      drawVisitors(night); drawSparkles(); drawFeedback();
       for (const p of parts) if (p.t === 'bee') rect(g, Math.round(p.cx + Math.cos(p.p) * 6), Math.round(p.cy + Math.sin(p.p * 1.3) * 4), 1, 1, '#ffd84a');
       core(g, false);                                    // Wolken, Partikel und Tönung über die ganze Breite
       if (shadows.length) { g.fillStyle = e.weather === 'gewitter' ? 'rgba(8,12,24,.16)' : 'rgba(10,20,30,.12)'; shadows.forEach(s => oval(g, Math.round(s.x), Math.round(s.y), Math.round(s.r), Math.round(s.r * .6))); }
@@ -452,12 +497,17 @@
     }
     /** Canvas als Ansicht anmelden: Faktor k (ganzzahlig) und gewünschte logische Breite w (mindestens 256, ohne Karte genau 256). */
     function view(cv, k, w) { views.set(cv, { k: Math.max(1, Math.round(k)), w: Math.floor(w || W) }); applyViews(); }
+    /** Abgelaufene Rückmeldungen vor dem Neuaufbau entfernen, damit die Pflanze ohne Lücke in die statische Ebene zurückkehrt. */
+    function expireFb() { const t = nowMs(); for (const [id, f] of fb) if (t - f.t0 >= f.d) { fb.delete(id); if (root.performance && performance.mark) performance.mark('lag-fb-ende'); } }
     function update(force) {
-      const e = computeEnv();
+      expireFb(); const e = computeEnv();
       if (force || e.key !== envKey) { const big = force || !env || env.weather !== e.weather || env.phase !== e.phase || env.season !== e.season; env = e; envKey = e.key; buildBase(e); if (big) initDynamics(e); else animals = makeAnimals(); deps.onMood(e.weather); }
     }
     let last = 0, acc = 0, running = false; const STEP = 1000 / 15;
-    function loop(ts) { requestAnimationFrame(loop); if (document.hidden) { last = ts; return; } acc += ts - last; last = ts; if (acc < STEP) return; acc %= STEP; update(); tick(); draw(); }
+    // v9: Animation nur, solange eine Ansicht sichtbar ist (kompakte Szene im Bild oder Großansicht offen); im Hintergrund pausiert
+    let onScreen = true;
+    if (root.IntersectionObserver) new IntersectionObserver(es => { onScreen = es.some(x => x.isIntersecting); }).observe(canvas);
+    function loop(ts) { requestAnimationFrame(loop); if (document.hidden || (!onScreen && views.size < 2)) { last = ts; return; } acc += ts - last; last = ts; if (acc < STEP) return; acc %= STEP; update(); tick(); draw(); }
     view(canvas, 1);
     return {
       /** Startet nach dem Laden der Sprite-Sheets (assets: Promise); ohne Sheets oder bei Fehler mit dem bisherigen Zeichencode. */
@@ -474,6 +524,20 @@
         ids.forEach(id => { const p = entPos(ENT_SPOT[id] || ''); if (!p) return; const [x, y] = p.length > 2 ? [p[0] + (p[2] >> 1), p[1] + (p[3] >> 1)] : [p[0], p[1] - 10];
           for (let k = 0; k < 5; k++) sparkles.push({ x: x + Math.round((Math.random() - .5) * 16), y: y + Math.round((Math.random() - .5) * 10), l: 30 + k * 9 }); });
         if (!running) draw();
+      },
+      /** v9 Baustein C: Rückmeldung am Beet der Gewohnheit starten (plan aus LAG.rueckmeldung). Gibt false zurück, wenn es kein Beet im Sprite-Hof gibt. */
+      feedback(habitId, plan, fromStage) {
+        if (mode !== 'sprites' || !slots.has(habitId)) return false;
+        fb.set(habitId, { t0: nowMs(), d: Math.max(100, plan.ms - 100), plan, from: fromStage });   // 100 ms Luft für Bildraster (15 fps)
+        if (root.performance && performance.mark) performance.mark('lag-fb-start');
+        update(); draw(); if (deps.reduce) setTimeout(() => { fb.clear(); update(); draw(); }, plan.ms - 100);
+        return true;
+      },
+      /** Mitte des Pflanzplatzes einer Gewohnheit in Bildschirmkoordinaten auf der Ansicht cv, oder null, wenn sie nicht im Bild ist. */
+      bedPoint(habitId, cv) {
+        const s = slots.get(habitId), v = views.get(cv); if (!s || !v) return null; const r = cv.getBoundingClientRect(), w = viewW(v);
+        const x = r.left + (s.x0 + 8 + OX - Math.floor((FW - w) / 2)) * (r.width / w), y = r.top + (s.by + 10) * (r.height / H);
+        return x >= 0 && y >= 0 && x <= root.innerWidth && y <= root.innerHeight && r.bottom > 0 ? [x, y] : null;
       },
       /** v9: Welche Entdeckung liegt unter dem Punkt (Bildschirmkoordinaten) auf der Ansicht cv? Für das Info-Blatt beim Antippen. */
       hitEnt(cv, clientX, clientY) {
