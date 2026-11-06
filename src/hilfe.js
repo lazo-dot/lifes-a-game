@@ -21,7 +21,6 @@
     darstellung: ['Darstellung', '„Lesbare Schrift“ zeigt Fließtexte in der Systemschrift, Überschriften und Zahlen bleiben in Pixel-Schrift. Das Thema ändert nur die Farben der Oberfläche, nicht den Hof; „Passend zur Jahreszeit“ wechselt mit ihr. „Gut unterscheidbar“ nutzt Farben, die auch bei Rot-Grün-Schwäche auseinanderzuhalten sind, und passt zu jedem Thema.'],
     akzent: ['Akzentfarbe', 'Die Akzentfarbe gilt für Überschriften, Anker, aktive Tabs und Hervorhebungen. „Thema“ nimmt die Farbe des Farbthemas. Alle Farben sind in jedem Thema gut lesbar.'],
     daten: ['Daten & Sicherung', 'Alles bleibt auf diesem Gerät. Eine Sicherung ist eine Textdatei mit allen Daten, mit der du deinen Hof später wiederherstellen kannst.'],
-    hofchronik: ['Hofchronik', 'Ein Hof-Tag ist jeder Tag, an dem du mindestens eine Gewohnheit geschafft hast, auch als Mini oder nachgetragen. Mit der Zeit entdeckst du dabei Neues auf deinem Hof. Nichts davon geht verloren, nichts läuft ab.'],
     beta: ['Beta-Zahlen', 'Diese Zahlen bleiben auf dem Gerät. Sie helfen dir und uns, wenn du sie freiwillig weitergibst, zu prüfen, ob der Hof beim Dranbleiben hilft. „Gehalten“ heißt: in den 14 Tagen bis dahin mindestens die Hälfte der geplanten Termine geschafft.']
   };
   const words = s => String(s).trim().split(/\s+/).filter(Boolean).length;
@@ -40,7 +39,8 @@
     if (c.checkin) return { kind: 'checkin', text: 'Magst du kurz auf deinen Tag schauen? Der Check-in dauert keine halbe Minute.' };
     if (c.neu && c.neu.length) {
       const n = c.neu.length;
-      return { kind: 'entdeckt', items: c.neu, text: n === 1 ? 'Schau mal: ' + c.neu[0].satz : `Auf deinem Hof gibt es ${n} neue Dinge zu entdecken.` };
+      // Freigabe Entwurf v9: einzeilig, ohne eigenen Knopf (die ganze Zeile öffnet das Blatt „Neu auf deinem Hof“)
+      return { kind: 'entdeckt', items: c.neu, text: 'Neu auf deinem Hof: ' + (n === 1 ? c.neu[0].name : `${n} Dinge`) };
     }
     if (c.milestones && c.milestones.length) { const m = c.milestones[0]; return { kind: 'milestone', text: m.text, item: m }; }
     const s = c.sayings && c.sayings.length ? c.sayings : ['Schön, dass du da bist.'];

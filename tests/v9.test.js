@@ -144,8 +144,26 @@ test('Wilma: Neu entdeckt nach Check-in und vor Meilenstein, mehrere gebündelt'
   assert.equal(HX.pickHint({ late: [{ title: 'x', day: 'gestern' }], checkin: true, neu, milestones: ms }).kind, 'late');
   assert.equal(HX.pickHint({ checkin: true, neu, milestones: ms }).kind, 'checkin');
   const one = HX.pickHint({ neu, milestones: ms });
-  assert.equal(one.kind, 'entdeckt'); assert.match(one.text, /Schmetterlinge/);
+  assert.equal(one.kind, 'entdeckt'); assert.equal(one.text, 'Neu auf deinem Hof: Schmetterlinge');
   const many = HX.pickHint({ neu: zwei, milestones: ms });
-  assert.equal(many.kind, 'entdeckt'); assert.match(many.text, /3 neue Dinge/); assert.equal(many.items.length, 3);
+  assert.equal(many.kind, 'entdeckt'); assert.equal(many.text, 'Neu auf deinem Hof: 3 Dinge'); assert.equal(many.items.length, 3);
   assert.equal(HX.pickHint({ neu: [], milestones: ms }).kind, 'milestone');
+});
+
+test('Entdeckungen: erreichtAm ist der Hof-Tag, an dem die Schwelle erreicht wurde (nicht der Tag des Ansehens)', () => {
+  const k = days(8), s = st([hab('a', logsOf(k))]);
+  L.markHofGesehen(s, ['schmetterlinge', 'steg'], T);
+  const e = L.entdeckungen(s, T);
+  assert.equal(e.find(x => x.id === 'schmetterlinge').erreichtAm, k[2]);
+  assert.equal(e.find(x => x.id === 'steg').erreichtAm, k[6]);
+  assert.equal(e.find(x => x.id === 'bienenwiese').erreichtAm, null);
+});
+
+test('Erntekalender: Satzzeile zählt Hof-Tage des Jahres nach der Hof-Tage-Regel', () => {
+  const h = hab('a', { '2025-12-31': 'done', '2026-01-02': 'tiny', '2026-01-03': 'repaired', '2026-03-01': 'done' }, { createdAt: '2025-12-01', history: [{ from: '2025-12-01', effort: 1, frequency: { kind: 'daily' } }] }), s = st([h]);
+  s.journal.push({ date: '2026-02-01', weather: 'heiter', text: 'x' });
+  assert.equal(L.hofTageImJahr(s, '2026', T), 2);
+  assert.equal(L.hofTageImJahr(s, 2025, T), 1);
+  const g = L.yearGrid(s, L.derive(s, T), null, '2026', T);
+  assert.equal(g.cells.filter(c => typeof c.v === 'number' && c.v > 0).length, 4, 'Färbung der Kacheln bleibt wie bisher');
 });

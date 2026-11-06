@@ -32,7 +32,7 @@ class Sprite {
       if (bevel) { if (!same(x, y - 1, sid) || !same(x - 1, y, sid)) i = idx + 1; else if (!same(x, y + 1, sid) || !same(x + 1, y, sid)) i = idx - 1; }
       set(base, x, y, r[Math.max(0, Math.min(r.length - 1, i))]); }
     const out = Uint8Array.from(base);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (base[(y * w + x) * 4 + 3]) continue;
+    if (this.outline !== false) for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (base[(y * w + x) * 4 + 3]) continue;
       for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) { const nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && nx < w && ny < h && this.mat[ny][nx]) { set(out, x, y, RAMPS[this.mat[ny][nx][0]][0]); break; } } }
     const glow = new Uint8Array(w * h * 4), shadow = new Uint8Array(w * h * 4);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (this.glow[y][x]) set(glow, x, y, this.glow[y][x]); if (this.sh[y][x]) set(shadow, x, y, SHADOW); }
@@ -70,11 +70,10 @@ function exportSheet(name, frames, names, tags, [w, h], outdir, ms = 100) {
 
 /* ---------- Orte und Dinge (32 × 32, Fußpunkt 16/31) ---------- */
 const ORTE = {
-  steg(s) {            // Bohlen-Steg von oben, ragt nach rechts unten ins Wasser
-    s.shadow(16, 30, 14, 2);
-    s.rect(1, 20, 30, 9, 'Holz', 3);
-    for (let x = 4; x < 31; x += 4) s.vline(x, 21, 7, 'Holz', 1);
-    for (const [x, y] of [[0, 19], [29, 19], [0, 27], [29, 27]]) s.rect(x, y, 3, 3, 'Holz', 1);
+  steg(s) {            // Freigabe Entwurf v9: senkrecht vom oberen Ufer ins Wasser (Bohlen quer, Pfähle im Wasser), Fußpunkt = Stegende
+    s.rect(11, 2, 10, 27, 'Holz', 3);
+    for (let y = 5; y < 29; y += 3) s.hline(12, y, 8, 'Holz', 1);
+    for (const [x, y] of [[9, 12], [20, 12], [9, 27], [20, 27]]) s.rect(x, y, 3, 3, 'Holz', 1);
   },
   bienenstock(s) {     // Strohkorb auf kleinem Holzbock
     s.shadow(16, 30, 7, 2);
@@ -126,10 +125,11 @@ function baum(s, fruits) {
 
 /* ---------- Besucher (16 × 16, je 2 Frames, Fußpunkt 8/15) ---------- */
 const BESUCHER = {
-  schmetterling: f => s => {
-    if (f === 0) { s.rect(4, 6, 3, 3, 'Blüte rosa', 2); s.rect(9, 6, 3, 3, 'Blüte rosa', 2); s.rect(5, 9, 2, 2, 'Blüte rosa', 1); s.rect(9, 9, 2, 2, 'Blüte rosa', 1); }
-    else { s.rect(6, 6, 1, 4, 'Blüte rosa', 2, false); s.rect(9, 6, 1, 4, 'Blüte rosa', 2, false); }
-    s.vline(7, 7, 4, 'Umriss & Nacht', 2); s.vline(8, 7, 4, 'Umriss & Nacht', 2);
+  schmetterling: f => s => {  // Freigabe Entwurf v9: 7 × 6, zwei Flügelpaare, dunkler Körper, ohne Umriss; Frame 2 = Flügel hochgeklappt
+    s.outline = false;
+    const M = f === 0 ? ['.o...o.', 'PP.o.PP', 'PPPoPPP', '.PPoPP.', '.pPoPp.', '.pp.pp.'] : ['..o.o..', '..PoP..', '..PoP..', '..PoP..', '..pop..', '.......'];
+    const C = { P: ['Blüte rosa', 2], p: ['Blüte rosa', 0], o: ['Umriss & Nacht', 2] };
+    M.forEach((row, y) => [...row].forEach((ch, x) => { if (C[ch]) s.px(4 + x, 7 + y, C[ch][0], C[ch][1]); }));
   },
   biene: f => s => {
     s.ellipse(5, 8, 6, 4, 'Frucht gelb', 2); s.vline(7, 8, 4, 'Umriss & Nacht', 1); s.vline(9, 8, 4, 'Umriss & Nacht', 1);

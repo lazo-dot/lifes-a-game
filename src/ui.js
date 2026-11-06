@@ -86,7 +86,23 @@
   /** Bild je Entdeckung (Platzhalter-Sheets), ohne Sheet leer. */
   const ENT_IMG = { schmetterlinge: ['hof-besucher', 'schmetterling'], steg: ['hof-entdeckungen', 'steg'], bienenwiese: ['hof-entdeckungen', 'bienenstock'], eichhoernchen: ['hof-besucher', 'eichhoernchen'],
     obstwiese: ['hof-entdeckungen', 'obstbaum-fruechte'], gemuesegarten: ['hof-entdeckungen', 'gemuesebeet'], erntefest: ['hof-entdeckungen', 'festtisch'], ruheecke: ['hof-entdeckungen', 'bank-laterne'], hofschild: ['hof-entdeckungen', 'hofschild'] };
-  const entImg = (id, k = 2) => { const x = ENT_IMG[id]; return x ? sheetImg(x[0], x[1], k) : ''; };
+  const ENT_ICON = { regenbogen: 'regenbogen', gluehwuermchen: 'gluehwurm' };   // per Code (src/sprites.js)
+  const entImgs = new Map();
+  /** Bild je Entdeckung, auf den Inhalt zugeschnitten und ganzzahlig vergrößert (höchstens 44 px), mittig in einer festen Bildspalte. */
+  function entImg(id) {
+    if (entImgs.has(id)) return entImgs.get(id);
+    let src = null; const x = ENT_IMG[id];
+    if (x) { const sh = SH && SH.get(x[0]); if (sh && sh.rect('base', x[1])) { src = document.createElement('canvas'); src.width = sh.w; src.height = sh.h; SH.draw(src.getContext('2d'), sh, 'base', x[1], sh.anchor.x, sh.anchor.y); } }
+    else if (ENT_ICON[id]) src = SP.sprite(ENT_ICON[id]);
+    if (!src) return '';
+    const d = src.getContext('2d').getImageData(0, 0, src.width, src.height).data; let x0 = src.width, y0 = src.height, x1 = -1, y1 = -1;
+    for (let y = 0; y < src.height; y++) for (let xx = 0; xx < src.width; xx++) if (d[(y * src.width + xx) * 4 + 3]) { x0 = Math.min(x0, xx); y0 = Math.min(y0, y); x1 = Math.max(x1, xx); y1 = Math.max(y1, y); }
+    if (x1 < 0) return '';
+    const bw = x1 - x0 + 1, bh = y1 - y0 + 1, k = Math.max(1, Math.floor(44 / Math.max(bw, bh))), c = document.createElement('canvas'); c.width = bw * k; c.height = bh * k;
+    const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(src, x0, y0, bw, bh, 0, 0, c.width, c.height);
+    const h = `<img class="pi" src="${c.toDataURL()}" alt="" width="${c.width}" height="${c.height}">`; entImgs.set(id, h); return h;
+  }
+  const entDate = e => e.erreichtAm || e.gesehenAm;
   /** Auf dem Hof sichtbar: Gesehenes immer, Erreichtes erst, wenn die Farm wach ist (nachts taucht nichts Neues auf). */
   const entOnFarm = () => (D && D.ent ? D.ent : []).filter(e => e.gesehenAm || (e.erreicht && !L.farmSleeps(hour()))).map(e => e.id);
   const entNew = () => (S.demo || L.farmSleeps(hour()) || !D.ent) ? [] : D.ent.filter(e => e.neu);
@@ -94,16 +110,16 @@
   function entSheet(ids, trigger) {
     const t = today(), list = D.ent.filter(e => ids.includes(e.id));
     if (!S.demo && L.markHofGesehen(S, list.filter(e => e.neu).map(e => e.id), t).length) { derive(); save(); }
-    const dated = list.map(e => Object.assign({}, e, { am: (S.hofGesehen || {})[e.id] || t }));
+    const dated = list.map(e => Object.assign({}, e, { am: entDate(e) || (S.hofGesehen || {})[e.id] || t }));
     const title = dated.length === 1 ? dated[0].name : 'Neu auf deinem Hof';
-    openSheet(title, `<div class="ent-list">${dated.map(e => `<div class="ent">${entImg(e.id) ? `<span class="pv">${entImg(e.id)}</span>` : ''}<div>${dated.length > 1 ? `<b>${esc(e.name)}</b>` : ''}<p>${esc(e.satz)}</p><p class="ctx">Entdeckt am ${fmt(e.am, { day: 'numeric', month: 'long', year: 'numeric' })} · ${esc(e.ort)}</p></div></div>`).join('')}</div>`, trigger, { refocus: '#npc .hd2, #scene' });
+    openSheet(title, `<div class="ent-list">${dated.map(e => `<div class="ent"><span class="pv">${entImg(e.id)}</span><div>${dated.length > 1 ? `<b>${esc(e.name)}</b>` : ''}<p>${esc(e.satz)}</p><p class="ctx">Entdeckt am ${fmt(e.am, { day: 'numeric', month: 'long', year: 'numeric' })} · ${esc(e.ort)}</p></div></div>`).join('')}</div>`, trigger, { refocus: '#npc .hd2, #scene' });
     R.npc(); scene.refresh();
   }
   /** Hofchronik: alle sichtbaren Entdeckungen mit Datum. Noch nicht Entdecktes erscheint nicht, die nächste Schwelle nirgends. */
   function chronikSheet(trigger) {
     const vis = D.ent.filter(e => e.sichtbar), n = L.hofTage(S, today());
-    openSheet('Hofchronik', `<p class="ctx">${n} ${n === 1 ? 'Hof-Tag' : 'Hof-Tage'} · ${vis.length} ${vis.length === 1 ? 'Entdeckung' : 'Entdeckungen'}</p>
-      ${vis.length ? `<div class="ent-list">${vis.map(e => `<button type="button" class="ent ent-b" data-act="ent-open" data-ids="${e.id}">${entImg(e.id) ? `<span class="pv">${entImg(e.id)}</span>` : '<span class="pv"></span>'}<span><b>${esc(e.name)}</b><span class="ctx">${e.gesehenAm ? fmt(e.gesehenAm, { day: 'numeric', month: 'long', year: 'numeric' }) : 'neu'}</span></span></button>`).join('')}</div>`
+    openSheet('Hofchronik', `<p>Hof-Tage sind Tage, an denen du mindestens eine Gewohnheit gepflegt hast. Sie gehen nie verloren.</p><p class="ctx num">${n} ${n === 1 ? 'Hof-Tag' : 'Hof-Tage'} · ${vis.length} ${vis.length === 1 ? 'Entdeckung' : 'Entdeckungen'}</p>
+      ${vis.length ? `<div class="ent-list">${vis.map(e => `<button type="button" class="ent ent-b" data-act="ent-open" data-ids="${e.id}"><span class="pv">${entImg(e.id)}</span><span><b>${esc(e.name)}</b><span class="ctx">${entDate(e) ? fmt(entDate(e), { day: 'numeric', month: 'long', year: 'numeric' }) : ''}</span></span></button>`).join('')}</div>`
         : '<p>Noch ist alles ruhig. Wenn du deine Gewohnheiten pflegst, tut sich hier mit der Zeit etwas.</p>'}`, trigger, { refocus: '#chronikBtn' });
   }
   const weather = () => L.currentWeather(S, today(), preview);
@@ -369,11 +385,11 @@
     let stat;
     if (hid) { const days = Object.entries(D.H[hid].days).filter(([k]) => k.startsWith(year)); const done = days.filter(([, v]) => v === 'done').length, tiny = days.filter(([, v]) => v === 'tiny').length, rep = days.filter(([, v]) => v === 'repaired' || v === 'watered').length;
       stat = `${done + tiny} erledigt in ${year}${tiny ? `, davon ${tiny} als Mini-Version` : ''}${rep ? ` · ${rep} gerettet` : ''}`; }
-    else { const n = g.cells.filter(c => typeof c.v === 'number' && c.v > 0).length; stat = `${n} ${n === 1 ? 'Tag' : 'Tage'} in ${year} mit mindestens einer Erledigung`; }
+    else { const n = L.hofTageImJahr(S, year, t); stat = `${n} ${n === 1 ? 'Hof-Tag' : 'Hof-Tage'} in ${year}`; }   // v9: gleiche Regel wie die Hofchronik
     const legend = hid ? LEGEND.map(([v, l]) => `<span><i class="v-${v}"></i>${l.replace(/:$/, '').replace(' (abgeschrägte Ecke)', '')}</span>`).join('')
       : `<span>wenig</span>${[0, 1, 2, 3, 4].map(v => `<i class="v-${v}"></i>`).join('')}<span>viel</span>`;
     return `<div class="harvest"><div class="ctl"><select class="in" id="calHabit" aria-label="Kalender für">${[['', 'Alle Gewohnheiten'], ...S.habits.map(h => [h.id, h.title + (h.archivedAt ? ' (pausiert)' : '')])].map(([v, l]) => `<option value="${v}" ${v === hid ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
-      <button class="btn ghost" type="button" data-act="cal-prev" ${+year <= firstYear ? 'disabled' : ''} aria-label="Vorheriges Jahr">‹</button><span>${year}</span><button class="btn ghost" type="button" data-act="cal-next" ${year >= t.slice(0, 4) ? 'disabled' : ''} aria-label="Nächstes Jahr">›</button></div>
+      <span class="yr"><button class="btn ghost" type="button" data-act="cal-prev" ${+year <= firstYear ? 'disabled' : ''} aria-label="Vorheriges Jahr">‹</button><span>${year}</span><button class="btn ghost" type="button" data-act="cal-next" ${year >= t.slice(0, 4) ? 'disabled' : ''} aria-label="Nächstes Jahr">›</button></span></div>
       <div class="cal-scroll"><div class="cal-grid" style="--cols:${g.cols}" role="img" aria-label="Erntekalender ${year}: ${esc(stat)}">${months}${wd}${cells}</div></div>
       <div class="cal-info" id="calInfo" aria-live="polite">Tippe auf einen Tag, um Datum und Status zu sehen.</div>
       <div class="ctx">${esc(stat)}</div><div class="cal-legend">${legend}</div></div>`;
@@ -476,7 +492,7 @@
       const grads = S.habits.filter(x => D.H[x.id].graduated), jm = S.journal.filter(j => j.date.startsWith(ym)).length;
       let h = head('h2', 'Fortschritt', 'fortschritt');
       const ht = L.hofTage(S, t), ne = D.ent.filter(e => e.sichtbar).length;
-      h += `<div class="hd2"><h3>Hofchronik</h3>${qBtn('hofchronik')}</div><button type="button" class="chronik" id="chronikBtn" data-act="chronik"><span><b>${ht}</b> ${ht === 1 ? 'Hof-Tag' : 'Hof-Tage'} · <b>${ne}</b> ${ne === 1 ? 'Entdeckung' : 'Entdeckungen'}</span><span class="vh">, Liste öffnen</span><span class="go" aria-hidden="true">›</span></button>`;
+      h += `<h3>Hofchronik</h3><button type="button" class="chronik" id="chronikBtn" data-act="chronik"><span><b>${ht}</b> ${ht === 1 ? 'Hof-Tag' : 'Hof-Tage'} · <b>${ne}</b> ${ne === 1 ? 'Entdeckung' : 'Entdeckungen'}</span><span class="vh">, Liste öffnen</span><span class="go" aria-hidden="true">›</span></button>`;
       h += `<div class="hd2"><h3>Erntekalender</h3>${qBtn('kalender')}</div>${calendarHTML()}
         <h3>Monatsrückblick ${mName}</h3><div class="badges month">${[['gem', done, 'erledigt', 'erledigte Termine'], ['boot', tiny, 'Mini', 'davon Mini-Versionen'], ['p2', grown, 'gewachsen', 'Pflanzen gewachsen'], ['flower', grads.length, 'gemeistert', 'gemeistert'], ['book', jm, 'Logbuch', 'Logbuch-Einträge']].map(([ic, n, w, sr]) => `<span class="bdg">${img(ic, 2, '')}<b>${n}</b> <span aria-hidden="true">${w}</span><span class="vh">${sr}</span></span>`).join('')}</div>`;
       h += `<div class="hd2"><h3>Gemeistert</h3>${qBtn('gemeistert')}</div>` + (grads.length ? `<div class="hall">${grads.map(g => `<div>${img('gem', 3, '')}<span>${esc(g.title)} · gemeistert am ${fmt(D.H[g.id].gradDate, { day: 'numeric', month: 'long' })}</span></div>`).join('')}</div>` : '<p class="ctx">Noch keine gemeisterte Gewohnheit.</p>');
@@ -500,9 +516,12 @@
       const x = hint(); U.hint = x; $('#npcFace').innerHTML = img('wilma', 3, ''); $('#npcText').textContent = x.text;
       const a = { late: () => `<button class="btn sm" type="button" data-act="late-open" data-id="${x.item.id}" data-k="${x.item.k}">Eintragen</button>`,
         checkin: () => `<button class="btn sm" type="button" data-act="ci-open">Check-in</button><button class="btn ghost" type="button" data-act="ci-later">Später</button>`,
-        entdeckt: () => `<button class="btn sm" type="button" data-act="ent-open" data-ids="${x.items.map(e => e.id).join(',')}">Ansehen</button>`,
+        entdeckt: () => '',
         milestone: () => x.item.acts || '', spruch: () => x.more ? `<button class="btn ghost" type="button" data-act="npc-next" aria-label="Nächster Hinweis von Wilma">Mehr</button>` : '' }[x.kind]();
       $('#npcAct').innerHTML = a; $('#npcAct').hidden = !a;
+      // v9 (Freigabe Punkt 1): Entdeckungs-Meldung einzeilig, die ganze Zeile ist die Tap-Fläche
+      $('#npc').classList.toggle('ent-on', x.kind === 'entdeckt');
+      if (x.kind === 'entdeckt') $('#npcText').innerHTML = `<button type="button" class="npc-ent" data-act="ent-open" data-ids="${x.items.map(e => e.id).join(',')}">${esc(x.text)}<span class="go" aria-hidden="true">›</span></button>`;
       // v9: Neu Entdecktes funkelt einmal je Sitzung an seiner Stelle
       if (x.kind === 'entdeckt' && scene) { U.sparkled = U.sparkled || new Set(); const ids = x.items.map(e => e.id).filter(id => !U.sparkled.has(id)); if (ids.length) { ids.forEach(id => U.sparkled.add(id)); setTimeout(() => scene.sparkle(ids), 600); } }
     },

@@ -46,7 +46,7 @@
   const TINT = { morning: '#ffe8d6', day: null, evening: '#b59bd0', night: '#4a4f8a' };   // Multiplizieren je Tageszeit
   const SHADOW = { color: PAL.nacht[1], alpha: .3 };
   /* v9: Plätze der Entdeckungen (Fußpunkt, Kern-Koordinaten), überschreibbar in hof-karte.json „entdeckungen“. Ränder: x < 0 bzw. ≥ 256. */
-  const ENT_POS = { steg: [198, 133], bienenstock: [10, 150], obst1: [-14, 62], obst2: [-34, 98], gemuese: [278, 92], ruheecke: [158, 140], hofschild: [118, 101], festtisch: [150, 74],
+  const ENT_POS = { steg: [219, 143], bienenstock: [10, 150], obst1: [-14, 62], obst2: [-34, 98], gemuese: [278, 92], ruheecke: [158, 140], hofschild: [118, 101], festtisch: [150, 74],
     eichhoernchen: [90, 18], wiese: [14, 118, 96, 32], frosch1: [236, 124], frosch2: [190, 150] };
   /** Welche Teile eine Entdeckung als feste Dinge zeigt: [Tag im Sheet hof-entdeckungen, Platz]. */
   const ENT_STATIC = { steg: [['steg', 'steg']], bienenwiese: [['bienenstock', 'bienenstock']], obstwiese: [['obstbaum', 'obst1'], ['obstbaum', 'obst2']],
@@ -239,7 +239,7 @@
       const es = SH.get('hof-entdeckungen'), ids = e.ent ? e.ent.split(',') : [];
       ids.forEach(id => (ENT_STATIC[id] || []).forEach(([tag, key]) => {
         const p = entPos(key), t = tag === 'obstbaum' && e.fruit ? 'obstbaum-fruechte' : tag; if (!p || !es || !es.rect('base', t)) return;
-        occ.push(tag === 'obstbaum' ? [p[0] - 14, p[1] - 30, 28, 32] : [p[0] - 16, p[1] - 14, 32, 16]); items.push({ fy: p[1], fx: p[0], sh: es, tag: t, glow: lit && t === 'bank-laterne' });
+        occ.push(tag === 'obstbaum' ? [p[0] - 14, p[1] - 30, 28, 32] : tag === 'steg' ? [p[0] - 6, p[1] - 30, 12, 30] : [p[0] - 16, p[1] - 14, 32, 16]); items.push({ fy: p[1], fx: p[0], sh: es, tag: t, glow: lit && t === 'bank-laterne' });
       }));
       // Tierplätze: freie Plätze (nicht auf Gebäuden, Beeten, Deko) für die aufgestellten Landtiere freihalten, damit dort nichts gestreut wird
       const nLand = S.chest.placed.filter(p => L.ITEMS[p.itemId].animal && p.itemId !== 'duck').length;

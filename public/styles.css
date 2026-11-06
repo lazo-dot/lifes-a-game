@@ -555,12 +555,19 @@ html.noscroll,html.noscroll body{overflow:hidden}
 
 /* ---------- v9: Hofchronik und Entdeckungen ---------- */
 .chronik{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:48px;padding:8px 12px;background:var(--panel-in);border:2px solid var(--panel-3);color:var(--text);font:inherit;font-size:1.25rem;text-align:left;cursor:pointer}
-.chronik b{font-family:var(--f-display);color:var(--accent)}
+.chronik b,.num{font-family:var(--f-body);font-weight:400;font-size:1.5rem;color:var(--accent)}   /* Freigabe Punkt 3: Ziffern nicht in Pixelify (5 ≈ S) */
 .chronik .go{font-family:var(--f-display);font-size:1.5rem;color:var(--text-soft)}
 .chronik:hover{border-color:var(--text-soft)}
 .ent-list{display:grid;gap:8px}
 .ent{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;padding:8px 10px;background:var(--panel-in);border:2px solid var(--panel-3);color:var(--text);font:inherit;text-align:left}
 .ent p{margin:0}
-.ent .pv{min-width:64px;display:grid;place-items:center}
+.ent .pv{width:48px;height:48px;display:grid;place-items:center}   /* feste Bildspalte, Bild mittig */
 .ent-b{width:100%;min-height:48px;cursor:pointer}
 .ent-b>span:last-child{display:grid;gap:2px}
+.num{font-size:inherit}
+.tab .n{font-family:var(--f-body);font-size:1rem;line-height:1.25}
+.yr{display:inline-flex;align-items:center;gap:8px;flex:none}
+.harvest .ctl select.in{flex:1 1 120px}
+.npc-ent{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:4px 10px;background:var(--panel-dk);border:2px solid var(--text-soft);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.npc-ent .go{font-family:var(--f-display);color:var(--accent)}
+.npc.ent-on .npc-name{display:none}

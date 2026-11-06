@@ -475,11 +475,14 @@
     return [...set].sort();
   }
   const hofTage = (state, heute) => hofTagListe(state, heute).length;
-  /** Alle Entdeckungen mit Stand: erreicht (Schwelle erreicht), gesehenAm (Datum aus hofGesehen oder null), sichtbar (erreicht oder gesehen), neu (erreicht, noch nicht gesehen). */
+  /** Hof-Tage eines Kalenderjahres (für die Satzzeile unter dem Erntekalender, Freigabe Entwurf v9 Punkt 4). */
+  const hofTageImJahr = (state, jahr, heute) => hofTagListe(state, heute).filter(k => k.startsWith(String(jahr))).length;
+  /** Alle Entdeckungen mit Stand: erreicht (Schwelle erreicht), erreichtAm (der Hof-Tag, an dem die Schwelle erreicht wurde, aus den Logs),
+   *  gesehenAm (Datum aus hofGesehen oder null), sichtbar (erreicht oder gesehen), neu (erreicht, noch nicht gesehen). */
   function entdeckungen(state, heute) {
-    const n = hofTage(state, heute), seen = (state && state.hofGesehen && typeof state.hofGesehen === 'object') ? state.hofGesehen : {};
+    const tage = hofTagListe(state, heute), n = tage.length, seen = (state && state.hofGesehen && typeof state.hofGesehen === 'object') ? state.hofGesehen : {};
     return ENTDECKUNGEN.map(e => { const erreicht = n >= e.schwelle, gesehenAm = typeof seen[e.id] === 'string' ? seen[e.id] : null;
-      return Object.assign({}, e, { erreicht, gesehenAm, sichtbar: erreicht || !!gesehenAm, neu: erreicht && !gesehenAm }); });
+      return Object.assign({}, e, { erreicht, erreichtAm: erreicht ? tage[e.schwelle - 1] : null, gesehenAm, sichtbar: erreicht || !!gesehenAm, neu: erreicht && !gesehenAm }); });
   }
   /** Markiert Entdeckungen als gesehen (nur fehlende Einträge; ein gesetztes Datum bleibt). Gibt die neu markierten IDs zurück. */
   function markHofGesehen(state, ids, heute) {
@@ -560,7 +563,7 @@
     dayWeather, journalOn, currentWeather, needsCheckin, farmSleeps, yearGrid,
     emptyState, migrateV3, importState,
     BUILDINGS, PLANTS, PLANT_FRAMES, suggestBuilding, suggestPlant, buildingStage, plantFrame, migrateV8a,
-    ENTDECKUNGEN, hofTagListe, hofTage, entdeckungen, markHofGesehen, EFFECTS, effectsOf, rueckmeldung
+    ENTDECKUNGEN, hofTagListe, hofTage, hofTageImJahr, entdeckungen, markHofGesehen, EFFECTS, effectsOf, rueckmeldung
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = LAG; else root.LAG = LAG;
 })(typeof self !== 'undefined' ? self : this);

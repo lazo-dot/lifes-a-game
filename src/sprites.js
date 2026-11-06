@@ -40,6 +40,8 @@
     duck: { m: ["..gg..", ".gGgy.", "wwwww.", ".www.."], p: { g: '#2f7a4a', G: '#3fa060', y: '#f0a020', w: '#fffaf0' } },
     beehive: { m: [".oooo.", "oYYYYo", "oyyyyo", "oYYYYo", "oyyyyo", "oooooo"], p: { o: '#5a3a10', Y: '#f0c860', y: '#c8962a' } },
     well: { m: ["RRRRRRRR", "o......o", "oSSSSSSo", "oSbbbbSo", "oSbbbbSo", "oSSSSSSo", ".oooooo."], p: { R: '#7a4e30', o: '#2a2a30', S: '#9aa0a8', b: '#2f4f6e' } },
+    regenbogen: { m: ["..rrrr..", ".roooor.", "royyyyor", "oyggggyo", "ygb..bgy", "gb....bg"], p: { r: '#d91c32', o: '#ef8e10', y: '#f0c742', g: '#3e913b', b: '#397fc6' } },   // v9: Symbol für Hofchronik
+    gluehwurm: { m: ["..y.....", ".yYy..y.", "..y..yYy", ".....+y.", "..y.....", ".yYy....", "..y....."], p: { y: '#ffd27a', Y: '#fff3c4', '+': '#ffd27a' } },
     wilma: { m: ["bbbbbbbbbbbb", "bbbooooooobb", "bboggggggGob", "boggSSSSgGgo", "bogSSSSSSgGo", "boSkkSSkkSgo", "boSkeSSekSgo", "bboSSSmSSsob", "bbboSSSSsobb", "bboTTTTTttob", "boTTTTTTTtto", "boTTTTTTTtto"], p: { o: O, g: '#c9c3dc', G: '#9a92b8', S: '#f0c39a', s: '#d09a7a', k: '#4a3a5a', e: O, m: '#c05a5a', T: '#5a9a7a', t: '#3e7a5e', b: '#3a5a48' } }
   };
   const STYLES = [{ c: '#e0605a', hi: '#f6a69c', dk: '#93291f' }, { c: '#5a8fe0', hi: '#a8c6f6', dk: '#24498f' }, { c: '#f080c0', hi: '#f8bcdc', dk: '#a33a75' }, { c: '#d99a5a', hi: '#f0c896', dk: '#8a5530' }, { c: '#f0607a', hi: '#f8a8b6', dk: '#9b1f33' }, { c: '#b48cf0', hi: '#dcc8fa', dk: '#5e3a9a' }];
