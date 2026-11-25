@@ -16,7 +16,7 @@ Der Koordinations-Chat behält den Überblick über alle Chats und Dokumente. Er
 
 | Was | Wo |
 |---|---|
-| Repo | `~/Desktop/lifes-a-game` (bis 01.11. `lifes-a-game-v4`), GitHub `lazo-dot/lifes-a-game` (öffentlich), App auf GitHub Pages `https://lazo-dot.github.io/lifes-a-game/` |
+| Repo | `~/Desktop/Desk/lifes-a-game` (seit spätestens 25.11.; vorher `~/Desktop/lifes-a-game`, bis 01.11. `lifes-a-game-v4`) – **liegt in iCloud (Schreibtisch-Synchronisierung), viele Dateien nur in der Cloud**, GitHub `lazo-dot/lifes-a-game` (öffentlich), App auf GitHub Pages `https://lazo-dot.github.io/lifes-a-game/` |
 | Docs im Projekt (Original) | `claude/`: projektstatus, Leitfaden (v1.10), abgleich-checkliste (kurz; Verlauf in `claude/archiv/`), selbsttest-plan, namensfindung, prompt-spieleentwickler (Rollen-Prompt + Forschung zu Spielgefühl/Neuheit/Gemütlichkeit), pixel-styleguide-stil-b, ux-verschlankung-v8c, ux-heuristische-evaluation-v6, ux-testleitfaden-v6, simulation-30/72-tage (abgeschlossen), marketingkonzept, marktanalyse. **Projekt = Quelle, Repo-`docs/` = Kopien (Entscheidung 15)** |
 | Docs im Repo (Kopien plus Repo-eigene) | `docs/`: Kopien der Projekt-Docs; Claude Code schreibt `V*-ZUSAMMENFASSUNG.md` und `ABWEICHUNGEN.md`; dazu `farbthemen.json` (7 Themen, Akzente, Kontraste), `text-inventar-v8c.md`, Screenshots |
 | Neuer Ablauf (ab 02.11.) | `docs/auftraege/` (README + Auftragsdateien), `docs/abnahme.json` (Grenzwerte), `docs/feedback.md` (Lars' Sammelstelle) |
@@ -34,6 +34,7 @@ Der Koordinations-Chat behält den Überblick über alle Chats und Dokumente. Er
 
 ## 4. Stand
 
+- **Stand 25.11.:** v9 (9.0.0) abgeglichen, nur auf Branch `v9` + Vorschau; v9.1 „Wege finden“ beauftragt (`docs/auftraege/v9-1.md`, Entscheidung 16); Merge v9+v9.1 gemeinsam nach iPhone-Prüfung. Selbsttest beendet (23.11.), **Auswertung K1–K7 fehlt noch – Daten von Lars anfordern**. Leitfaden v1.11.
 - **Online:** 8.2.1 (v8c „Ruhiger Bildschirm“ plus Arbeitsablauf: `npm run abnahme`, Vorschau `/preview/`, Hooks, schlanke CLAUDE.md), 105 Tests, Abnahme grün mit 2 bekannt offenen Punkten. Wichtige Stände davor:
   - v6: Nachtragen, erreichbare Graduierung
   - v7: Bedienbarkeit
@@ -75,5 +76,5 @@ Der Koordinations-Chat behält den Überblick über alle Chats und Dokumente. Er
 - **Artifacts brauchen ein Claude-Konto** zum Öffnen (auch mit Link). Für Menschen ohne Konto: eigene Seite auf GitHub Pages in einem separaten Repo (Beispiel `lifes-a-game-test`), nicht im App-Repo (sonst Update-Hinweis auf Lars' iPhone).
 - **Claude Code darf keine öffentlichen Repos anlegen oder Pages einschalten** (Rechteprüfung). Solche Schritte als Befehle für Lars in den Auftrag schreiben; `gh` liegt auf dem Mac unter `~/.local/bin/gh` (angemeldet).
 - **Eigenständige HTML-Seiten brauchen `[hidden]{display:none!important}`**, sobald Elemente mit `display:flex/grid` per `hidden` umgeschaltet werden (Artifacts bringen die Regel mit, GitHub Pages nicht).
-- **Ins Repo schreiben geht jetzt über die Brücke:** Ordner `~/Desktop/lifes-a-game` ist freigegeben, `device_commit_files` mit `expectedMtimeMs` (vorher `device_list_dir`), nur wenn Claude Code nicht arbeitet. Nicht committen – das macht Claude Code.
+- **Ins Repo schreiben geht jetzt über die Brücke:** Ordner `~/Desktop/Desk/lifes-a-game` ist freigegeben (bei Umzug neu anfragen), `device_commit_files` mit `expectedMtimeMs` (vorher `device_list_dir`), nur wenn Claude Code nicht arbeitet. Nicht committen – das macht Claude Code.
 - **Ein Claude-Code-Chat pro Auftrag.** Der erste Chat lief über v5–v8c, das führte zu Kontextverlust.

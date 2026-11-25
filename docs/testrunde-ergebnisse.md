@@ -53,6 +53,23 @@ Erfolg: 2 = ohne Hilfe · 1 = mit Umwegen · 0 = nicht geschafft · Leichtigkeit
 3. **Schwelle für v9:** Zeigen weitere Personen dieselben Umwege (Abhaken, Ändern, Pausieren), kommen Auffindbarkeit des Info-Blatts und sichtbarere Hilfe als UX-Punkte in den v9-Auftrag.
 4. **Ideen** → Ideenspeicher (Projektstatus 6): kooperatives Dorf (Leitfaden Phase 5, opt-in), Fokus-/Lernphasen wie Forest.
 
+## Entscheidungen (25.11.2026, vorläufig, Projektstatus Entscheidung 16)
+
+- **v9.1 „Wege finden“ wird umgesetzt.** Code-Befund bestätigt P1: Im Info-Blatt stehen Bearbeiten/Pausieren unter sieben Infozeilen (meist erst nach Scrollen), Abhaken ist dort nicht möglich – wahrscheinliche Ursache der Umwege bei Aufgabe 2, 4 und 5. Umsetzung: Aktionen oben im Blatt, „›“ an Karten, Wilma-Hinweise einzeilig, „?“ deutlicher, Anker-Beispiel im Formular.
+- **Glossar (U7)** nicht vorrangig; **Regentag-Regel (U8)** bleibt; **Vorlagen (U18)** bleiben v10-Kandidat.
+- Revision, wenn die nächsten zwei Testpersonen anderes zeigen.
+
+## Zielwerte für die nächste Testrunde (nach v9.1)
+
+| Kennzahl | P1 (8.2.1) | Ziel |
+|---|---|---|
+| SUS | 62,5 | ≥ 68 (Durchschnitt), Ziel 75 |
+| Abhaken: Erfolg / Leichtigkeit | mit Umweg / 4 | ohne Hilfe / ≥ 6 |
+| Ändern: Erfolg / Leichtigkeit | mit Umweg / 3 | ohne Hilfe / ≥ 5 |
+| Pausieren: Leichtigkeit | 3 | ≥ 5 |
+| „Ungereimtheiten“ (SUS 6) | 4 | ≤ 2 |
+| Verständnis (4 Fragen) | 4/4 (Spieler) | ≥ 3/4 auch bei Nicht-Spielern |
+
 ## Offene Rückfragen an P1
 
 - Was war der Umweg beim **Abhaken** (Aufgabe 2)?

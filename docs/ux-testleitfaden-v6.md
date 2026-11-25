@@ -53,7 +53,7 @@ Der Test-Hof enthält:
 
 **Weitere Vorbereitung:**
 - Uhrzeit: zwischen 8 und 21 Uhr testen. Ab 22 Uhr „schläft die Farm“, dann lässt sich nicht dekorieren (Aufgabe 6).
-- Musik aus, Effekte an.
+- Musik aus, Klänge an, Effekte „Normal“ (Einstellungen → Darstellung).
 - Einverständnis und Beobachtungsbogen ausdrucken, Stoppuhr bereithalten.
 - Optional eine Bildschirmaufnahme in iOS mit Mikrofon, nur mit Einverständnis.
 

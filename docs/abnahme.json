@@ -87,5 +87,16 @@
    "hof-gute-woche.png",
    "hof-schwache-woche.png"
   ]
+ },
+ "v9.1": {
+  "_hinweis": "v9.1 „Wege finden“. bildzeit_ms misst die Rechenzeit je Szenenbild (Abweichung v9/9).",
+  "erster_haken_max_pt": 450,
+  "erster_haken_mit_meldung_max_pt": 450,
+  "info_blatt_aktionen_ohne_scrollen": [
+   "Erledigt",
+   "Mini",
+   "Bearbeiten",
+   "Pausieren"
+  ]
  }
 }

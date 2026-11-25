@@ -1,9 +1,20 @@
 # Life's a Game – Entwicklungsleitfaden Habit Tracker (forschungs- und marktbasiert)
 
-Version 1.10 · Stand: 02.11.2026
+Version 1.11 · Stand: 06.11.2026
 Grundlagen: [Research Insights for App Design](https://claude.ai/code/artifact/bf3f4dda-dc8c-4703-8009-641d0208463d) · [Marktanalyse](marktanalyse-habit-apps.md) · [Projektstatus](projektstatus.md) · [Marketingkonzept](marketingkonzept.md) · Prototyp 8.2.1 (Repo `lifes-a-game`, GitHub Pages; Vorschau für Branches unter `/preview/`) · [Pixel-Style-Guide](pixel-styleguide-stil-b.md) · [UX-Evaluation](ux-heuristische-evaluation-v6.md) · [Simulation 30 Tage](simulation-30-tage.md) · [Simulation 72 Tage](simulation-72-tage.md) · [Abgleich-Checkliste](abgleich-checkliste.md)
 
 Dieses Dokument übersetzt die Forschung zu Motivation, Gamification und Gewohnheitsbildung sowie die Erkenntnisse aus der Marktanalyse in konkrete Entwicklungsentscheidungen. Zahlenwerte (XP, Kurven, Wahrscheinlichkeiten) sind begründete Startwerte, die im Prototyp getestet und angepasst werden.
+
+### Änderungen in v1.11 (Abgleich mit Prototyp v9 – Hof-Tage und lebendige Welt)
+
+| Bereich | Änderung | Grund |
+|---|---|---|
+| Datenmodell | Optionale Felder auf oberster Ebene: `hofGesehen: { [entdeckungId]: Datum }` (welche Entdeckung schon gezeigt wurde) und `effects: 'ruhig' \| 'normal'`. Schema bleibt 4 | v9; Hof-Tage selbst werden abgeleitet |
+| Spielwelt | 11 Entdeckungen nach Hof-Tagen (5.4); Datum in der Hofchronik = Tag, an dem die Schwelle erreicht wurde; Gesehenes bleibt sichtbar, auch nach Löschen einer Gewohnheit | Abweichung v9/2 |
+| Spielwelt | Hof-Ereignisse mit fester Regel (5.4): Regenbogen, Erntefest, Glühwürmchen/Laternen – nie verpassbar | Abweichung v9/3 |
+| Rückmeldung | Abhaken: Funken vom Haken zum eigenen Beet, abgestuft (Mini ≤ 400 ms, erledigt ≤ 600 ms, Ernte/Fund ≤ 900 ms), nie blockierend; Einstellung „Effekte: ruhig/normal“; der Ton-Schalter heißt „Klänge“ | v9, Kao 2020/2024, Abweichung v9/6–7 |
+| Statistik | Satzzeile unter dem Erntekalender zählt Hof-Tage des Jahres; Kachelfärbung unverändert | Abweichung v9/5 |
+| Spielwelt | „Heute gepflegt“: feuchte Erde unter heute erledigten Pflanzen; offene Beete bleiben neutral | Prinzip 8 |
 
 ### Änderungen in v1.10 (Kritische Durchsicht 02.11.2026, Projektstatus Entscheidungen 10–15)
 
@@ -183,6 +194,8 @@ interface Habit {
   gradRewarded: boolean;         // Fund für "Gemeistert" schon vergeben
   plotId?: string;               // Beet auf dem Hof
   plantType?: "beere" | "blume" | "kuerbis" | "baeumchen"; // ab v8a, Vorschlag reihum
+  // Zustand (oberste Ebene, ab v9, optional): hofGesehen?: Record<string, string> – Entdeckung → Tag des ersten Zeigens;
+  // effects?: "ruhig" | "normal" – Stärke der Abhak-Rückmeldung
   archivedAt?: string;
   createdAt: string;
 }
@@ -339,6 +352,8 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 - **Begleiter/NPC (Phase 2, vorgezogen):** reagiert auf Fortschritte („Du warst diese Woche jeden Tag laufen!“), überbringt Nudges und Check-in. Deckt Verbundenheit ab, solange es keine sozialen Features gibt (Sailer 2017; Finch). v3: Wilma ✅. Später optional ein Farm-Tier als zweiter Begleiter.
 - **Atmosphäre:** Tageszeit, Wetter, Jahreszeiten, wetterabhängige Klaviermusik ✅. Musik und Effekte getrennt schaltbar.
 - **Schrittweise Freischaltung:** neue Bereiche, Jahreszeiten-Inhalte, Crafting über die ersten Wochen verteilt (Neuheitseffekt-Abfall nach ca. 3–8 Wochen, Koivisto & Hamari 2019; U-Verlauf mit Tief ab Woche 4, Rodrigues et al. 2022). **Ab v9 über Hof-Tage:** Tage mit mindestens einer erledigten Gewohnheit (voll, Mini oder nachgetragen; nicht To-dos, Logbuch, Regentag oder Extra-Runde), aufsummiert, nie verloren. Etwa alle 5–7 Hof-Tage bis Woche 10, in Woche 3–8 dichter: neue Randbereiche, umherlaufende Tiere, kleine Hof-Ereignisse. Farbthemen und Bedienfunktionen bleiben frei.
+- **Entdeckungen ✅ (v9):** 3 Schmetterlinge · 7 Steg (danach Frösche) · 12 Bienenwiese · 15 Regenbogen · 19 Eichhörnchen · 23 Obstwiese · 27 Glühwürmchen (Winter: Laternen) · 31 Gemüsegarten · 36 Erntefest · 42 Ruheecke · 50 Hofschild. Neu Erreichtes funkelt einmal und wird gebündelt gemeldet („Neu auf deinem Hof: … ›“, einzeilig), nicht 22–6 Uhr. Hofchronik im Fortschritt zeigt Hof-Tage und Entdeckungen mit dem Tag des Erreichens, **nie die nächste Schwelle**, keine Silhouetten.
+- **Hof-Ereignisse (v9):** Regenbogen am Tag der Entdeckung, am ersten trockenen Tag nach Regen-Stimmung, sonst gelegentlich; Erntefest am Tag der Entdeckung und danach am ersten Hof-Tag jeder Jahreszeit (also immer an einem Tag mit echter Erledigung); Glühwürmchen Juni–September abends am Weg, Dezember–Februar Laternen. Nichts davon ist verpassbar oder zeitlich begrenzt.
 - **Saisonale Events** pro Jahreszeit als Inhalts-Rhythmus (Habitica-Prinzip), ohne Zeitdruck und ohne verpassbare Exklusiv-Belohnungen.
 - **„Die Farm schläft nachts“ ✅ (22–6 Uhr):** spätabends keine Spielaktionen – kurze Sessions, kein Grinding (Allcott et al. 2022).
 - **Grafik ab v8a:** Sprite-Sheets nach [Pixel-Style-Guide](pixel-styleguide-stil-b.md) (Stil B), Hof als Karte, Szene ganzzahlig skaliert, Licht über Ebenen (Tönung multiplizieren, Leuchten addieren, Schatten 30 %). Gebäude je Fähigkeit in 4 Ausbaustufen (Skill-Level 1–2/3–5/6–9/ab 10), Pflanzen in 5 Stufen plus „Gemeistert“, bis zu 3 Pflanzen je Beet. Grafiken bis zum Launch sind Platzhalter; veröffentlicht werden nur handgezeichnete Grafiken.
@@ -346,6 +361,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 
 ### 5.5 Fortschritt & Statistiken 🟡
 
+- **Satzzeile unter dem Kalender (ab v9):** „N Hof-Tage in <Jahr>“ nach der Hof-Tage-Regel, damit nur eine Zählweise sichtbar ist.
 - **Erntekalender (Phase 1) ✅:** Jahres-Kachelraster pro Gewohnheit und gesamt im Pixel-Stil; Kachelfarbe nach Status (erledigt / Mini / repariert); nachgetragene Tage dezent markiert (abgeschrägte Ecke, Legende) ✅. Kacheln sind antippbar (Datum, Status) und als einziges Element von der 44-pt-Regel ausgenommen ✅ (v7).
 - Pro Skill ein Verlaufsgraph ✅ (v3: 30 Tage) (Vergleich mit sich selbst, nicht mit anderen – Sailer 2017). Gerade hier ist Habitica am schwächsten.
 - Monatsrückblick ✅: erledigte Termine, gewachsene Pflanzen, gemeisterte Gewohnheiten.
@@ -397,7 +413,7 @@ Ein kurzes Ritual macht die App selbst zur Gewohnheit (Finch-Prinzip):
 | 4 – Langzeit | Jahreszeiten-Inhalte, Freischaltungen, NPC-Story, saisonale Events, Monatsrückblicke, Widgets, Apple Health | Flutter (iOS) | 🟡 Jahreszeiten-Optik, Monatsrückblick |
 | 5 – Sozial (optional) | Kooperatives Dorf mit Freunden, Teilen von Wochenkarten | Flutter (iOS, dann Android) | ⬜ |
 
-**Nächster Schritt:** Selbsttest auf main fortsetzen; v9 (Welt und Freischaltungen, ohne Regeländerung), Kurz-Vortest auf v9; v10 (Regeln nach dem Selbsttest), danach Usability-Test mit 5 Personen. Dann Flutter-Grundgerüst: Logik und Tests 1:1 nach Dart, Szene mit Flame, lokale Notifications.
+**Nächster Schritt:** Selbsttest auf main bis 23.11.; v9 (Hof-Tage, Entdeckungen, Abhak-Rückmeldung) in der Vorschau auf dem iPhone prüfen und nach der Selbsttest-Auswertung mergen; v9.1 Bedienung (falls Tests es bestätigen); v10 Regeln nach dem Selbsttest, danach Usability-Test mit 5 Personen; dann Flutter: Logik und Tests nach Dart, lokale Erinnerungen, Szene mit Flame.
 
 **Prüfung jeder Version (ab 8.2.1):** `npm test` und `npm run abnahme` (Grenzwerte in `docs/abnahme.json`, bekannt offene Punkte mit Verweis auf `docs/feedback.md`), Branch-Vorschau unter `/preview/` mit eigenem Speicher; Merge nach main erst nach Freigabe.
 
