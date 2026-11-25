@@ -275,7 +275,9 @@
     const f = h ? h.frequency : { kind: 'daily' }, days = f.kind === 'weekdays' ? f.days : [1, 2, 3, 4, 5], n = f.kind === 'weekly' ? f.timesPerWeek : 3, eff = h ? h.effort : 2, plant = (h && h.plantType) || L.suggestPlant(S.habits.length);
     return `<form class="hform" data-form="${p}" novalidate>
       <div class="step"><b>1</b><label for="${p}-title">Was möchtest du tun?</label><div class="ctl"><input class="in" id="${p}-title" data-f="title" maxlength="60" placeholder="z. B. 10 Minuten dehnen" value="${h ? esc(h.title) : ''}"></div></div>
-      <div class="step"><b>2</b><label for="${p}-anchor">Wann genau? Nach welcher Routine?</label><div class="ctl"><span class="pre">Nach</span><input class="in" id="${p}-anchor" data-f="anchor" maxlength="60" placeholder="dem ersten Kaffee" value="${h ? esc(h.anchor) : ''}"><input class="in" type="time" data-f="time" aria-label="Ungefähre Uhrzeit der Routine (optional)" value="${h ? esc(h.anchorTime) : ''}"></div></div>
+      <div class="step"><b>2</b><label for="${p}-anchor">Wann genau? Nach welcher Routine?</label><div class="ctl"><span class="pre">Nach</span><input class="in" id="${p}-anchor" data-f="anchor" maxlength="60" placeholder="z. B. dem ersten Kaffee" aria-describedby="${p}-anchor-h" value="${h ? esc(h.anchor) : ''}"></div>
+        <p class="hint" id="${p}-anchor-h" style="grid-column:2">Eine Routine, keine Uhrzeit: z. B. „nach dem ersten Kaffee“. Die Uhrzeit hat ein eigenes Feld.</p>
+        <label class="tm" style="grid-column:2"><span>Ungefähre Uhrzeit (optional)</span><input class="in" type="time" data-f="time" value="${h ? esc(h.anchorTime) : ''}"></label></div>
       <div class="step"><b>3</b><span class="lab">Wie oft ist realistisch?</span>
         <div class="ctl">${[['daily', 'Täglich'], ['weekdays', 'An bestimmten Tagen'], ['weekly', 'X-mal pro Woche']].map(([k, l]) => `<button type="button" class="chip" data-freq="${k}" aria-pressed="${f.kind === k}">${l}</button>`).join('')}</div>
         <div class="ctl" data-g="days" ${f.kind === 'weekdays' ? '' : 'hidden'}>${[1, 2, 3, 4, 5, 6, 0].map(d => `<button type="button" class="chip" data-day="${d}" aria-pressed="${days.includes(d)}">${DAYS[d]}</button>`).join('')}</div>
@@ -533,14 +535,13 @@
     },
     npc() {
       const x = hint(); U.hint = x; $('#npcFace').innerHTML = img('wilma', 3, ''); $('#npcText').textContent = x.text;
-      const a = { late: () => `<button class="btn sm" type="button" data-act="late-open" data-id="${x.item.id}" data-k="${x.item.k}">Eintragen</button>`,
-        checkin: () => `<button class="btn sm" type="button" data-act="ci-open">Check-in</button><button class="btn ghost" type="button" data-act="ci-later">Später</button>`,
-        entdeckt: () => '',
-        milestone: () => x.item.acts || '', spruch: () => x.more ? `<button class="btn ghost" type="button" data-act="npc-next" aria-label="Nächster Hinweis von Wilma">Mehr</button>` : '' }[x.kind]();
+      // v9.1: Hinweise einzeilig wie „Neu auf deinem Hof … ›“: Porträt, ein Satz, „›“; die ganze Zeile öffnet das zugehörige Blatt, kein eigener Knopf mehr
+      const open = { late: () => `data-act="late-open" data-id="${x.item.id}" data-k="${x.item.k}"`, checkin: () => 'data-act="ci-open"',
+        entdeckt: () => `data-act="ent-open" data-ids="${x.items.map(e => e.id).join(',')}"`, milestone: () => x.item.open || '', spruch: () => '' }[x.kind]();
+      const a = x.kind === 'spruch' && x.more ? `<button class="btn ghost" type="button" data-act="npc-next" aria-label="Nächster Hinweis von Wilma">Mehr</button>` : '';
       $('#npcAct').innerHTML = a; $('#npcAct').hidden = !a;
-      // v9 (Freigabe Punkt 1): Entdeckungs-Meldung einzeilig, die ganze Zeile ist die Tap-Fläche
-      $('#npc').classList.toggle('ent-on', x.kind === 'entdeckt');
-      if (x.kind === 'entdeckt') $('#npcText').innerHTML = `<button type="button" class="npc-ent" data-act="ent-open" data-ids="${x.items.map(e => e.id).join(',')}">${esc(x.text)}<span class="go" aria-hidden="true">›</span></button>`;
+      $('#npc').classList.toggle('ent-on', x.kind === 'entdeckt'); $('#npc').classList.toggle('line-on', !!open);
+      if (open) $('#npcText').innerHTML = `<button type="button" class="npc-ent npc-line" ${open}><span>${esc(x.zeile || x.text)}</span><span class="go" aria-hidden="true">›</span></button>`;
       // v9: Neu Entdecktes funkelt einmal je Sitzung an seiner Stelle
       if (x.kind === 'entdeckt' && scene) { U.sparkled = U.sparkled || new Set(); const ids = x.items.map(e => e.id).filter(id => !U.sparkled.has(id)); if (ids.length) { ids.forEach(id => U.sparkled.add(id)); setTimeout(() => scene.sparkle(ids), 600); } }
     },
@@ -607,27 +608,41 @@
   }
   /** v9: Kontextzeile beginnt mit dem Anker, Uhrzeit bzw. Wochenstand danach; sie darf auf zwei Zeilen umbrechen, nichts wird abgeschnitten (feedback.md 02.11.). */
   const habitCtx = (h, d) => `nach ${esc(h.anchor)}${d.weekly ? ` · ${d.weekCnt} von ${d.N} diese Woche` : h.anchorTime ? ` · <span class="nw">${timeText(h.anchorTime)}</span>` : ''}`;
-  /** v8c Regel 2: kompakte Karte, höchstens zwei Textzeilen und eine Reihe Abzeichen. Antippen (außer Haken und Mini) öffnet das Info-Blatt. */
+  /** v8c Regel 2: kompakte Karte, höchstens zwei Textzeilen und eine Reihe Abzeichen. Antippen (außer Haken und Mini) öffnet das Info-Blatt.
+   *  v9.1: „›“ rechts zeigt, dass die Karte antippbar ist; die ganze Karte außer Haken und Mini ist Tap-Fläche (Tastatur: der Titel-Knopf). */
   function habitRow(h, opt = {}) {
     const d = D.H[h.id], st = styleOf(skillById(h.skillId)), done = d.doneToday === 'done', tiny = d.doneToday === 'tiny', check = opt.check !== false;
-    return `<div class="row hrow${done || tiny ? ' done' : ''}${check ? '' : ' nochk'}" data-hid="${h.id}">
+    return `<div class="row hrow${done || tiny ? ' done' : ''}${check ? '' : ' nochk'}" data-hid="${h.id}" data-act="hsheet" data-id="${h.id}">
       ${check ? `<button class="chk${tiny ? ' tiny' : ''}" type="button" data-act="hdone" data-id="${h.id}" aria-pressed="${done || tiny}" aria-label="${done || tiny ? 'Rückgängig' : 'Erledigt'}: ${esc(h.title)}"></button>` : ''}
       <button class="hopen" type="button" data-act="hsheet" data-id="${h.id}"><span class="row-title">${esc(h.title)}</span><span class="ctx">${check ? habitCtx(h, d) : `nach ${esc(h.anchor)} · ${freqText(h.frequency)}`}</span><span class="badges">${habitBadges(h, d, st)}</span><span class="vh">, Details öffnen</span></button>
-      ${check ? `<button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" aria-label="${tiny ? 'Rückgängig' : 'Mini-Version erledigt'}: ${esc(h.tinyVersion)}">Mini</button>` : ''}</div>`;
+      ${check ? `<button class="minib" type="button" data-act="htiny" data-id="${h.id}" aria-pressed="${tiny}" aria-label="${tiny ? 'Rückgängig' : 'Mini-Version erledigt'}: ${esc(h.tinyVersion)}">Mini</button>` : ''}<span class="go" aria-hidden="true">›</span></div>`;
   }
-  /** Info-Blatt einer Gewohnheit: alle übrigen Angaben und die Aktionen Bearbeiten, Kalender, Pausieren. */
+  /** v9.1 Knopfreihe oben im Info-Blatt: Erledigt · Mini · Bearbeiten · Pausieren; „Rückgängig“, wenn heute schon eingetragen; „Fortsetzen“ bei pausierten.
+   *  Abhaken nur, wenn die Gewohnheit heute ansteht (wie die Karte auf „Heute“) – keine neue Regel. */
+  function habitActs(h, d) {
+    if (h.archivedAt) return `<button class="btn wide" type="button" data-act="resume" data-id="${h.id}">Fortsetzen</button>`;
+    const now = d.doneToday, ed = `<button class="btn alt" type="button" data-act="edit" data-id="${h.id}">Bearbeiten</button><button class="btn alt" type="button" data-act="pause" data-id="${h.id}">Pausieren</button>`;
+    if (!d.due) return ed;
+    if (now) return `<button class="btn alt wide undo" type="button" data-act="sh-log" data-id="${h.id}" data-st="undo" aria-pressed="true" aria-label="Rückgängig: heute ${now === 'tiny' ? 'Mini-Version' : 'erledigt'}"><span>✓ Heute ${now === 'tiny' ? 'Mini' : 'erledigt'}</span><b>Rückgängig</b></button>` + ed;
+    return `<button class="btn" type="button" data-act="sh-log" data-id="${h.id}" data-st="done">Erledigt</button><button class="btn mini" type="button" data-act="sh-log" data-id="${h.id}" data-st="tiny" aria-label="Mini-Version erledigt: ${esc(h.tinyVersion)}"><b>Mini</b><span>${esc(h.tinyVersion)}</span></button>` + ed;
+  }
+  /** Info-Blatt einer Gewohnheit (v9.1): oben die Aktionen, darunter die Kurzinfo (Anker, Pflanze/Stärke), der Rest unter „Mehr“ (aufklappbar, keine dritte Ebene). */
   function habitSheet(h, trigger) {
     const d = D.H[h.id], sk = skillById(h.skillId), st = styleOf(sk), pct = Math.round(d.s * 100), stage = L.STAGES[d.stage][1];
-    const html = `<dl class="kv"><dt>Anker</dt><dd>nach ${esc(h.anchor)}${h.anchorTime ? ', ca. ' + timeText(h.anchorTime) : ''} · ${freqText(h.frequency)}</dd>
-      <dt>Pflanze</dt><dd>${stage} · Stärke ${pct} % · ${d.age > 66 ? `Tag ${d.age}, die üblichen 66 Tage sind geschafft` : `Tag ${d.age} von etwa 66`}${d.graduated ? ' · <b>Gemeistert</b>' : ''}</dd>
-      ${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : ''} in Folge${d.weekly ? '' : ' ' + tokBtn(d)}</dd>` : ''}
+    const free = !h.archivedAt && !d.due ? `<p class="ctx">Heute frei${d.weekly ? `: Wochenziel erreicht, ${d.weekCnt} von ${d.N}` : ''}.</p>` : '';
+    const html = `<div class="hs-acts">${habitActs(h, d)}</div>${free}
+      <dl class="kv"><dt>Anker</dt><dd>nach ${esc(h.anchor)}${h.anchorTime ? ', ca. ' + timeText(h.anchorTime) : ''} · ${freqText(h.frequency)}</dd>
+      <dt>Pflanze</dt><dd>${stage} · Stärke ${pct} %${d.graduated ? ' · <b>Gemeistert</b>' : ''}</dd></dl>
+      <div class="bar sm sk" style="--c:${st.c};--hi:${st.hi};--dk:${st.dk}" role="progressbar" aria-label="Gewohnheitsstärke" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+      ${d.suggestOff ? `<div class="suggest">Läuft fast von allein: ${d.weekly ? 'Wochenziel zwei Wochen nacheinander erreicht' : `${d.held14} der letzten ${d.of14} Termine geschafft`}. Erinnerung abschalten? Hältst du die Gewohnheit danach 30 Tage lang an mindestens 70 % der Termine, gilt sie als gemeistert. <button class="btn sm" type="button" data-act="remoff" data-id="${h.id}">Abschalten</button></div>` : ''}
+      <details class="more hs-more"><summary>Mehr <span class="go" aria-hidden="true">›</span></summary>
+      <dl class="kv">${h.streakEnabled ? `<dt>Serie</dt><dd>${d.streak} ${d.weekly ? (d.streak === 1 ? 'Woche' : 'Wochen') : ''} in Folge${d.weekly ? '' : ' ' + tokBtn(d)}</dd>` : ''}
+      <dt>Alter</dt><dd>${d.age > 66 ? `Tag ${d.age}, die üblichen 66 Tage sind geschafft` : `Tag ${d.age} von etwa 66`}</dd>
       <dt>Fähigkeit</dt><dd>${img(sk.icon, 2, '')} ${esc(sk.name)} · +${10 * h.effort} XP je Erledigung</dd>
       <dt>Gezählt</dt><dd>${d.weekly ? `${d.weekCnt} von ${d.N} diese Woche` : `${d.month}× diesen Monat`} · ${d.year}× dieses Jahr</dd>
       <dt>Mini</dt><dd>${esc(h.tinyVersion)}</dd>
       <dt>Wilma erinnert</dt><dd>${h.remindersEnabled ? 'an' : h.remOffAt ? `aus seit ${L.daysBetween(h.remOffAt, today())} Tagen${!d.graduated ? ' (30 für „Gemeistert“)' : ''}` : 'aus'}</dd></dl>
-      <div class="bar sm sk" style="--c:${st.c};--hi:${st.hi};--dk:${st.dk}" role="progressbar" aria-label="Gewohnheitsstärke" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
-      ${d.suggestOff ? `<div class="suggest">Läuft fast von allein: ${d.weekly ? 'Wochenziel zwei Wochen nacheinander erreicht' : `${d.held14} der letzten ${d.of14} Termine geschafft`}. Erinnerung abschalten? Hältst du die Gewohnheit danach 30 Tage lang an mindestens 70 % der Termine, gilt sie als gemeistert. <button class="btn sm" type="button" data-act="remoff" data-id="${h.id}">Abschalten</button></div>` : ''}
-      <div class="row-btns">${h.archivedAt ? `<button class="btn" type="button" data-act="resume" data-id="${h.id}">Fortsetzen</button>` : `<button class="btn" type="button" data-act="edit" data-id="${h.id}">Bearbeiten</button><button class="btn" type="button" data-act="hcal" data-id="${h.id}">Kalender</button><button class="btn" type="button" data-act="pause" data-id="${h.id}">Pausieren</button>`}<button class="btn ghost" type="button" data-act="delhabit" data-id="${h.id}">Löschen</button></div>`;
+      <div class="row-btns">${h.archivedAt ? '' : `<button class="btn alt" type="button" data-act="hcal" data-id="${h.id}">Kalender</button>`}<button class="btn ghost" type="button" data-act="delhabit" data-id="${h.id}">Löschen</button></div></details>`;
     openSheet(h.title, html, trigger, { refocus: `[data-hid="${h.id}"] .hopen` });
   }
   /** v8c: To-do kompakt; Antippen zeigt Fähigkeit, XP und Datum. */
@@ -674,12 +689,19 @@
   function milestones() {
     const t = today(), ym = t.slice(0, 7), m = [], c = L.canAddHabit(S, t);
     if (S.demo) return m;
-    if (c.ok && active().length >= L.C.START_HABITS && !S.unlockSeen) m.push({ id: 'unlock', text: 'Eine Woche geschafft! Magst du noch etwas pflanzen?', acts: '<button class="btn sm" type="button" data-act="unlock-go">Pflanzen</button><button class="btn ghost" type="button" data-act="unlock-no">Später</button>' });
-    if (new Date().getDate() <= 3 && S.freshSeen !== ym && S.startedAt < ym + '-01') m.push({ id: 'fresh', text: 'Ein neuer Monat beginnt, ein guter Moment für einen frischen Start. Möchtest du eine Gewohnheit anpassen oder neu anfangen?', acts: '<button class="btn sm" type="button" data-act="fresh-go">Ansehen</button><button class="btn ghost" type="button" data-act="fresh-no">Später</button>' });
-    S.habits.forEach(h => { const d = D.H[h.id]; if (d.graduated && L.daysBetween(d.gradDate, t) < 7) m.push({ id: 'grad', text: `Glückwunsch! „${h.title}“ ist gemeistert. Das klappt jetzt ganz ohne Erinnerung.` }); });
-    active().forEach(h => { if (D.H[h.id].suggestOff) m.push({ id: 'remoff', text: `„${h.title}“ läuft fast von allein. Magst du die Erinnerung abschalten?`, acts: `<button class="btn sm" type="button" data-act="hsheet" data-id="${h.id}">Ansehen</button>` }); });
-    if (isIOS() && !standalone() && !S.installHintSeen) m.push({ id: 'install', text: 'Als App installieren: Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach läuft dein Hof auch offline.', acts: '<button class="btn sm" type="button" data-act="install-ok">Verstanden</button>' });
+    // v9.1: zeile = ein Satz in Wilmas Zeile, open = was die Zeile öffnet (eigenes Blatt mit Text und Knöpfen bzw. das Info-Blatt der Gewohnheit)
+    const ms = id => `data-act="ms-open" data-ms="${id}"`, hs = h => `data-act="hsheet" data-id="${h.id}"`;
+    if (c.ok && active().length >= L.C.START_HABITS && !S.unlockSeen) m.push({ id: 'unlock', title: 'Eine Woche geschafft', zeile: 'Eine Woche geschafft! Noch etwas pflanzen?', open: ms('unlock'), text: 'Eine Woche geschafft! Magst du noch etwas pflanzen?', acts: '<button class="btn" type="button" data-act="unlock-go">Pflanzen</button><button class="btn ghost" type="button" data-act="unlock-no">Später</button>' });
+    if (new Date().getDate() <= 3 && S.freshSeen !== ym && S.startedAt < ym + '-01') m.push({ id: 'fresh', title: 'Neuer Monat', zeile: 'Neuer Monat, frischer Start?', open: ms('fresh'), text: 'Ein neuer Monat beginnt, ein guter Moment für einen frischen Start. Möchtest du eine Gewohnheit anpassen oder neu anfangen?', acts: '<button class="btn" type="button" data-act="fresh-go">Ansehen</button><button class="btn ghost" type="button" data-act="fresh-no">Später</button>' });
+    S.habits.forEach(h => { const d = D.H[h.id]; if (d.graduated && L.daysBetween(d.gradDate, t) < 7) m.push({ id: 'grad', zeile: `„${h.title}“ ist gemeistert!`, open: hs(h), text: `Glückwunsch! „${h.title}“ ist gemeistert. Das klappt jetzt ganz ohne Erinnerung.` }); });
+    active().forEach(h => { if (D.H[h.id].suggestOff) m.push({ id: 'remoff', zeile: `„${h.title}“ läuft fast von allein`, open: hs(h), text: `„${h.title}“ läuft fast von allein. Magst du die Erinnerung abschalten?` }); });
+    if (isIOS() && !standalone() && !S.installHintSeen) m.push({ id: 'install', title: 'Als App installieren', zeile: 'Als App installieren', open: ms('install'), text: 'Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“. Danach läuft dein Hof auch offline.', acts: '<button class="btn" type="button" data-act="install-ok">Verstanden</button>' });
     return m;
+  }
+  /** v9.1: Blatt zu einem Meilenstein aus Wilmas Zeile (Text und die Knöpfe, die früher in der Karte standen). */
+  function milestoneSheet(id, trigger) {
+    const m = milestones().find(x => x.id === id); if (!m) return;
+    openSheet(m.title, `<p>${esc(m.text)}</p>${m.acts ? `<div class="row-btns">${m.acts}</div>` : ''}`, trigger, { refocus: '#npc .npc-line, #p-today .hd2 h2' });
   }
   function hint() {
     const t = today(), sleep = L.farmSleeps(hour());
@@ -775,7 +797,9 @@
         case 'info': showInfo(el); break;
         case 'explain': { const x = HX.explain(el.dataset.x); if (x) { openSheet(x.title, `<p>${esc(x.text)}</p>`, el); markSeen([x.id]); } break; }
         case 'once-ok': markSeen([el.dataset.x]); el.closest('[data-once]').remove(); break;
-        case 'hsheet': habitSheet(habit(), el); break;
+        case 'hsheet': habitSheet(habit(), el.classList.contains('hrow') ? el.querySelector('.hopen') : el); break;
+        case 'sh-log': { const h = habit(), cur = D.H[h.id].doneToday, st = el.dataset.st === 'undo' ? cur : el.dataset.st; if (st) { logHabit(h, st, pt); scene.refresh(); } closeSheet(); break; }   // v9.1: Abhaken im Info-Blatt, das Blatt schließt, damit die Rückmeldung am Beet sichtbar ist
+        case 'ms-open': milestoneSheet(el.dataset.ms, el); break;
         case 'hcal': U.calHabit = el.dataset.id; closeSheet(); selectTab($('#t-progress')); { const hv = $('#p-progress .harvest'); if (hv) hv.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' }); } break;
         case 'tsheet': todoSheet(S.todos.find(y => y.id === el.closest('[data-tid]').dataset.tid), el); break;
         case 'todo-new': todoNewSheet(el); break;
@@ -836,10 +860,10 @@
           if (L.ITEMS[type].animal) S.chest.placed.push({ itemId: type }); else { const used = new Set(S.chest.placed.map(p => p.slot)), cap = L.slotsFor(D.char.l); let slot = -1; for (let i = 0; i < cap; i++) if (!used.has(i)) { slot = i; break; } if (slot < 0) { au.sfx.err(); break; } S.chest.placed.push({ itemId: type, slot }); }
           if (!--S.chest.items[type]) delete S.chest.items[type]; au.sfx.place(); save(); refresh('chest', 'hud'); scene.refresh(); break; }
         case 'stash': { if (L.farmSleeps(hour())) break; const p = S.chest.placed.splice(+el.dataset.i, 1)[0]; S.chest.items[p.itemId] = (S.chest.items[p.itemId] || 0) + 1; au.sfx.tick(); save(); refresh('chest', 'hud'); scene.refresh(); break; }
-        case 'fresh-go': S.freshSeen = t.slice(0, 7); save(); selectTab($('#t-habits')); R.today(); R.npc(); break;
-        case 'fresh-no': S.freshSeen = t.slice(0, 7); save(); R.today(); R.npc(); break;
-        case 'unlock-go': S.unlockSeen = true; save(); selectTab($('#t-habits')); R.today(); R.npc(); break;
-        case 'unlock-no': S.unlockSeen = true; save(); R.today(); R.npc(); break;
+        case 'fresh-go': closeSheet(); S.freshSeen = t.slice(0, 7); save(); selectTab($('#t-habits')); R.today(); R.npc(); break;
+        case 'fresh-no': closeSheet(); S.freshSeen = t.slice(0, 7); save(); R.today(); R.npc(); break;
+        case 'unlock-go': closeSheet(); S.unlockSeen = true; save(); selectTab($('#t-habits')); R.today(); R.npc(); break;
+        case 'unlock-no': closeSheet(); S.unlockSeen = true; save(); R.today(); R.npc(); break;
         case 'scale': S.textScale = +el.dataset.v; applyLook(); save(); R.settings(); au.sfx.tick(); break;
         case 'font': S.readableFont = !!el.dataset.v || undefined; applyLook(); save(); R.settings(); au.sfx.tick(); break;
         case 'theme': S.theme = el.dataset.v || undefined; applyLook(); save(); R.settings(); au.sfx.tick(); break;
@@ -848,7 +872,7 @@
         case 'metrics-save': { const a = document.createElement('a'), url = URL.createObjectURL(new Blob([metricsJSON()], { type: 'application/json' }));
           a.href = url; a.download = `lifes-a-game-beta-${t}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); break; }
         case 'metrics-copy': { const txt = metricsJSON(); try { navigator.clipboard.writeText(txt).then(() => toast('<span><b>Kopiert.</b> Die Beta-Zahlen liegen in der Zwischenablage.</span>'), () => toast('<span>Kopieren hat nicht geklappt. Nutze „Als Datei sichern“.</span>')); } catch (err) { toast('<span>Kopieren hat nicht geklappt. Nutze „Als Datei sichern“.</span>'); } break; }
-        case 'install-ok': S.installHintSeen = true; save(); R.today(); R.npc(); break;
+        case 'install-ok': closeSheet(); S.installHintSeen = true; save(); R.today(); R.npc(); break;
         // Onboarding
         case 'ob-start': showOnboarding('habits'); break;
         case 'ob-back': showOnboarding('welcome'); break;
@@ -933,7 +957,8 @@
     derive();
     scene = root.LAGScene.createScene($('#scene'), { state: () => S, D: () => D, weather, phase, sleeps: () => L.farmSleeps(hour()), thunder: () => au.thunder(), entdeckt: entOnFarm, ereignisse: () => (D && D.ev) || {}, onMood: m => { au.Music.setMood(m); R.cal(); }, reduce });
     tabIcons(); layout(); sizeScene();
-    if (root.MutationObserver) new MutationObserver(gearIcon).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-palette'] });   // v9: Zahnrad folgt dem Thema if (narrowMQ) narrowMQ.addEventListener('change', () => { layout(); sizeScene(); }); root.addEventListener('resize', () => { layout(); sizeScene(); });
+    if (root.MutationObserver) new MutationObserver(gearIcon).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-palette'] });   // v9: Zahnrad folgt dem Thema
+    if (narrowMQ) narrowMQ.addEventListener('change', () => { layout(); sizeScene(); }); root.addEventListener('resize', () => { layout(); sizeScene(); });
     bind(); R.progress(); refresh(); scene.start(assets);
     setTimeout(() => au.warm(), 1500);   // v9: Audio vorab anlegen, der erste Haken setzt nur fort
     if (assets) Promise.resolve(assets).then(() => refresh(), () => {});   // Vorschaubilder und Hinweis „Vorläufige Grafiken“

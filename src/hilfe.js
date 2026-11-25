@@ -2,13 +2,14 @@
  * DOM-frei, läuft im Browser (window.LAGHilfe) und in Node (Tests).
  * Erklärungen stehen hinter einem „?“ und öffnen ein Info-Blatt: ein Thema, höchstens 60 Wörter (Konzept v8c, Regel 3).
  * Wilma zeigt immer nur einen Hinweis, nach Vorrang: offener Nachtrag, Check-in, Neu entdeckt (v9), Meilenstein, Hof- oder Wetterspruch (Regel 5).
+ * v9.1: Jeder Hinweis hat zusätzlich `zeile` (ein kurzer Satz für Wilmas einzeilige Zeile); `text` bleibt der volle Satz.
  */
 (function (root) {
   'use strict';
   const MAX_WORDS = 60;
   /** id → [Titel, Text]. Texte aus v8.1 (Text-Inventar), nur gekürzt, wo es über 60 Wörter waren. */
   const X = {
-    heute: ['Heute', 'Hake ab, was du geschafft hast. An schlechten Tagen zählt die Mini-Version voll. Tippst du auf eine Gewohnheit, siehst du alle Angaben dazu und kannst sie bearbeiten, im Kalender ansehen oder pausieren.'],
+    heute: ['Heute', 'Hake ab, was du geschafft hast. An schlechten Tagen zählt die Mini-Version voll. Tippst du auf eine Gewohnheit (›), kannst du sie auch dort abhaken, bearbeiten oder pausieren und alle Angaben sehen.'],
     nachtragen: ['Nachtragen', 'Vergessen einzutragen? Gestern und vorgestern lassen sich nachholen. Nachgetragenes zählt voll, nur Funde gibt es dafür keine. Hat ein Regentag den Tag gerettet, bekommst du ihn durch das Nachtragen zurück. Ist ein Tag wirklich ausgefallen, rettet eine Extra-Runde heute deine Serie.'],
     regentage: ['Regentage', 'Ein Regentag rettet automatisch einen verpassten Tag deiner Serie. Für je 7 erledigte Termine bekommst du einen, höchstens zwei. Verzeihende Hilfen setzen keine Zähler zurück.'],
     todo: ['To-dos', 'Nur der Titel ist Pflicht. Aufwand und Fähigkeit bestimmen die XP, ein Datum plant das To-do für einen Tag. Jedes To-do kann einmal einen Fund bringen.'],
@@ -35,14 +36,14 @@
    * v9: Mehrere neue Entdeckungen zugleich ergeben eine gebündelte Meldung.
    */
   function pickHint(c) {
-    if (c.late && c.late.length) { const x = c.late[0]; return { kind: 'late', text: `${x.day[0].toUpperCase() + x.day.slice(1)} ist bei „${x.title}“ noch nichts eingetragen.`, item: x }; }
-    if (c.checkin) return { kind: 'checkin', text: 'Magst du kurz auf deinen Tag schauen? Der Check-in dauert keine halbe Minute.' };
+    if (c.late && c.late.length) { const x = c.late[0]; const Day = x.day[0].toUpperCase() + x.day.slice(1); return { kind: 'late', text: `${Day} ist bei „${x.title}“ noch nichts eingetragen.`, zeile: `${Day} noch offen: ${x.title}`, item: x }; }
+    if (c.checkin) return { kind: 'checkin', text: 'Magst du kurz auf deinen Tag schauen? Der Check-in dauert keine halbe Minute.', zeile: 'Kurzer Check-in für heute' };
     if (c.neu && c.neu.length) {
       const n = c.neu.length;
       // Freigabe Entwurf v9: einzeilig, ohne eigenen Knopf (die ganze Zeile öffnet das Blatt „Neu auf deinem Hof“)
-      return { kind: 'entdeckt', items: c.neu, text: 'Neu auf deinem Hof: ' + (n === 1 ? c.neu[0].name : `${n} Dinge`) };
+      const t = 'Neu auf deinem Hof: ' + (n === 1 ? c.neu[0].name : `${n} Dinge`); return { kind: 'entdeckt', items: c.neu, text: t, zeile: t };
     }
-    if (c.milestones && c.milestones.length) { const m = c.milestones[0]; return { kind: 'milestone', text: m.text, item: m }; }
+    if (c.milestones && c.milestones.length) { const m = c.milestones[0]; return { kind: 'milestone', text: m.text, zeile: m.zeile || m.text, item: m }; }
     const s = c.sayings && c.sayings.length ? c.sayings : ['Schön, dass du da bist.'];
     return { kind: 'spruch', text: s[(c.idx || 0) % s.length], more: s.length > 1 };
   }

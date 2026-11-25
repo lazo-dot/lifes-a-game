@@ -3,6 +3,8 @@
  * Prüft danach, dass ein v6-Hof unverändert geladen wird. Taps auf Elemente unter 44 pt werden gemeldet.
  *   node tools/ux/aufgaben-v8c.js [url]   (ohne url: baut dist/ und startet einen eigenen Server)
  * 8.2.1: Chrome-Steuerung aus tools/ux/chrome.js (gemeinsam mit tools/abnahme.js).
+ * v9.1: Aufgaben 2, 4 und 7 zusätzlich über das Info-Blatt (Karte antippen → Knopfreihe oben, ohne Scrollen im Bild): 2b Abhaken und Rückgängig,
+ *       4b Bearbeiten von „Gewohnheiten“ aus (Antippen der Karte am „›“), 7b Pausieren von „Heute“ aus.
  */
 'use strict';
 const path = require('path'), { open, testhof } = require('./chrome');
@@ -33,6 +35,13 @@ const path = require('path'), { open, testhof } = require('./chrome');
     await tap(row('5 Minuten dehnen').querySelector('[data-act=hdone]')); await tap(row('10 Minuten lesen').querySelector('[data-act=htiny]')); await flush();
     s = await state(); const H = t => s.habits.find(h => h.title === t);
     res['2 Abhaken + Mini'] = H('5 Minuten dehnen').logs[T] === 'done' && H('10 Minuten lesen').logs[T] === 'tiny';
+    // v9.1: Aktion im Info-Blatt ohne Scrollen ganz im Bild?
+    const inView = b => { if (!b) return false; const r = b.getBoundingClientRect(), sh = $('.sheet'); return sh.scrollTop === 0 && r.top >= 0 && r.bottom <= innerHeight && b.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)); };
+    // 2b Abhaken über das Info-Blatt (Titel statt Kasten), danach „Rückgängig“ im Blatt
+    await tap(row('Spazieren gehen').querySelector('.hopen')); res.sheet2b = ['done', 'tiny'].map(st => inView($('.sheet [data-act=sh-log][data-st=' + st + ']')));
+    await tap($('.sheet [data-act=sh-log][data-st=done]')); await flush(); s = await state(); const sp1 = H('Spazieren gehen').logs[T] === 'done';
+    await tap(row('Spazieren gehen').querySelector('.hopen')); const und = $('.sheet [data-act=sh-log][data-st=undo]'); res.undo2b = inView(und); await tap(und); await flush(); s = await state();
+    res['2b Abhaken im Info-Blatt'] = sp1 && !H('Spazieren gehen').logs[T] && res.sheet2b.every(Boolean) && res.undo2b && !$('.sheet');
     // 3 Nachtragen
     const late = $$('#todayBody .late1').find(r => r.innerText.includes('10 Minuten lesen')); await tap(late.querySelector('[data-act=late-open]')); await tap($('.sheet [data-st=done]'));
     res.toast3 = ($('.toast') || {}).innerText; await flush(); s = await state();
@@ -41,6 +50,10 @@ const path = require('path'), { open, testhof } = require('./chrome');
     await tab('today'); await tap(row('Spazieren gehen').querySelector('[data-act=hsheet]')); res.sheet4 = !!$('.sheet [data-act=edit]'); await tap($('.sheet [data-act=edit]'));
     const ef = $('.sheet [data-form="edit"]'); setVal(ef.querySelector('[data-f=n]'), '2'); await tap(ef.querySelector('button[type=submit]')); await flush(); s = await state();
     res['4 Bearbeiten'] = H('Spazieren gehen').frequency.timesPerWeek === 2;
+    // 4b Bearbeiten über das Info-Blatt, von „Gewohnheiten“ aus (Antippen am „›“ der Karte)
+    await tab('habits'); const c4 = $$('#p-habits [data-hid]').find(c => c.innerText.includes('10 Minuten lesen')); await tap(c4); const e4 = $('.sheet [data-act=edit]'); res.sheet4b = inView(e4);
+    await tap(e4); const ef4 = $('.sheet [data-form="edit"]'); setVal(ef4.querySelector('[data-f=tiny]'), 'Zwei Seiten lesen'); await tap(ef4.querySelector('button[type=submit]')); await flush(); s = await state();
+    res['4b Bearbeiten über Karte'] = res.sheet4b && H('10 Minuten lesen').tinyVersion === 'Zwei Seiten lesen';
     // 5 Kalender
     await tab('progress'); const sel = $('#calHabit'); sel.value = H('10 Minuten lesen').id; sel.dispatchEvent(new Event('change', { bubbles: true })); await w(100);
     const stat = $('#progressBody .harvest .ctx').textContent; const cells = $$('.cal-grid i[data-info]'); await tap(cells[cells.length - 3]);
@@ -52,6 +65,9 @@ const path = require('path'), { open, testhof } = require('./chrome');
     // 7 Pausieren
     await tab('habits'); const c7 = $$('#p-habits [data-hid]').find(c => c.innerText.includes('5 Minuten dehnen')); await tap(c7.querySelector('[data-act=hsheet]')); await tap($('.sheet [data-act=pause]')); await flush(); s = await state();
     res['7 Pausieren'] = !!H('5 Minuten dehnen') && !!H('5 Minuten dehnen').archivedAt;
+    // 7b Pausieren über das Info-Blatt, von „Heute“ aus
+    await tab('today'); await tap(row('Ein Glas Wasser trinken').querySelector('.hopen')); const p7 = $('.sheet [data-act=pause]'); res.sheet7b = inView(p7); await tap(p7); await flush(); s = await state();
+    res['7b Pausieren über Heute'] = res.sheet7b && !!H('Ein Glas Wasser trinken').archivedAt;
     // 8 Gebäude ändern: „Geist“ auf Scheune, auf dem Hof sichtbar (Pixel im Bereich des 2. Gebäudeplatzes ändern sich)
     const region = () => { const c = $('#scene'), k = c.height / 160, lw = c.width / k, ox = Math.floor((lw - 256) / 2);
       return c.getContext('2d').getImageData((ox + 42) * k, 6 * k, 48 * k, 48 * k).data; };

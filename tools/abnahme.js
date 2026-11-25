@@ -242,6 +242,17 @@ async function main() {
         const cl = await s.ev(`__abn.contextLines()`), cut = cl.filter(c => c.cut);
         rec('kontextzeile_ohne_abschneiden', `${tag}: ${cut.length} von ${cl.length} abgeschnitten`, cut.map(c => `${tag} anker: „${c.text}“`)); }
 
+      // v9.1: Im Info-Blatt der ersten Gewohnheit liegen die Aktionen ohne Scrollen ganz im Bild (Blatt oben, nicht verdeckt)
+      if (lim('info_blatt_aktionen_ohne_scrollen')) {
+        const r = await s.ev(`(async()=>{ document.querySelector('[data-tab=today]').click(); await __abn.w(200); window.scrollTo(0, 0); document.querySelector('#p-today .hopen').click(); await __abn.w(450);
+          const sh = document.querySelector('.sheet'), sb = sh.getBoundingClientRect(), out = {};
+          for (const n of ${JSON.stringify(L.info_blatt_aktionen_ohne_scrollen || [])}) { const b = [...sh.querySelectorAll('button')].find(x => __abn.vis(x) && x.textContent.trim().startsWith(n));
+            if (!b) { out[n] = 'fehlt'; continue; } const q = b.getBoundingClientRect(), hit = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2);
+            out[n] = q.top >= Math.max(0, sb.top) && q.bottom <= Math.min(innerHeight, sb.bottom) && sh.scrollTop === 0 && b.contains(hit) ? Math.round(q.bottom) : 'außerhalb (' + Math.round(q.top) + '–' + Math.round(q.bottom) + ' pt)'; }
+          await ${CLOSE}; return out; })()`);
+        const f = Object.entries(r).filter(([, v]) => typeof v !== 'number').map(([n, v]) => `${tag} ${n}: ${v}`);
+        rec('info_blatt_aktionen_ohne_scrollen', `${tag}: ` + Object.entries(r).map(([n, v]) => typeof v === 'number' ? `${n} bis ${v} pt` : `${n} ${v}`).join(', '), f); }
+
       // Szene und Großansicht
       await s.ev(`(async()=>{ document.querySelector('[data-tab=today]').click(); window.scrollTo(0, 0); await __abn.w(400); })()`);
       const sc = await s.ev(`__abn.scene('#scene')`);
@@ -309,7 +320,8 @@ async function main() {
       // v9: erster Haken auch mit aktiver Meldung „Neu auf deinem Hof“ (Freigabe Entwurf v9, Punkt 1)
       if (lim('erster_haken_max_pt')) { await s.loadHof(null, variante(hof, 'neu')); await s.ev(NOANIM);
         const r = await s.ev(`(async()=>{ document.querySelector('[data-tab=today]').click(); await __abn.w(300); window.scrollTo(0, 0); return { on: document.getElementById('npc').classList.contains('ent-on'), top: Math.round(document.querySelector('#p-today .chk').getBoundingClientRect().top + scrollY) }; })()`);
-        rec('erster_haken_max_pt', `${tag} mit Meldung: ${r.top}`, !r.on ? [`${tag}: Meldung „Neu auf deinem Hof“ nicht aktiv`] : r.top <= L.erster_haken_max_pt ? [] : [`${tag} mit Meldung: ${r.top} pt`]); }
+        const key = lim('erster_haken_mit_meldung_max_pt') ? 'erster_haken_mit_meldung_max_pt' : 'erster_haken_max_pt', max = L[key];   // v9.1: eigener Grenzwert
+        rec(key, `${tag} mit Meldung: ${r.top}`, !r.on ? [`${tag}: Meldung „Neu auf deinem Hof“ nicht aktiv`] : r.top <= max ? [] : [`${tag} mit Meldung: ${r.top} pt`]); }
 
       // v9: Abhaken bleibt sofort möglich (Dauer des Klick-Handlers, nächster Haken nicht verdeckt)
       if (lim('abhaken_wieder_moeglich_ms') && gi === 0) { await s.loadHof(null, hof); await new Promise(r => setTimeout(r, 1800));   // Audio ist dann vorab angelegt
